@@ -1,0 +1,67 @@
+.hero-section {
+    background-color: var(--light-red);
+    padding: 60px 0;
+}
+
+.hero-text h1 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.hero-text p {
+    font-size: 1.2rem;
+    color: var(--gray);
+}
+
+.service-card {
+    transition: transform 0.3s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    height: 100%;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+}
+
+.service-card .card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.service-card .card-title {
+    color: var(--primary-color);
+}
+
+.section-title {
+    position: relative;
+    color: var(--primary-color);
+    margin-bottom: 30px;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background-color: var(--primary-color);
+}
+
+.booking-form {
+    background-color: var(--white);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.page-banner {
+    background-color: var(--light-red);
+    padding: 50px 0;
+    margin-bottom: 40px;
+}
+
+.page-banner h1 {
+    color: var(--primary-color);
+}
