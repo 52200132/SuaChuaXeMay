@@ -1,0 +1,74 @@
+from pydantic import BaseModel, Field
+from typing import Optional, List
+from datetime import datetime
+
+from schemas.reception_image import ReceptionImageCreate, ReceptionImageResponse
+
+class ReceptionFormBase(BaseModel):
+    """Schema cơ bản cho ReceptionForm"""
+    motocycle_id: int = Field(..., description="ID của xe máy")
+    customer_id: int = Field(..., description="ID của khách hàng")
+    staff_id: int = Field(..., description="ID của nhân viên tiếp nhận")
+    is_returned: Optional[bool] = Field(False, description="Xe được bàn giao lại cho khách hay chưa")
+    initial_conditon: str = Field(..., description="Tình trạng ban đầu do khách mô tả")
+
+class ReceptionFormCreate(ReceptionFormBase):
+    """Schema để tạo mới ReceptionForm"""
+    images: Optional[List[ReceptionImageCreate]] = Field(None, description="Danh sách hình ảnh kèm theo")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "motocycle_id": 1,
+                "customer_id": 1,
+                "staff_id": 1,
+                "initial_conditon": "Xe bị hư hệ thống phanh, tiếng máy kêu to",
+                "images": [
+                    {
+                        "URL": "/uploads/reception/image1.jpg",
+                        "decription": "Hình ảnh phanh trước"
+                    },
+                    {
+                        "URL": "/uploads/reception/image2.jpg",
+                        "decription": "Hình ảnh động cơ"
+                    }
+                ]
+            }
+        }
+
+class ReceptionFormUpdate(BaseModel):
+    """Schema để cập nhật ReceptionForm"""
+    motocycle_id: Optional[int] = Field(None, description="ID của xe máy")
+    staff_id: Optional[int] = Field(None, description="ID của nhân viên tiếp nhận")
+    initial_conditon: Optional[str] = Field(None, description="Tình trạng ban đầu do khách mô tả")
+
+class ReceptionFormResponse(BaseModel):
+    """Schema để trả về thông tin ReceptionForm"""
+    form_id: int
+    motocycle_id: int
+    customer_id: int
+    staff_id: int
+    created_at: datetime
+    initial_conditon: str
+    reception_images: List[ReceptionImageResponse] = []
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "form_id": 1,
+                "motocycle_id": 1,
+                "customer_id": 1,
+                "staff_id": 1,
+                "created_at": datetime.now(),
+                "initial_conditon": "Xe bị hư hệ thống phanh, tiếng máy kêu to",
+                "reception_images": [
+                    {
+                        "img_id": 1,
+                        "form_id": 1,
+                        "URL": "/uploads/reception/image1.jpg",
+                        "decription": "Hình ảnh phanh trước"
+                    }
+                ]
+            }
+        }

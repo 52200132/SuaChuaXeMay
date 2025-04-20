@@ -19,5 +19,10 @@ URLS = {
         # 'UPDATE_APPOINTMENT': '/appointment/{appointment_id}',
         # 'DELETE_APPOINTMENT': '/appointment/{appointment_id}',
     },
-
+    'RECEPTION_FORM': {
+        'CREATE': '/reception-form/create',
+        'GET_ALL_TODAY': '/reception-form/today',
+        'GET_RECEPTION_FORM_BY_ID': '/reception-form/{reception_form_id}',
+        'GET_RECEPTION_FORMS_BY_DATE_RANGE': '/reception-form/date-range',
+    },
 }

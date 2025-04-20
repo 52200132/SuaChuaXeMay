@@ -121,8 +121,8 @@ class Staff(Base):
     
     staff_id = Column(Integer, primary_key=True, autoincrement=True)
     fullname = Column(Unicode(255), nullable=False)
-    role = Column(Enum('Receptionist', 'Technician', 'Cashier', 'Manager', name='staff_role'), nullable=False)
-    status = Column(Enum('Idle', 'Busy', 'Off', 'None', name='staff_status'), default='None')
+    role = Column(Enum('receptionist', 'technician', 'cashier', 'manager', name='staff_role'), nullable=False)
+    status = Column(Enum('idle', 'busy', 'off', 'none', name='staff_status'), default='none')
     email = Column(String(50), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
     
@@ -139,7 +139,7 @@ class Appointment(Base):
     customer_id = Column(Integer, ForeignKey('Customer.customer_id'))
     service_type_id = Column(Integer, ForeignKey('ServiceType.service_type_id'))
     appointment_date = Column(DateTime)
-    status = Column(Enum('Pending', 'Confirmed', 'Cancelled', 'NoShow', name='appointment_status'), default='Pending')
+    status = Column(Enum('pending', 'confirmed', 'cancelled', 'noshow', name='appointment_status'), default='pending')
     note = Column(Text(collation='utf8mb4_unicode_ci'))
     created_at = Column(DateTime, default=datetime.utcnow)
     
