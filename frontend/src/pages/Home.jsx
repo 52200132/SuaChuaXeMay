@@ -1,28 +1,88 @@
-import React from 'react';
-import { Container, Row, Col, Card, Button } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Button, Spinner, Alert } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import { resourceService } from '../services/api';
 
 const Home = () => {
-    const services = [
-        {
-            id: 1,
-            title: 'Bảo dưỡng định kỳ',
-            description: 'Kiểm tra toàn bộ xe và thay thế các phụ tùng cần thiết để đảm bảo xe luôn trong tình trạng tốt.',
-            image: 'https://placehold.co/600x400/e83737/ffffff?text=Bảo+dưỡng+định+kỳ',
-        },
-        {
-            id: 2,
-            title: 'Sửa chữa động cơ',
-            description: 'Dịch vụ sửa chữa, đại tu động cơ chuyên nghiệp với đội ngũ kỹ thuật viên giàu kinh nghiệm.',
-            image: 'https://placehold.co/600x400/e83737/ffffff?text=Sửa+chữa+động+cơ',
-        },
-        {
-            id: 3,
-            title: 'Thay thế phụ tùng',
-            description: 'Cung cấp và thay thế phụ tùng chính hãng với giá cả hợp lý và bảo hành dài hạn.',
-            image: 'https://placehold.co/600x400/e83737/ffffff?text=Thay+thế+phụ+tùng',
-        },
-    ];
+    const [services, setServices] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Hàm lấy dữ liệu dịch vụ từ API
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const [serviceTypeData] = await Promise.all([
+                resourceService.getAllServiceTypes()
+            ]);
+            const formattedServices = serviceTypeData.slice(0, 3).map(item => ({
+                id: item.service_type_id,
+                title: item.name,
+                description: item.description,
+                image: item.url || `https://placehold.co/600x400/e83737/ffffff?text=${encodeURIComponent(item.name)}`
+            }));
+            setServices(formattedServices);
+            // console.log('formattedServices', formattedServices);
+            setError(null);
+        } catch (err) {
+            console.error('Lỗi khi gọi hàm fetchServices:', err);
+            setError('Không thể tải dữ liệu từ server. Vui lòng thử lại sau.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        // Hàm lấy dữ liệu dịch vụ từ API
+        const fetchServices = async () => {
+            try {
+                setLoading(true);
+                // Gọi API lấy danh sách dịch vụ
+                const data = await resourceService.getAllServiceTypes();
+                
+                // Chuyển đổi dữ liệu từ API sang định dạng hiển thị trên UI
+                const formattedServices = data.map(item => ({
+                    id: item.id,
+                    title: item.name, // Giả sử API trả về trường "name"
+                    description: item.description,
+                    image: `https://placehold.co/600x400/e83737/ffffff?text=${encodeURIComponent(item.name)}`
+                }));
+                
+                // Lấy 3 dịch vụ đầu tiên để hiển thị ở trang chủ
+                setServices(formattedServices.slice(0, 3));
+                setError(null);
+            } catch (err) {
+                console.error('Lỗi khi lấy dữ liệu:', err);
+                // Trong trường hợp lỗi, sử dụng dữ liệu mẫu để hiển thị
+                setServices([
+                    {
+                        id: 1,
+                        title: 'Bảo dưỡng định kỳ',
+                        description: 'Kiểm tra toàn bộ xe và thay thế các phụ tùng cần thiết để đảm bảo xe luôn trong tình trạng tốt.',
+                        image: 'https://placehold.co/600x400/e83737/ffffff?text=Bảo+dưỡng+định+kỳ',
+                    },
+                    {
+                        id: 2,
+                        title: 'Sửa chữa động cơ',
+                        description: 'Dịch vụ sửa chữa, đại tu động cơ chuyên nghiệp với đội ngũ kỹ thuật viên giàu kinh nghiệm.',
+                        image: 'https://placehold.co/600x400/e83737/ffffff?text=Sửa+chữa+động+cơ',
+                    },
+                    {
+                        id: 3,
+                        title: 'Thay thế phụ tùng',
+                        description: 'Cung cấp và thay thế phụ tùng chính hãng với giá cả hợp lý và bảo hành dài hạn.',
+                        image: 'https://placehold.co/600x400/e83737/ffffff?text=Thay+thế+phụ+tùng',
+                    }
+                ]);
+                setError('Không thể tải dữ liệu từ server. Đang hiển thị dữ liệu mẫu.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // fetchServices();
+        fetchData();
+    }, []);
 
     return (
         <>
@@ -55,23 +115,37 @@ const Home = () => {
                 </Container>
             </section>
 
+            {/* Hiển thị 3 dịch vụ trong trang chủ */}
             <section className="py-5">
                 <Container>
                     <h2 className="section-title">Dịch vụ của chúng tôi</h2>
-                    <Row className="mt-4 g-4">
-                        {services.map(service => (
-                            <Col key={service.id} md={6} lg={4}>
-                                <Card className="service-card">
-                                    <Card.Img variant="top" src={service.image} />
-                                    <Card.Body>
-                                        <Card.Title>{service.title}</Card.Title>
-                                        <Card.Text>{service.description}</Card.Text>
-                                        <Button as={Link} to="/services" variant="outline-danger">Chi tiết</Button>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        ))}
-                    </Row>
+                    
+                    {loading ? (
+                        <div className="text-center py-4">
+                            <Spinner animation="border" variant="danger" size="sm" />
+                            <p className="mt-2">Đang tải dịch vụ...</p>
+                        </div>
+                    ) : (
+                        <>
+                            {error && <Alert variant="warning" className="mb-3">{error}</Alert>}
+                            
+                            <Row className="mt-4 g-4">
+                                {services.map(service => (
+                                    <Col key={service.id} md={6} lg={4}>
+                                        <Card className="service-card">
+                                            <Card.Img variant="top" src={service.image} />
+                                            <Card.Body>
+                                                <Card.Title>{service.title}</Card.Title>
+                                                <Card.Text>{service.description}</Card.Text>
+                                                <Button as={Link} to={`/services/${service.id}`} variant="outline-danger">Chi tiết</Button>
+                                            </Card.Body>
+                                        </Card>
+                                    </Col>
+                                ))}
+                            </Row>
+                        </>
+                    )}
+                    
                     <div className="text-center mt-4">
                         <Button as={Link} to="/services" className="btn-primary-red px-4">
                             Xem tất cả dịch vụ

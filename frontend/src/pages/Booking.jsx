@@ -1,32 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+
 import { useAuth } from '../contexts/AuthContext';
+import { useData } from '../contexts/DataContext';
+import { customerService } from '../services/api';
+import { set } from 'date-fns';
 
 const Booking = () => {
     const { currentUser } = useAuth();
+    const { timeSlots, serviceTypes, motorcycleTypes } = useData(); // lấy dữ liệu từ DataContext
+    const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
-        name: '',
-        phone: '',
-        email: '',
+        customer_id: '',
+        service_type_id: '',
+        appointment_date: '',
+        note: '',
         date: '',
-        time: '',
-        service: '',
-        vehicleModel: '',
-        vehicleYear: '',
-        message: ''
+        time: ''
     });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     // Điền thông tin từ người dùng đã đăng nhập
     useEffect(() => {
         if (currentUser) {
             setFormData(prevState => ({
                 ...prevState,
+                customer_id: currentUser.id || '',
                 name: currentUser.displayName || '',
                 email: currentUser.email || '',
                 phone: currentUser.phone || ''
             }));
         }
+        
     }, [currentUser]);
 
     const [validated, setValidated] = useState(false);
@@ -40,6 +48,8 @@ const Booking = () => {
         }));
     };
 
+
+
     const handleSubmit = (e) => {
         e.preventDefault();
         const form = e.currentTarget;
@@ -50,9 +60,48 @@ const Booking = () => {
             return;
         }
 
-        // Mock API call to submit form
-        console.log('Form submitted:', formData);
+        setLoading(true);
+        setError('');
+
+        customerService.appointment.createAppointment(formData)
+        .then((response) => {
+            // console.log('Đặt lịch thành công:', response.data);
+            handleBookingSuccess(response);
+            // alert('Đặt lịch thành công!');
+        })
+        .catch((error) => {
+            const errorMessage = error.response?.data?.detail || 'Đặt lịch thất bại. Vui lòng thử lại sau.';
+            console.error('Lỗi khi đặt lịch:', error);  
+            // console.log('errorMessage:', errorMessage); // Log errorMessage để kiểm tra
+            alert(errorMessage);
+            setError(errorMessage);
+        })
+        .finally(() => {
+            // setLoading(false);
+        });
+    };
+
+    const handleBookingSuccess = async (response) => {
+        
         setSubmitted(true);
+        setError('');   
+        
+        // Hiển thị thông báo thành công
+        alert("Đăng ký lịch hẹn thành công!");
+        
+        // Lưu ID lịch hẹn vào localStorage 
+        localStorage.setItem("lastBookingId", response.data.appointment_id);
+        console.log("Lịch hẹn ID:", localStorage.getItem("lastBookingId"));
+        // TODO: Cần publish sự kiện thông báo cho nhân viên
+        
+        // Chuyển đến trang xác nhận
+        // navigate(`/booking-confirmation/${response.data.appointment_id}`);
+        setTimeout(() => {
+            // Reset trạng thái loading
+            setLoading(false);
+            navigate('/')
+        }, 3000); // Chuyển hướng sau 2 giây       
+        // Reset form
         setValidated(false);
         setFormData({
             name: currentUser?.displayName || '',
@@ -60,12 +109,10 @@ const Booking = () => {
             email: currentUser?.email || '',
             date: '',
             time: '',
-            service: '',
-            vehicleModel: '',
-            vehicleYear: '',
-            message: ''
+            service_type_id: '',
+            note: ''
         });
-    };
+    }
 
     return (
         <>
@@ -90,6 +137,8 @@ const Booking = () => {
                             </Alert>
                         )}
 
+                        {/* {error && <Alert variant="danger">{error.map(e => (e))}</Alert>} */}
+
                         <div className="booking-form">
                             <h3 className="text-primary-red mb-4">Thông tin đặt lịch</h3>
                             <Form noValidate validated={validated} onSubmit={handleSubmit}>
@@ -98,6 +147,7 @@ const Booking = () => {
                                         <Form.Group className="mb-3">
                                             <Form.Label>Họ và tên *</Form.Label>
                                             <Form.Control
+                                                disabled={currentUser ? true : false}
                                                 required
                                                 type="text"
                                                 name="name"
@@ -113,6 +163,7 @@ const Booking = () => {
                                         <Form.Group className="mb-3">
                                             <Form.Label>Số điện thoại *</Form.Label>
                                             <Form.Control
+                                                disabled={currentUser ? true : false}
                                                 required
                                                 type="tel"
                                                 name="phone"
@@ -128,7 +179,8 @@ const Booking = () => {
 
                                 <Form.Group className="mb-3">
                                     <Form.Label>Email</Form.Label>
-                                    <Form.Control
+                                    <Form.Control   
+                                        disabled={currentUser ? true : false}
                                         type="email"
                                         name="email"
                                         value={formData.email}
@@ -164,14 +216,11 @@ const Booking = () => {
                                                 onChange={handleChange}
                                             >
                                                 <option value="">Chọn giờ</option>
-                                                <option value="08:00">08:00</option>
-                                                <option value="09:00">09:00</option>
-                                                <option value="10:00">10:00</option>
-                                                <option value="11:00">11:00</option>
-                                                <option value="13:30">13:30</option>
-                                                <option value="14:30">14:30</option>
-                                                <option value="15:30">15:30</option>
-                                                <option value="16:30">16:30</option>
+                                                {timeSlots.map(slot => (
+                                                    <option key={slot.value} value={slot.value}>
+                                                        {slot.value}
+                                                    </option>
+                                                ))}
                                             </Form.Control>
                                             <Form.Control.Feedback type="invalid">
                                                 Vui lòng chọn giờ.
@@ -179,47 +228,56 @@ const Booking = () => {
                                         </Form.Group>
                                     </Col>
                                 </Row>
-
                                 <Form.Group className="mb-3">
                                     <Form.Label>Dịch vụ *</Form.Label>
                                     <Form.Control
                                         required
                                         as="select"
-                                        name="service"
-                                        value={formData.service}
+                                        name="service_type_id"
+                                        value={formData.service_type_id}
                                         onChange={handleChange}
                                     >
                                         <option value="">Chọn dịch vụ</option>
+                                        {serviceTypes.map(service => (
+                                            <option key={service.service_type_id} value={service.service_type_id}>
+                                                {service.name}
+                                            </option>
+                                        ))}
+                                        {/* <option value="">Chọn dịch vụ</option>
                                         <option value="bao-duong">Bảo dưỡng định kỳ</option>
                                         <option value="sua-chua-dong-co">Sửa chữa động cơ</option>
                                         <option value="thay-the-phu-tung">Thay thế phụ tùng</option>
                                         <option value="sua-he-thong-dien">Sửa hệ thống điện</option>
                                         <option value="ve-sinh-xe">Vệ sinh xe</option>
-                                        <option value="khac">Dịch vụ khác</option>
+                                        <option value="khac">Dịch vụ khác</option> */}
                                     </Form.Control>
                                     <Form.Control.Feedback type="invalid">
                                         Vui lòng chọn dịch vụ.
                                     </Form.Control.Feedback>
                                 </Form.Group>
 
-                                <Row>
-                                    <Col md={6}>
-                                        <Form.Group className="mb-3">
+                                {/* <Form.Group className="mb-3">
                                             <Form.Label>Loại xe *</Form.Label>
                                             <Form.Control
                                                 required
-                                                type="text"
+                                                as="select"
+                                                // type='text'
                                                 name="vehicleModel"
                                                 value={formData.vehicleModel}
                                                 onChange={handleChange}
-                                                placeholder="VD: Honda Wave, Yamaha Exciter..."
-                                            />
+                                            >
+                                                <option value="">Chọn loại xe</option>
+                                                {motorcycleTypes.map(type => (
+                                                    <option key={type.motorcycle_type_id} value={type.name}>
+                                                        {type.name}
+                                                    </option>
+                                                ))}
+                                            </Form.Control>
                                             <Form.Control.Feedback type="invalid">
                                                 Vui lòng nhập loại xe.
                                             </Form.Control.Feedback>
-                                        </Form.Group>
-                                    </Col>
-                                    <Col md={6}>
+                                        </Form.Group> */}
+                                {/* <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Năm sản xuất</Form.Label>
                                             <Form.Control
@@ -230,24 +288,24 @@ const Booking = () => {
                                                 placeholder="VD: 2020"
                                             />
                                         </Form.Group>
-                                    </Col>
-                                </Row>
+                                    </Col> */}
 
                                 <Form.Group className="mb-3">
                                     <Form.Label>Mô tả vấn đề</Form.Label>
                                     <Form.Control
                                         as="textarea"
                                         rows={3}
-                                        name="message"
-                                        value={formData.message}
+                                        name="note"
+                                        value={formData.note}
                                         onChange={handleChange}
                                         placeholder="Mô tả ngắn gọn về vấn đề của xe"
                                     />
                                 </Form.Group>
 
                                 <div className="text-center mt-4">
-                                    <Button type="submit" className="btn-primary-red px-5 py-2">
-                                        Đặt lịch ngay
+                                    <Button type="submit" className="btn-primary-red px-5 py-2" disabled={loading}>
+                                        {/* {loading? "Dàng" : "Đặt lịch nga"} */}
+                                        {loading ? "Đang xử lý..." : "Đặt lịch ngay"}
                                     </Button>
                                 </div>
                             </Form>

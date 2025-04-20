@@ -11,7 +11,7 @@ class Customer(Base):
     fullname = Column(Unicode(255), nullable=False)
     phone_num = Column(String(10), unique=True, nullable=False)
     email = Column(String(255))
-    is_guest = Column(Boolean, default=True)
+    is_guest = Column(Boolean, default=False)
     password = Column(String(255))
     
     # Relationships

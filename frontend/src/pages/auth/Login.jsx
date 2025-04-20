@@ -36,6 +36,8 @@ const Login = () => {
 
             await login(formData.email, formData.password);
 
+            alert('Đăng nhập thành công!');
+
             // Chuyển hướng người dùng đến trang họ định truy cập trước đó
             navigate(from, { replace: true });
         } catch (error) {

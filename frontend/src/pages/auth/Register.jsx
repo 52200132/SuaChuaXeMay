@@ -32,20 +32,22 @@ const Register = () => {
 
         // Kiểm tra mật khẩu xác nhận
         if (formData.password !== formData.confirmPassword) {
-            return setError('Mật khẩu xác nhận không khớp');
+            setError('Mật khẩu xác nhận không khớp');
+            return;
         }
 
         // Kiểm tra đồng ý điều khoản
         if (!formData.agree) {
-            return setError('Bạn phải đồng ý với Điều khoản dịch vụ và Chính sách bảo mật');
+            setError('Bạn phải đồng ý với Điều khoản dịch vụ và Chính sách bảo mật');
+            return;
         }
 
         try {
             setError('');
             setLoading(true);
 
-            await register(formData.email, formData.password, formData.displayName);
-
+            await register(formData.email, formData.password, formData.displayName, formData);
+            alert('Đăng ký thành công!');
             // Chuyển hướng đến trang chủ sau khi đăng ký thành công
             navigate('/');
         } catch (error) {

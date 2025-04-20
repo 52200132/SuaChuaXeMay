@@ -15,6 +15,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
+// import contexts
+import { DataProvider } from './contexts/DataContext';
+
 // Admin imports
 import AdminLayout from './admin/components/AdminLayout';
 import Dashboard from './admin/pages/Dashboard';
@@ -24,32 +27,24 @@ import UserManagement from './admin/pages/UserManagement';
 import Reports from './admin/pages/Reports';
 import Settings from './admin/pages/Settings';
 import AdminProfile from './admin/pages/Profile';
+import StaffLogin from './admin/pages/Login';
+
+// Import the new components
+import ServiceDetail from './pages/ServiceDetail';
+import NotFound from './pages/NotFound';
+import ComingSoon from './components/ComingSoon';
 
 function App() {
     return (
         <AuthProvider>
-            <div className="App d-flex flex-column min-vh-100">
-                <Header />
-                <main className="flex-grow-1">
+            <DataProvider>
+                <div className="App d-flex flex-column min-vh-100">
                     <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/services" element={<Services />} />
-                        <Route path="/about" element={<About />} />
-                        <Route path="/contact" element={<Contact />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route path="/booking" element={<Booking />} />
-                        <Route
-                            path="/profile"
-                            element={
-                                <PrivateRoute>
-                                    <Profile />
-                                </PrivateRoute>
-                            }
-                        />
+                        {/* Staff Login Route - No Header/Footer */}
+                        <Route path="/admin/login" element={<StaffLogin />} />
                         
-                        {/* Admin Routes */}
-                        <Route 
+                        {/* Admin Routes - No Header/Footer */}
+                        <Route
                             path="/admin"
                             element={
                                 <PrivateRoute>
@@ -68,10 +63,62 @@ function App() {
                             <Route path="settings" element={<Settings />} />
                             <Route path="profile" element={<AdminProfile />} />
                         </Route>
+                        
+                        {/* Client Routes - With Header/Footer */}
+                        <Route path="*" element={
+                            <>
+                                <Header />
+                                <main className="flex-grow-1">
+                                    <Routes>
+                                        <Route path="/" element={<Home />} />
+                                        <Route path="/services" element={<Services />} />
+                                        <Route path="/services/:id" element={<ServiceDetail />} />
+                                        <Route path="/about" element={<About />} />
+                                        <Route path="/contact" element={<Contact />} />
+                                        <Route path="/login" element={<Login />} />
+                                        <Route path="/register" element={<Register />} />
+                                        <Route path="/booking" element={<Booking />} />
+                                        <Route
+                                            path="/profile"
+                                            element={
+                                                <PrivateRoute>
+                                                    <Profile />
+                                                </PrivateRoute>
+                                            }
+                                        />
+
+                                        {/* Coming Soon Routes for features that are not yet implemented */}
+                                        <Route path="/shop" element={
+                                            <ComingSoon
+                                                title="Cửa hàng phụ tùng sắp ra mắt"
+                                                description="Chúng tôi đang xây dựng cửa hàng phụ tùng trực tuyến. Bạn sẽ sớm có thể mua phụ tùng và phụ kiện xe máy trực tiếp từ website."
+                                            />
+                                        } />
+
+                                        <Route path="/blog" element={
+                                            <ComingSoon
+                                                title="Blog sắp ra mắt"
+                                                description="Chúng tôi đang xây dựng mục blog với những bài viết hữu ích về bảo dưỡng và sửa chữa xe máy."
+                                            />
+                                        } />
+
+                                        <Route path="/membership" element={
+                                            <ComingSoon
+                                                title="Chương trình thành viên sắp ra mắt"
+                                                description="Đăng ký thành viên để nhận nhiều ưu đãi hấp dẫn. Tính năng này sẽ sớm được ra mắt."
+                                            />
+                                        } />
+
+                                        {/* 404 Route - Must be the last route */}
+                                        <Route path="*" element={<NotFound />} />
+                                    </Routes>
+                                </main>
+                                <Footer />
+                            </>
+                        } />
                     </Routes>
-                </main>
-                <Footer />
-            </div>
+                </div>
+            </DataProvider>
         </AuthProvider>
     );
 }

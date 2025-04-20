@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Modal, Form, Row, Col, Alert } from 'react-bootstrap';
+import { Card, Table, Button, Modal, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import FilterBar from '../components/FilterBar';
+import { resourceService } from '../../services/api';
 
 const ServiceManagement = () => {
     const [services, setServices] = useState([]);
@@ -27,80 +28,99 @@ const ServiceManagement = () => {
     
     // Load services data
     useEffect(() => {
-        // In a real application, this would be an API call
-        const fetchServices = () => {
-            // Mock data based on the services from the Services.jsx page
-            const mockServices = [
-                {
-                    id: 1,
-                    title: 'Bảo dưỡng định kỳ',
-                    description: 'Kiểm tra toàn bộ xe và thay thế các phụ tùng cần thiết để đảm bảo xe luôn trong tình trạng tốt.',
-                    details: 'Dịch vụ bao gồm kiểm tra và thay dầu máy, dầu số, bugi, lọc gió, lọc dầu, điều chỉnh xích, kiểm tra phanh, lốp và các hệ thống điện.',
-                    image: 'https://placehold.co/600x400/e83737/ffffff?text=Bảo+dưỡng+định+kỳ',
-                    price: 'Từ 150.000đ',
-                    category: 'Bảo dưỡng',
-                    active: true
-                },
-                {
-                    id: 2,
-                    title: 'Sửa chữa động cơ',
-                    description: 'Dịch vụ sửa chữa, đại tu động cơ chuyên nghiệp với đội ngũ kỹ thuật viên giàu kinh nghiệm.',
-                    details: 'Kiểm tra, chẩn đoán và khắc phục các vấn đề về động cơ như: kém khởi động, tiêu hao nhiên liệu, mất công suất, tiếng kêu bất thường...',
-                    image: 'https://placehold.co/600x400/e83737/ffffff?text=Sửa+chữa+động+cơ',
-                    price: 'Từ 300.000đ',
-                    category: 'Sửa chữa',
-                    active: true
-                },
-                {
-                    id: 3,
-                    title: 'Thay thế phụ tùng',
-                    description: 'Cung cấp và thay thế phụ tùng chính hãng với giá cả hợp lý và bảo hành dài hạn.',
-                    details: 'Chúng tôi cung cấp và thay thế các loại phụ tùng như: nhông sên dĩa, phanh, lốp, ắc quy, đèn, còi, gương, nhớt và các phụ tùng khác.',
-                    image: 'https://placehold.co/600x400/e83737/ffffff?text=Thay+thế+phụ+tùng',
-                    price: 'Theo báo giá',
-                    category: 'Phụ tùng',
-                    active: true
-                },
-                {
-                    id: 4,
-                    title: 'Sửa hệ thống điện',
-                    description: 'Kiểm tra và sửa chữa toàn bộ hệ thống điện trên xe máy.',
-                    details: 'Dịch vụ bao gồm kiểm tra và sửa chữa các vấn đề về hệ thống điện như: hệ thống đèn, còi, IC, cuộn sạc, bình ắc quy và hệ thống khởi động.',
-                    image: 'https://placehold.co/600x400/e83737/ffffff?text=Sửa+hệ+thống+điện',
-                    price: 'Từ 200.000đ',
-                    category: 'Sửa chữa',
-                    active: true
-                },
-                {
-                    id: 5,
-                    title: 'Vệ sinh xe',
-                    description: 'Dịch vụ vệ sinh xe chuyên nghiệp giúp xe luôn sạch sẽ và bảo vệ các bộ phận.',
-                    details: 'Rửa xe, vệ sinh bình xăng, bộ chế hòa khí, kim phun, buồng đốt và làm đẹp các chi tiết nhựa, kim loại trên xe.',
-                    image: 'https://placehold.co/600x400/e83737/ffffff?text=Vệ+sinh+xe',
-                    price: 'Từ 100.000đ',
-                    category: 'Vệ sinh',
-                    active: true
-                },
-                {
-                    id: 6,
-                    title: 'Sơn và làm đẹp xe',
-                    description: 'Dịch vụ sơn xe, phục hồi vỏ xe và làm đẹp các chi tiết trên xe.',
-                    details: 'Sơn xe theo yêu cầu, dán decal, phục hồi các bộ phận bị trầy xước, oxy hóa và làm mới vẻ ngoài cho xe của bạn.',
-                    image: 'https://placehold.co/600x400/e83737/ffffff?text=Sơn+và+làm+đẹp+xe',
-                    price: 'Từ 500.000đ',
-                    category: 'Làm đẹp',
-                    active: true
-                }
-            ];
-            
-            setServices(mockServices);
-            setFilteredServices(mockServices);
+        const fetchServices = async () => {
+            try {
+                // Gọi API để lấy dữ liệu
+                const data = await resourceService.getAllServiceTypes();
+                
+                // Chuyển đổi dữ liệu từ API sang định dạng UI
+                const formattedServices = data.map(item => ({
+                    id: item.id,
+                    title: item.name, // Giả sử API trả về trường "name"
+                    description: item.description,
+                    details: item.description, // hoặc một trường khác
+                    image: `https://placehold.co/600x400/e83737/ffffff?text=${encodeURIComponent(item.name)}`,
+                    price: 'Liên hệ', // hoặc một trường từ API
+                    category: 'Chưa phân loại', // hoặc một trường từ API
+                    active: true // hoặc một trường từ API
+                }));
+                
+                setServices(formattedServices);
+                setFilteredServices(formattedServices);
+            } catch (error) {
+                console.error('Lỗi khi lấy dữ liệu dịch vụ:', error);
+                // Nếu lỗi, sử dụng dữ liệu mẫu
+                const mockServices = [
+                    {
+                        id: 1,
+                        title: 'Bảo dưỡng định kỳ',
+                        description: 'Kiểm tra toàn bộ xe và thay thế các phụ tùng cần thiết để đảm bảo xe luôn trong tình trạng tốt.',
+                        details: 'Dịch vụ bao gồm kiểm tra và thay dầu máy, dầu số, bugi, lọc gió, lọc dầu, điều chỉnh xích, kiểm tra phanh, lốp và các hệ thống điện.',
+                        image: 'https://placehold.co/600x400/e83737/ffffff?text=Bảo+dưỡng+định+kỳ',
+                        price: 'Từ 150.000đ',
+                        category: 'Bảo dưỡng',
+                        active: true
+                    },
+                    {
+                        id: 2,
+                        title: 'Sửa chữa động cơ',
+                        description: 'Dịch vụ sửa chữa, đại tu động cơ chuyên nghiệp với đội ngũ kỹ thuật viên giàu kinh nghiệm.',
+                        details: 'Kiểm tra, chẩn đoán và khắc phục các vấn đề về động cơ như: kém khởi động, tiêu hao nhiên liệu, mất công suất, tiếng kêu bất thường...',
+                        image: 'https://placehold.co/600x400/e83737/ffffff?text=Sửa+chữa+động+cơ',
+                        price: 'Từ 300.000đ',
+                        category: 'Sửa chữa',
+                        active: true
+                    },
+                    {
+                        id: 3,
+                        title: 'Thay thế phụ tùng',
+                        description: 'Cung cấp và thay thế phụ tùng chính hãng với giá cả hợp lý và bảo hành dài hạn.',
+                        details: 'Chúng tôi cung cấp và thay thế các loại phụ tùng như: nhông sên dĩa, phanh, lốp, ắc quy, đèn, còi, gương, nhớt và các phụ tùng khác.',
+                        image: 'https://placehold.co/600x400/e83737/ffffff?text=Thay+thế+phụ+tùng',
+                        price: 'Theo báo giá',
+                        category: 'Phụ tùng',
+                        active: true
+                    },
+                    {
+                        id: 4,
+                        title: 'Sửa hệ thống điện',
+                        description: 'Kiểm tra và sửa chữa toàn bộ hệ thống điện trên xe máy.',
+                        details: 'Dịch vụ bao gồm kiểm tra và sửa chữa các vấn đề về hệ thống điện như: hệ thống đèn, còi, IC, cuộn sạc, bình ắc quy và hệ thống khởi động.',
+                        image: 'https://placehold.co/600x400/e83737/ffffff?text=Sửa+hệ+thống+điện',
+                        price: 'Từ 200.000đ',
+                        category: 'Sửa chữa',
+                        active: true
+                    },
+                    {
+                        id: 5,
+                        title: 'Vệ sinh xe',
+                        description: 'Dịch vụ vệ sinh xe chuyên nghiệp giúp xe luôn sạch sẽ và bảo vệ các bộ phận.',
+                        details: 'Rửa xe, vệ sinh bình xăng, bộ chế hòa khí, kim phun, buồng đốt và làm đẹp các chi tiết nhựa, kim loại trên xe.',
+                        image: 'https://placehold.co/600x400/e83737/ffffff?text=Vệ+sinh+xe',
+                        price: 'Từ 100.000đ',
+                        category: 'Vệ sinh',
+                        active: true
+                    },
+                    {
+                        id: 6,
+                        title: 'Sơn và làm đẹp xe',
+                        description: 'Dịch vụ sơn xe, phục hồi vỏ xe và làm đẹp các chi tiết trên xe.',
+                        details: 'Sơn xe theo yêu cầu, dán decal, phục hồi các bộ phận bị trầy xước, oxy hóa và làm mới vẻ ngoài cho xe của bạn.',
+                        image: 'https://placehold.co/600x400/e83737/ffffff?text=Sơn+và+làm+đẹp+xe',
+                        price: 'Từ 500.000đ',
+                        category: 'Làm đẹp',
+                        active: true
+                    }
+                ];
+                
+                setServices(mockServices);
+                setFilteredServices(mockServices);
+            }
         };
         
         fetchServices();
     }, []);
     
-    // Handle filter application
     const handleApplyFilter = (appliedFilters) => {
         let filtered = [...services];
         
@@ -122,7 +142,6 @@ const ServiceManagement = () => {
         setFilteredServices(filtered);
     };
     
-    // Form handling
     const handleShowAddModal = () => {
         setFormMode('add');
         setCurrentService(null);
@@ -165,7 +184,7 @@ const ServiceManagement = () => {
         });
     };
     
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
         
@@ -175,21 +194,47 @@ const ServiceManagement = () => {
             return;
         }
         
-        if (formMode === 'add') {
-            // Add new service
-            const newServices = [...services, formData];
-            setServices(newServices);
-            setFilteredServices(newServices);
-        } else {
-            // Update existing service
-            const updatedServices = services.map(service => 
-                service.id === formData.id ? formData : service
-            );
-            setServices(updatedServices);
-            setFilteredServices(updatedServices);
+        try {
+            if (formMode === 'add') {
+                // Chuẩn bị dữ liệu để gửi lên API
+                const serviceData = {
+                    name: formData.title, // Chuyển đổi tên trường từ UI sang API
+                    description: formData.description
+                    // Thêm các trường khác nếu cần
+                };
+                
+                // Gọi API để tạo dịch vụ mới
+                const response = await resourceService.createServiceType(serviceData);
+                
+                // Thêm dịch vụ mới vào state
+                const newService = {
+                    id: response.id,
+                    title: response.name,
+                    description: response.description,
+                    details: response.description,
+                    image: formData.image,
+                    price: formData.price,
+                    category: formData.category,
+                    active: formData.active
+                };
+                
+                const newServices = [...services, newService];
+                setServices(newServices);
+                setFilteredServices(newServices);
+            } else {
+                // Cập nhật dịch vụ có thể được thêm sau khi API hỗ trợ
+                const updatedServices = services.map(service => 
+                    service.id === formData.id ? formData : service
+                );
+                setServices(updatedServices);
+                setFilteredServices(updatedServices);
+            }
+            
+            setShowModal(false);
+        } catch (error) {
+            console.error('Lỗi khi lưu dịch vụ:', error);
+            alert('Có lỗi xảy ra khi lưu dịch vụ. Vui lòng thử lại.');
         }
-        
-        setShowModal(false);
     };
     
     const handleToggleActive = (id) => {
@@ -203,7 +248,6 @@ const ServiceManagement = () => {
         setFilteredServices(updatedServices);
     };
     
-    // Get unique categories for filter
     const categories = [...new Set(services.map(service => service.category))];
 
     return (

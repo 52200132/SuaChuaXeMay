@@ -16,7 +16,7 @@ class Customer(Base):
     
     # Relationships
     motocycles = relationship("Motocycle", back_populates="customer") # checked
-    appointments = relationship("Appointment", back_populates="customer")
+    appointments = relationship("Appointment", back_populates="customer") # checked
     reception_forms = relationship("ReceptionForm", back_populates="customer")
 
 class MotocycleType(Base):
@@ -27,9 +27,9 @@ class MotocycleType(Base):
     
     # Relationships
     motocycles = relationship("Motocycle", back_populates="moto_type") # checked
-    service_moto_types = relationship("ServiceMotoType", back_populates="moto_type")
-    part_moto_types = relationship("PartMotoType", back_populates="moto_type")
-    orders = relationship("Order", back_populates="moto_type")
+    # service_moto_types = relationship("ServiceMotoType", back_populates="moto_type")
+    # part_moto_types = relationship("PartMotoType", back_populates="moto_type")
+    # orders = relationship("Order", back_populates="moto_type")
 
 class Motocycle(Base):
     __tablename__ = 'Motocycle'
@@ -51,26 +51,28 @@ class Appointment(Base):
     
     appointment_id = Column(Integer, primary_key=True, autoincrement=True)
     customer_id = Column(Integer, ForeignKey('Customer.customer_id'))
-    service_type_id = Column(Integer, ForeignKey('ServiceType.service_type_id'))
+    # service_type_id = Column(Integer, ForeignKey('ServiceType.service_type_id'))
+    service_type_id = Column(Integer)
     appointment_date = Column(DateTime)
-    status = Column(Enum('Pending', 'Confirmed', 'Cancelled', 'NoShow', name='appointment_status'), default='Pending')
+    status = Column(Enum('pending', 'confirmed', 'cancelled', name='appointment_status'), default='pending')
     note = Column(Text(collation='utf8mb4_unicode_ci'))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
     
     # Relationships
-    customer = relationship("Customer", back_populates="appointments")
-    service_type = relationship("ServiceType", back_populates="appointments")
-    appointment_services = relationship("AppointmentService", back_populates="appointment")
+    customer = relationship("Customer", back_populates="appointments") # checked
+    # service_type = relationship("ServiceType", back_populates="appointment")
+    # appointment_services = relationship("AppointmentService", back_populates="appointment") # checked
 
-class AppointmentService(Base):
-    __tablename__ = 'Appointment_Service'
+# class AppointmentService(Base):
+#     __tablename__ = 'Appointment_Service'
     
-    appointment_id = Column(Integer, ForeignKey('Appointment.appointment_id'), primary_key=True)
-    service_type_id = Column(Integer, ForeignKey('ServiceType.service_type_id'), primary_key=True)
+#     appointment_id = Column(Integer, ForeignKey('Appointment.appointment_id'), primary_key=True)
+#     # service_type_id = Column(Integer, ForeignKey('ServiceType.service_type_id'), primary_key=True)
+#     service_type_id = Column(Integer, primary_key=True)
     
-    # Relationships
-    appointment = relationship("Appointment", back_populates="appointment_services")
-    service_type = relationship("ServiceType", back_populates="appointment_services")
+#     # Relationships
+#     appointment = relationship("Appointment", back_populates="appointment_services") # checked
+#     # service_type = relationship("ServiceType", back_populates="appointment_services")
 
 class ReceptionForm(Base):
     __tablename__ = 'ReceptionForm'
@@ -78,16 +80,17 @@ class ReceptionForm(Base):
     form_id = Column(Integer, primary_key=True, autoincrement=True)
     motocycle_id = Column(Integer, ForeignKey('Motocycle.motocycle_id'))
     customer_id = Column(Integer, ForeignKey('Customer.customer_id'))
-    staff_id = Column(Integer, ForeignKey('Staff.staff_id'))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    # staff_id = Column(Integer, ForeignKey('Staff.staff_id'))
+    staff_id = Column(Integer)
+    created_at = Column(DateTime, default=datetime.now)
     initial_conditon = Column(Unicode(255))  # Tình trạng ban đầu do khách mô tả
     
     # Relationships
-    motocycle = relationship("Motocycle", back_populates="reception_forms")
-    customer = relationship("Customer", back_populates="reception_forms")
-    staff = relationship("Staff", back_populates="reception_forms")
-    reception_images = relationship("ReceptionImage", back_populates="form")
-    diagnoses = relationship("Diagnosis", back_populates="form")
+    motocycle = relationship("Motocycle", back_populates="reception_forms") # checked
+    customer = relationship("Customer", back_populates="reception_forms") # checked
+    # staff = relationship("Staff", back_populates="reception_forms") 
+    reception_images = relationship("ReceptionImage", back_populates="form") # checked
+    # diagnoses = relationship("Diagnosis", back_populates="form")
 
 class ReceptionImage(Base):
     __tablename__ = 'ReceptionImage'
