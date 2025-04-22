@@ -1,26 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useStaffAuth } from '../contexts/StaffAuthContext';
 import './Login.css';
 
 const StaffLogin = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
-        role: '', // Default role
         rememberMe: false
     });
 
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const { loginEmployee, currentUser } = useAuth();
+    const { login, currentStaff, error: authError } = useStaffAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
     // Redirect to dashboard after login
     let from = location.state?.from?.pathname || '/admin/dashboard';
+
+    // Set error from auth context if available
+    useEffect(() => {
+        if (authError) {
+            setError(authError);
+        }
+    }, [authError]);
+
+    // If already logged in, redirect to admin dashboard
+    useEffect(() => {
+        console.log("Current staff:", currentStaff);
+        if (currentStaff) {
+            // return;
+            navigate('/admin/bookings', { replace: true });
+        }       
+    }, [currentStaff, navigate]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -42,24 +57,23 @@ const StaffLogin = () => {
             setError('');
             setLoading(true);
 
-            // Call the authentication service to login
-            await loginEmployee(formData.email, formData.password);
-            
-            // console.log("Login successful:", currentUser);
+            // Call the staff authentication service to login
+            await login(formData.email, formData.password);
             
             // Save user credentials in localStorage if "Remember me" is checked
             if (formData.rememberMe) {
-                localStorage.setItem('rememberedEmail', formData.email);
+                localStorage.setItem('rememberedStaffEmail', formData.email);
             } else {
-                localStorage.removeItem('rememberedEmail');
+                localStorage.removeItem('rememberedStaffEmail');
             }
 
             // Navigate to the dashboard or previous intended page
-            from = from.includes('admin/login') ? '/admin' : from;
+            from = from.includes('admin/login') || from.includes('/admin') ? '/admin/dashboard' : from;
+            console.log("Redirecting to:", from);
             navigate(from, { replace: true });
         } catch (error) {
             console.error("Login error:", error);
-            const errorMessage = error.response?.data?.detail || 'Đăng nhập thất bại. Vui lòng thử lại sau.';
+            const errorMessage = error.message || 'Đăng nhập thất bại. Vui lòng thử lại sau.';
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -68,7 +82,7 @@ const StaffLogin = () => {
 
     // Load remembered email on component mount
     useEffect(() => {
-        const rememberedEmail = localStorage.getItem('rememberedEmail');
+        const rememberedEmail = localStorage.getItem('rememberedStaffEmail');
         if (rememberedEmail) {
             setFormData(prev => ({
                 ...prev,

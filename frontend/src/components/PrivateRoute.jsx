@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useStaffAuth } from '../admin/contexts/StaffAuthContext';
 
 const PrivateRoute = ({ children }) => {
-    const { currentUser, loading } = useAuth();
+    const { currentStaff, loading } = useStaffAuth();
     const location = useLocation();
 
     // Xác định đường dẫn đăng nhập dựa trên vai trò người dùng
@@ -12,11 +12,11 @@ const PrivateRoute = ({ children }) => {
 
     // Add logic for role-based access
     const hasRequiredRole = () => {
-        if (!currentUser) return false;
+        if (!currentStaff) return false;
         
         // For admin routes, user must have admin, owner or employee role
         if (isAdminRoute) {
-            return !['customer', ''].includes(currentUser.role);
+            return !['customer', ''].includes(currentStaff.role);
         }
         
         // For customer routes, any authenticated user can access
@@ -36,10 +36,10 @@ const PrivateRoute = ({ children }) => {
         //     }
         // };
 
-        if (currentUser) {
+        if (currentStaff) {
             // verifyAuthStatus();
         }
-    }, [currentUser]);
+    }, [currentStaff]);
 
     if (loading) {
         return (
@@ -51,7 +51,7 @@ const PrivateRoute = ({ children }) => {
         );
     }
 
-    if (!currentUser || !hasRequiredRole()) {
+    if (!currentStaff || !hasRequiredRole()) {
         // Chuyển hướng đến trang đăng nhập phù hợp và lưu URL hiện tại
         return <Navigate to={loginPath} state={{ from: location }} replace />;
     }

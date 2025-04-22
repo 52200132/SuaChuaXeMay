@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback, use } from 'react';
 import { Card, Table, Button, Pagination, Modal, Form, Row, Col, InputGroup, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { debounce } from 'lodash';
-
+import { debounce, set } from 'lodash';
 
 import StatusBadge from '../components/StatusBadge';
 import { useAppData } from '../contexts/AppDataContext';
+import { useStaffAuth } from '../contexts/StaffAuthContext';
 import { customerService } from '../../services/api';
 
 const ReceiptManagement = () => {
     // State quản lý danh sách đơn tiếp nhận
-    const { getData, fetchAndStoreData, setData } = useAppData();
+    const { getData, fetchAndStoreData, setData, setMultipleData } = useAppData();
     const receiptsById = getData('receipts') || {};
     const receiptIds = getData('receiptsIds') || new Set();
     const customersById = getData('customers') || {};
@@ -24,6 +24,9 @@ const ReceiptManagement = () => {
     const [ currentCustomerWithMotorcycle, setCurrentCustomerWithMotorcycle ] = useState({});
     const [ customerNotFound, setCustomerNotFound ] = useState(false);
     const [ motorcyclesNotFound, setMotorcyclesNotFound ] = useState(false);
+
+    //
+    const { currentStaff } = useStaffAuth();
 
     // Loading state
     const [loading, setLoading] = useState(true);
@@ -55,11 +58,13 @@ const ReceiptManagement = () => {
         initialCondition: '',
         note: '',
         isReturned: false,
-        plateNumber: '',
+        staffId: currentStaff.staff_id || '',
+        customerId: '',
+        motocycleId: '',
     });
     const [validated, setValidated] = useState(false);
 
-    
+    // TODO: useEffect 1
     // Load mock data khi component được mount
     useEffect(() => {
         // Mock data
@@ -141,7 +146,7 @@ const ReceiptManagement = () => {
                 note: receipt.note,
                 isReturned: receipt.is_returned,
                 createdAt: receipt.created_at,
-                updatedAt: receipt.updated_at
+                returnedAt: receipt.updated_at
             };
 
             newReceiptIds.push(receipt.form_id);
@@ -180,11 +185,16 @@ const ReceiptManagement = () => {
         }
 
         fetchData();
+        console.log("Form data - useState", formData);
 
-
+        // console.log("Staff info", currentStaff);
         // setFilteredReceiptIds(newReceiptIds);
         // setTotalPages(Math.ceil(newReceiptIds.length / 10));
     }, []);
+
+    useEffect(() => {
+        console.log('fromData - useEffect', formData);
+    }, [formData]);
 
     useEffect(() => {
         console.log('Loading state:', loading); // Log loading state để kiểm tra
@@ -197,16 +207,26 @@ const ReceiptManagement = () => {
         }
     }, [loading]);
 
-    // Hàm debounce để tìm kiếm khách hàng theo số điện thoại
+    useEffect(() => {
+        console.log('Current customer with motorcycle:', currentCustomerWithMotorcycle); // Log dữ liệu khách hàng với xe để kiểm tra
+    }, [currentCustomerWithMotorcycle]);
+
+    // TODO: Hàm debounce để tìm kiếm khách hàng theo số điện thoại
     const debouncedFindCustomer = useCallback(
         debounce((phone) => {
+            setFormData(prev => ({ 
+                ...prev, brand: '', motorcycleModel: '', 
+            }));
             customerService.customer.getCustomerWithMotorcyclesByPhone(phone)
             .then(response => {
                 const customer = response.data || response; // dữ liệu của khách có chứa danh sách xe
                 if (customer && customer.fullname) {
                     setCurrentCustomerWithMotorcycle(customer);
+                    setMultipleData('motorcycles', customer.motocycles, 'motocycle_id');
+                    setData('customers', customer, customer.customer_id);
                     setFormData(prev => ({
                         ...prev,
+                        customerId: customer.customer_id || '',
                         customerName: customer.fullname || '',
                         email: customer.email || ''
                     }));
@@ -229,7 +249,7 @@ const ReceiptManagement = () => {
                 }));
                 setCustomerNotFound(phone.length > 0); // chỉ báo khi đã nhập số
             });
-        }, 1000),
+        }, 500),
         []
     );
     // Cleanup effect để hủy bỏ hàm debounce khi component unmount
@@ -253,7 +273,7 @@ const ReceiptManagement = () => {
             note: receipt.note,
             isReturned: receipt.is_returned,
             createdAt: receipt.created_at,
-            updatedAt: receipt.updated_at || ''
+            returnedAt: receipt.returned_at || ''
         };
     };
 
@@ -325,13 +345,13 @@ const ReceiptManagement = () => {
         // const { value, name } = e.target;
         const plateNumber = e.target.value;
         setFormData(prev => ({
-            ...prev,
+            ...prev, 
             plateNumber
         }));
         console.log("plateNumber", plateNumber);
 
         // Tìm xe theo biển số và tự động điền brand/model
-        const motorcycle = currentCustomerWithMotorcycle['motocycles'].find(m => m.license_plate === plateNumber);
+        const motorcycle = currentCustomerWithMotorcycle['motocycles']?.find(m => m.license_plate === plateNumber);
         if (motorcycle) {
             setFormData(prev => ({
                 ...prev,
@@ -378,7 +398,8 @@ const ReceiptManagement = () => {
 
     // Xử lý modal tạo mới
     const handleShowCreateModal = () => {
-        setFormData({
+        setFormData(prev => ({
+            ...prev,
             customerName: '',
             phone: '',
             email: '',
@@ -388,7 +409,7 @@ const ReceiptManagement = () => {
             initialCondition: '',
             note: '',
             isReturned: false
-        });
+        }));
         setValidated(false);
         setShowCreateModal(true);
     };
@@ -401,34 +422,7 @@ const ReceiptManagement = () => {
             phone
         }));
         debouncedFindCustomer(phone);
-
-        // // Tìm khách hàng theo số điện thoại
-        // const customer = Object.values(customersById).find(c => c.phone_num === phone);
-        // if (customer) {
-        //     setFormData(prev => ({
-        //         ...prev,
-        //         customerName: customer.fullname || '',
-        //         email: customer.email || ''
-        //     }));
-        //     setCustomerNotFound(false);
-        // } else {
-        //     setFormData(prev => ({
-        //         ...prev,
-        //         customerName: '',
-        //         email: ''
-        //     }));
-        //     setCustomerNotFound(phone.length > 0); // chỉ báo khi đã nhập số
-        // }
     };
-
-    // Hàm lấy thông tin xe theo biển số
-    // const handlePlateChange = (e) => {
-    //     const plateNumber = e.target.value;
-    //     setFormData(prev => ({
-    //         ...prev,
-    //         plateNumber
-    //     }));
-    // };
 
     // Xử lý thay đổi form
     const handleFormChange = (e) => {
@@ -439,6 +433,7 @@ const ReceiptManagement = () => {
             handleSelectPlate(e);
         } else {
             // console.log(name, value);
+            // console.log("formData - handle", formData);
             setFormData(prev => ({
                 ...prev,
                 [name]: type === 'checkbox' ? checked : value
@@ -464,7 +459,7 @@ const ReceiptManagement = () => {
             initialCondition: formData.initialCondition,
             note: formData.note,
             isReturned: formData.isReturned,
-            updatedAt: new Date().toISOString().split('T')[0]
+            returnedAt: new Date().toISOString().split('T')[0]
         };
 
         setReceptionsDisplay(prev => ({
@@ -476,8 +471,8 @@ const ReceiptManagement = () => {
         setShowEditModal(false);
     };
 
-    // Xử lý submit form tạo mới
-    const handleCreateSubmit = (e) => {
+    // TODO: Xử lý submit form tạo mới
+    const handleCreateSubmit = async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
 
@@ -487,13 +482,36 @@ const ReceiptManagement = () => {
             return;
         }
 
-        // Tạo ID mới
-        const newId = `RN-${new Date().getFullYear()}-${String(receiptIds.length + 1).padStart(3, '0')}`;
-        const today = new Date().toISOString().split('T')[0];
+        console.log("formData", formData);
+        try {
+            setLoading(true);
+            const response = await customerService.reception.createReception(formData);
+            const reception = response.data;
+            // Tạo đơn mới
+            setData('receipts', reception, reception.form_id);
+            setReceptionsDisplay(prev => ({
+                ...prev,
+                [reception.form_id]: formatReciptData(reception, customersById[reception.customer_id], motorcyclesById[reception.motocycle_id])
+            }));
+            setFilteredReceiptIds(prev => [...prev, reception.form_id]);
+            setShowCreateModal(false);
+            
+            alert('Tạo đơn tiếp nhận thành công!');
+        } catch (error) {
+            const errorMessage = error.response?.data?.detail || 'Tạo đơn thất bại. Vui lòng thử lại sau.';
+            alert(errorMessage);
+            console.error("Lỗi khi tạo đơn tiếp nhận:", errorMessage);
+            setLoading(false);
+        } finally {
+            setShowCreateModal(false);
+        }
 
-        // Tạo đơn mới
+        // Tạo ID mới
+        const newId = `RN-${new Date().getFullYear()}-${String(filteredReceiptIds.length + 1).padStart(3, '0')}`;
+        const today = new Date().toISOString().split('T');
+
         const newReceipt = {
-            id: newId,
+            // id: newId,
             customerName: formData.customerName,
             phone: formData.phone,
             plateNumber: formData.plateNumber,
@@ -502,7 +520,7 @@ const ReceiptManagement = () => {
             note: formData.note,
             isReturned: formData.isReturned,
             createdAt: today,
-            updatedAt: today
+            returnedAt: today
         };
 
         // Cập nhật state
@@ -512,7 +530,7 @@ const ReceiptManagement = () => {
         // }));
 
         // setReceiptIds(prev => [...prev, newId]);
-        setFilteredReceiptIds(prev => [...prev, newId]);
+        // setFilteredReceiptIds(prev => [...prev, newId]);
         setTotalPages(Math.ceil((filteredReceiptIds.length + 1) / 10));
 
         setShowCreateModal(false);
@@ -746,7 +764,7 @@ const ReceiptManagement = () => {
                                     <h6 className="text-muted mb-3">Thông tin chung</h6>
                                     <p><strong>Mã đơn:</strong> {currentReceipt.id}</p>
                                     <p><strong>Ngày tiếp nhận:</strong> {currentReceipt.createdAt}</p>
-                                    <p><strong>Cập nhật lần cuối:</strong> {currentReceipt.updatedAt}</p>
+                                    <p><strong>Cập nhật lần cuối:</strong> {currentReceipt.returnedAt}</p>
                                     <p>
                                         <strong>Trạng thái:</strong> <Badge bg={currentReceipt.isReturned ? "success" : "warning"}>
                                             {currentReceipt.isReturned ? "Đã trả khách" : "Đang sửa chữa"}
@@ -953,12 +971,14 @@ const ReceiptManagement = () => {
                                             value={formData.plateNumber}
                                             onChange={handleFormChange}
                                             required
-                                            disabled={!customerNotFound}
+                                            disabled={!formData.phone}
                                             placeholder="Ví dụ: 59X1-12345"
                                         />
                                     )}
                                     {/* Nếu chọn nhập biển số mới */}
-                                    {Array.isArray(currentCustomerWithMotorcycle['motocycles']) && currentCustomerWithMotorcycle['motocycles'].length > 0 && formData.plateNumber === "__manual__" && (
+                                    {Array.isArray(currentCustomerWithMotorcycle['motocycles']) 
+                                    && currentCustomerWithMotorcycle['motocycles'].length > 0 
+                                    && formData.plateNumber === "__manual__" && (
                                         <Form.Control
                                             className="mt-2"
                                             type="text"
@@ -980,7 +1000,7 @@ const ReceiptManagement = () => {
                                         name="brand"
                                         onChange={handleFormChange}
                                         value={formData.brand}
-                                        readOnly={formData.plateNumber !== "__manual__"}
+                                        readOnly={!formData.phone}
                                         required
                                         placeholder="Hãng xe (tự động điền nếu có)"
                                     />
@@ -992,7 +1012,7 @@ const ReceiptManagement = () => {
                                         name="motorcycleModel"
                                         value={formData.motorcycleModel}
                                         onChange={handleFormChange}
-                                        readOnly={formData.plateNumber !== "__manual__"}
+                                        readOnly={!formData.phone}
                                         required
                                         placeholder="Ví dụ: Honda Wave, Yamaha Exciter..."
                                     />

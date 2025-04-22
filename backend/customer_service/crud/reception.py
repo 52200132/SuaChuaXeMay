@@ -113,7 +113,7 @@ async def get_all_reception_forms(
         result = await db.execute(
         select(ReceptionForm)
         .options(selectinload(ReceptionForm.reception_images))
-        .order_by(ReceptionForm.created_at.desc())
+        .order_by(ReceptionForm.form_id.asc())  
         .offset(skip)
         .limit(limit)
     )

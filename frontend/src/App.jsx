@@ -18,6 +18,7 @@ import './App.css';
 // import contexts
 import { DataProvider } from './contexts/DataContext';
 import AppDataProvider from './admin/contexts/AppDataContext';
+import { StaffAuthProvider } from './admin/contexts/StaffAuthContext';
 
 // Admin imports
 import AdminLayout from './admin/components/AdminLayout';
@@ -44,17 +45,23 @@ function App() {
 
                     <Routes>
                         {/* Staff Login Route - No Header/Footer */}
-                        <Route path="/admin/login" element={<StaffLogin />} />
+                        <Route path="/admin/login" element={
+                            <StaffAuthProvider>
+                                <StaffLogin />
+                            </StaffAuthProvider>
+                        } />
 
                         {/* Admin Routes - No Header/Footer */}
                         <Route
                             path="/admin"
                             element={
-                                <PrivateRoute>
-                                    <AppDataProvider>
-                                        <AdminLayout />
-                                    </AppDataProvider>
-                                </PrivateRoute>
+                                <StaffAuthProvider>
+                                    <PrivateRoute>
+                                        <AppDataProvider>
+                                            <AdminLayout />
+                                        </AppDataProvider>
+                                    </PrivateRoute>
+                                </StaffAuthProvider>
                             }
                         >
                             <Route index element={<Dashboard />} />

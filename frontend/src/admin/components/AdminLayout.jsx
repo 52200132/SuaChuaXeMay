@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Nav, Button, Navbar, NavDropdown } from 'react-bootstrap';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+
+
+import { useStaffAuth } from '../contexts/StaffAuthContext';    
 import { employeeRoutes, ownerRoutes } from '../routes';
 import './AdminLayout.css';
 
 const AdminLayout = () => {
-    const { currentUser, logout } = useAuth();
+    const { currentStaff, logout } = useStaffAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
 
     // Xác định xem người dùng có phải là quản lý hay không hay chỉ là nhân viên
     // This would typically come from your user's role in the auth context
-    const isOwner = currentUser?.role === 'admin' || currentUser?.role === 'owner';
+    const isOwner = currentStaff?.role === 'admin' || currentStaff?.role === 'owner';
     
     // Chọn các route dựa trên vai trò của người dùng (sửa lỗi logic)
     const routes = !isOwner ? ownerRoutes : employeeRoutes;
@@ -21,7 +23,7 @@ const AdminLayout = () => {
     const handleLogout = async () => {
         try {
             await logout();
-            navigate('/login');
+            navigate('/admin/login', { replace: true });
         } catch (error) {
             console.error("Failed to log out", error);
         }
@@ -47,15 +49,15 @@ const AdminLayout = () => {
                 
                 <div className="sidebar-user">
                     <div className={`user-avatar ${collapsed ? 'small' : ''}`}>
-                        {currentUser?.photoURL ? (
-                            <img src={currentUser.photoURL} alt="User" className="rounded-circle" />
+                        {currentStaff?.photoURL ? (
+                            <img src={currentStaff.photoURL} alt="User" className="rounded-circle" />
                         ) : (
                             <i className="bi bi-person-circle"></i>
                         )}
                     </div>
                     {!collapsed && (
                         <div className="user-info">
-                            <p className="user-name">{currentUser?.displayName || 'User'}</p>
+                            <p className="user-name">{currentStaff?.displayName || 'User'}</p>
                             <span className="user-role">{isOwner ? 'Quản lý' : 'Nhân viên'}</span>
                         </div>
                     )}
@@ -115,7 +117,7 @@ const AdminLayout = () => {
                                     title={
                                         <span>
                                             <i className="bi bi-person-circle me-1"></i>
-                                            {currentUser?.displayName || 'User'}
+                                            {currentStaff?.displayName || 'User'}
                                         </span>
                                     } 
                                     id="user-dropdown"
