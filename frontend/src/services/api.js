@@ -161,6 +161,16 @@ const customerService = {
                 console.error(`Lỗi khi lấy thông tin khách hàng theo số điện thoại ${phone}:`, error);
                 throw error;
             }
+        },
+
+        getCustomerWithMotorcyclesByPhone: async (phone) => {
+            try {
+                const response = await apiCustomerService.get(URLS.CUSTOMER.GET_CUSTOMER_WITH_MOTORCYCLES.replace('{phone_num}', phone));
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi lấy thông tin khách hàng và xe theo số điện thoại ${phone}:`, error);
+                throw error;
+            }
         }
     },
 

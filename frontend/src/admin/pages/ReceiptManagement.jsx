@@ -7,7 +7,6 @@ import { debounce } from 'lodash';
 import StatusBadge from '../components/StatusBadge';
 import { useAppData } from '../contexts/AppDataContext';
 import { customerService } from '../../services/api';
-import { set } from 'date-fns';
 
 const ReceiptManagement = () => {
     // State quản lý danh sách đơn tiếp nhận
@@ -22,8 +21,7 @@ const ReceiptManagement = () => {
     const [filteredReceiptIds, setFilteredReceiptIds] = useState([]);
 
     //
-    const [ currentCustomer, setCurrentCustomer ] = useState({});
-    const [ currentMotorcycle, setCurrentMotorcycle ] = useState({}); // danh sách xe của khách hàng
+    const [ currentCustomerWithMotorcycle, setCurrentCustomerWithMotorcycle ] = useState({});
     const [ customerNotFound, setCustomerNotFound ] = useState(false);
     const [ motorcyclesNotFound, setMotorcyclesNotFound ] = useState(false);
 
@@ -56,7 +54,8 @@ const ReceiptManagement = () => {
         motorcycleModel: '',
         initialCondition: '',
         note: '',
-        isReturned: false
+        isReturned: false,
+        plateNumber: '',
     });
     const [validated, setValidated] = useState(false);
 
@@ -201,11 +200,11 @@ const ReceiptManagement = () => {
     // Hàm debounce để tìm kiếm khách hàng theo số điện thoại
     const debouncedFindCustomer = useCallback(
         debounce((phone) => {
-            customerService.customer.getCustomerByPhone(phone)
+            customerService.customer.getCustomerWithMotorcyclesByPhone(phone)
             .then(response => {
-                const customer = response.data || response;
+                const customer = response.data || response; // dữ liệu của khách có chứa danh sách xe
                 if (customer && customer.fullname) {
-                    setCurrentCustomer(customer);
+                    setCurrentCustomerWithMotorcycle(customer);
                     setFormData(prev => ({
                         ...prev,
                         customerName: customer.fullname || '',
@@ -222,7 +221,7 @@ const ReceiptManagement = () => {
                 }
             })
             .catch(error => {
-                console.error('Lỗi khi tìm khách hàng:', error);
+                console.error('Lỗi khi tìm khách hàng với xe:', error);
                 setFormData(prev => ({
                     ...prev,
                     customerName: '',
@@ -247,7 +246,7 @@ const ReceiptManagement = () => {
             id: receipt.form_id,
             customerName: customer.fullname,
             phone: customer.phone_num,
-            plateNumber: motorcycle.licence_plate,
+            plateNumber: motorcycle.license_plate,
             motorcycleModel: `${brand} ${model}`,
             // TODO: lỗi chính tả
             initialCondition: receipt.initial_conditon,
@@ -320,6 +319,35 @@ const ReceiptManagement = () => {
         setTotalPages(Math.ceil(receiptIds.length / 10));
         setCurrentPage(1);
     };
+
+    // TODO: Xử lý khi chọn biển số xe
+    const handleSelectPlate = (e) => {    
+        // const { value, name } = e.target;
+        const plateNumber = e.target.value;
+        setFormData(prev => ({
+            ...prev,
+            plateNumber
+        }));
+        console.log("plateNumber", plateNumber);
+
+        // Tìm xe theo biển số và tự động điền brand/model
+        const motorcycle = currentCustomerWithMotorcycle['motocycles'].find(m => m.license_plate === plateNumber);
+        if (motorcycle) {
+            setFormData(prev => ({
+                ...prev,
+                brand: motorcycle.brand || '',
+                motorcycleModel: motorcycle.model || '',
+                motocycleId: motorcycle.motocycle_id || '',
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                brand: '',
+                motorcycleModel: '',
+                motocycleId: '',
+            }));
+        }
+    }
 
     // Phân trang
     const getCurrentItems = () => {
@@ -394,29 +422,13 @@ const ReceiptManagement = () => {
     };
 
     // Hàm lấy thông tin xe theo biển số
-    const handlePlateChange = (e) => {
-        const plateNumber = e.target.value;
-        setFormData(prev => ({
-            ...prev,
-            plateNumber
-        }));
-
-        // Tìm xe theo biển số
-        const motorcycle = Object.values(motorcyclesById).find(m => m.licence_plate === plateNumber);
-        if (motorcycle) {
-            setFormData(prev => ({
-                ...prev,
-                brand: motorcycle.brand || '',
-                motorcycleModel: motorcycle.model || ''
-            }));
-        } else {
-            setFormData(prev => ({
-                ...prev,
-                brand: '',
-                motorcycleModel: ''
-            }));
-        }
-    };
+    // const handlePlateChange = (e) => {
+    //     const plateNumber = e.target.value;
+    //     setFormData(prev => ({
+    //         ...prev,
+    //         plateNumber
+    //     }));
+    // };
 
     // Xử lý thay đổi form
     const handleFormChange = (e) => {
@@ -424,8 +436,9 @@ const ReceiptManagement = () => {
         if (name === 'phone') {
             handlePhoneChange(e);
         } else if (name === 'plateNumber') {
-            handlePlateChange(e);
+            handleSelectPlate(e);
         } else {
+            // console.log(name, value);
             setFormData(prev => ({
                 ...prev,
                 [name]: type === 'checkbox' ? checked : value
@@ -894,7 +907,7 @@ const ReceiptManagement = () => {
                                         value={formData.customerName}
                                         onChange={handleFormChange}
                                         required
-                                        disabled={!customerNotFound} //{!customerNotFound && !formData.customerName}
+                                        readOnly={!customerNotFound} //{!customerNotFound && !formData.customerName}
                                     />
                                     <Form.Control.Feedback type="invalid">
                                         Vui lòng nhập họ tên khách hàng
@@ -908,7 +921,7 @@ const ReceiptManagement = () => {
                                         value={formData.email}
                                         onChange={handleFormChange}
                                         readOnly={!customerNotFound } // {!customerNotFound && !formData.email}
-                                        disabled={!customerNotFound } // {!customerNotFound && !formData.email}
+                                        // disabled={!customerNotFound } // {!customerNotFound && !formData.email}
                                         placeholder="Email khách hàng (nếu có)"
                                     />
                                 </Form.Group>
@@ -917,15 +930,45 @@ const ReceiptManagement = () => {
                                 <h6 className="mb-3">Thông tin xe</h6>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Biển số xe *</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="plateNumber"
-                                        value={formData.plateNumber}
-                                        onChange={handleFormChange}
-                                        required
-                                        disabled={!customerNotFound} //{!customerNotFound && !formData.plateNumber}
-                                        placeholder="Ví dụ: 59X1-12345"
-                                    />
+                                    {/* Nếu currentCustomerWithMotorcycle có motorcycles thì cho chọn, nếu không thì nhập */}
+                                    {Array.isArray(currentCustomerWithMotorcycle['motocycles']) && currentCustomerWithMotorcycle['motocycles'].length > 0 ? (
+                                        <Form.Select
+                                            name="plateNumber"
+                                            value={formData.plateNumber}
+                                            onChange={handleFormChange}
+                                            required
+                                        >
+                                            <option value="">-- Chọn biển số xe --</option>
+                                            {currentCustomerWithMotorcycle['motocycles'].map(m => (
+                                                <option key={m.motocycle_id} value={m.license_plate}>
+                                                    {m.license_plate} 
+                                                </option>
+                                            ))} 
+                                            <option value="__manual__">Nhập biển số mới...</option>
+                                        </Form.Select>
+                                    ) : (
+                                        <Form.Control
+                                            type="text"
+                                            name="plateNumber"
+                                            value={formData.plateNumber}
+                                            onChange={handleFormChange}
+                                            required
+                                            disabled={!customerNotFound}
+                                            placeholder="Ví dụ: 59X1-12345"
+                                        />
+                                    )}
+                                    {/* Nếu chọn nhập biển số mới */}
+                                    {Array.isArray(currentCustomerWithMotorcycle['motocycles']) && currentCustomerWithMotorcycle['motocycles'].length > 0 && formData.plateNumber === "__manual__" && (
+                                        <Form.Control
+                                            className="mt-2"
+                                            type="text"
+                                            name="plateNumberManual"
+                                            value={formData.plateNumberManual || ""}
+                                            onChange={handleFormChange}
+                                            required
+                                            placeholder="Nhập biển số mới"
+                                        />
+                                    )}
                                     <Form.Control.Feedback type="invalid">
                                         Vui lòng nhập biển số xe
                                     </Form.Control.Feedback>
@@ -935,8 +978,10 @@ const ReceiptManagement = () => {
                                     <Form.Control
                                         type="text"
                                         name="brand"
+                                        onChange={handleFormChange}
                                         value={formData.brand}
-                                        readOnly
+                                        readOnly={formData.plateNumber !== "__manual__"}
+                                        required
                                         placeholder="Hãng xe (tự động điền nếu có)"
                                     />
                                 </Form.Group>
@@ -947,6 +992,7 @@ const ReceiptManagement = () => {
                                         name="motorcycleModel"
                                         value={formData.motorcycleModel}
                                         onChange={handleFormChange}
+                                        readOnly={formData.plateNumber !== "__manual__"}
                                         required
                                         placeholder="Ví dụ: Honda Wave, Yamaha Exciter..."
                                     />

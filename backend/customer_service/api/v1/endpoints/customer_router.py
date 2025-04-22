@@ -71,11 +71,11 @@ async def read_customer_by_phone(
 
 @router.get(URLS['CUSTOMER']['GET_CUSTOMER_WITH_MOTORCYCLES'], response_model=CustomerResponseWithMotocycles)
 async def get_customer_with_motorcycles(
-    phone_number: str,
+    phone_num: str,
     db: AsyncSession = Depends(get_db)
 ):
     """Lấy thông tin khách hàng theo số điện thoại và bao gồm thông tin xe máy"""
-    customer = await customer_crud.get_customer_with_motorcycle_by_phone(db, phone_number)
+    customer = await customer_crud.get_customer_with_motorcycle_by_phone(db, phone_num)
     if customer is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
