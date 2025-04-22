@@ -8,6 +8,8 @@ const AppDataContext = createContext();
 export const useAppData = () => useContext(AppDataContext);
 
 export const AppDataProvider = ({ children }) => {
+    const [currentCustomer, setCurrentCustomer] = useState(null); // State for current customer
+
     // State for different data categories
     const [dataStore, setDataStore] = useState({
         customers: {},    // Customer data by ID

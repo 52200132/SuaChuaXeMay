@@ -18,6 +18,7 @@ const URLS = {
         'CREATE_CUSTOMER' : '/customer/create',
         'LOGIN' : '/customer/login',
         'GET_CUSTOMER_BY_ID' : '/customer/{customer_id}',
+        'GET_CUSTOMER_BY_PHONE': '/customer/phone/{phone_num}', 
         // 'GET_ALL_CUSTOMER_TYPE' : '/customer/customer-type/get-all',
         // 'GET_CUSTOMER_TYPE_BY_ID' : '/customer/customer-type/{customer-type-id}',
         // 'GET_CUSTOMERS_BY_CUSTOMER_TYPE_ID' : '/customer/customer-type/{customer_type_id}/get-customers',

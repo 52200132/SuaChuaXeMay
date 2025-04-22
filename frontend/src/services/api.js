@@ -151,6 +151,16 @@ const customerService = {
                 console.error(`Lỗi khi lấy thông tin khách hàng ID=${id}:`, error);
                 throw error;
             }
+        },
+
+        getCustomerByPhone: async (phone) => {
+            try {
+                const response = await apiCustomerService.get(URLS.CUSTOMER.GET_CUSTOMER_BY_PHONE.replace('{phone_num}', phone));
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi lấy thông tin khách hàng theo số điện thoại ${phone}:`, error);
+                throw error;
+            }
         }
     },
 
