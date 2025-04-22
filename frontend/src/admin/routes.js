@@ -1,5 +1,6 @@
 import Dashboard from './pages/Dashboard';
 import BookingManagement from './pages/BookingManagement';
+import ReceiptManagement from './pages/ReceiptManagement';
 import ServiceManagement from './pages/ServiceManagement';
 import UserManagement from './pages/UserManagement';
 import Reports from './pages/Reports';
@@ -20,6 +21,13 @@ export const employeeRoutes = [
         component: BookingManagement,
         name: 'Quản lý đặt lịch',
         icon: 'bi bi-calendar-check',
+        exact: true,
+    },
+    {
+        path: '/admin/receipts',
+        component: ReceiptManagement,
+        name: 'Quản lý đơn tiếp nhận',
+        icon: 'bi bi-file-earmark-text',
         exact: true,
     },
     {

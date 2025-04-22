@@ -84,6 +84,8 @@ class ReceptionForm(Base):
     staff_id = Column(Integer)
     created_at = Column(DateTime, default=datetime.now)
     initial_conditon = Column(Unicode(255))  # Tình trạng ban đầu do khách mô tả
+    note = Column(Text(collation='utf8mb4_unicode_ci'))  # Ghi chú của nhân viên tiếp nhận
+    is_returned = Column(Boolean, default=False)  # Xe được bàn giao lại cho khách hay chưa
     
     # Relationships
     motocycle = relationship("Motocycle", back_populates="reception_forms") # checked

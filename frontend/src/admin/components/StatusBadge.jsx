@@ -6,6 +6,7 @@ const StatusBadge = ({ status }) => {
         switch (status.toLowerCase()) {
             case 'pending':
             case 'chờ xác nhận':
+            case 'đang sửa chữa':
                 return 'warning';
             case 'confirmed':
             case 'đã xác nhận':
@@ -15,6 +16,7 @@ const StatusBadge = ({ status }) => {
                 return 'primary';
             case 'completed':
             case 'hoàn thành':
+            case 'đã trả khách':
                 return 'success';
             case 'cancelled':
             case 'đã hủy':

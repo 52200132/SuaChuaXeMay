@@ -1,0 +1,65 @@
+/* Styling cho trang quản lý đơn tiếp nhận */
+
+.btn-custom {
+    background-color: #d30000;
+    border-color: #d30000;
+}
+
+.btn-custom:hover,
+.btn-custom:focus,
+.btn-custom:active {
+    background-color: #b80000;
+    border-color: #b80000;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.time-filter-container {
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+}
+
+.time-filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.time-filter-tab {
+    border: none;
+    background: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.time-filter-tab.active {
+    background-color: #d30000;
+    color: white;
+}
+
+.time-filter-tab:not(.active):hover {
+    background-color: #e9ecef;
+}
+
+/* Styling cho modal */
+.modal-header .modal-title {
+    color: #d30000;
+}
+
+/* Styling cho badge */
+.badge.bg-warning {
+    background-color: #ffa000 !important;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+}

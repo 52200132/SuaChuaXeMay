@@ -74,55 +74,56 @@ async def get_appointments_by_date_range(
     
     return appointments
 
-@router.get(URLS['APPOINTMENT']['GET_APPOINTMENT_BY_ID'], response_model=AppointmentResponse)
-async def get_appointment_by_id(appointment_id: int, db: AsyncSession = Depends(get_db)):
+@router.get(URLS['APPOINTMENT']['GET_ALL'], response_model=List[AppointmentResponse])
+async def get_all_appointments(db: AsyncSession = Depends(get_db)):
     """
-    Lấy thông tin chi tiết của một lịch hẹn theo ID.
+    Lấy danh sách tất cả lịch hẹn.
     
-    - **appointment_id**: ID của lịch hẹn
+    - Trả về danh sách các lịch hẹn trong cơ sở dữ liệu.
     """
-    appointment = await appointment_crud.get_appointment(db, appointment_id)
-    
-    if not appointment:
-        raise HTTPException(status_code=404, detail="Không tìm thấy lịch hẹn")
-    
-    return AppointmentResponse.from_orm(appointment)
+    appointments = await appointment_crud.get_all_appointments(db)
+    logger.info("Fetched all appointments successfully")
 
+    return appointments
 
-
-# @router.get("/", response_model=List[AppointmentResponse])
-# async def read_appointments(
-#     skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
-#     limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),
-#     customer_id: Optional[int] = Query(None, description="Lọc theo ID khách hàng"),
-#     status: Optional[AppointmentStatusEnum] = Query(None, description="Lọc theo trạng thái"),
-#     start_date: Optional[datetime] = Query(None, description="Ngày bắt đầu"),
-#     end_date: Optional[datetime] = Query(None, description="Ngày kết thúc"),
-#     db: AsyncSession = Depends(get_db)
-# ):
-#     """
-#     Lấy danh sách lịch hẹn với các tùy chọn lọc.
+@router.get(URLS['APPOINTMENT']['FILTER'], response_model=List[AppointmentResponse])
+async def read_appointments(
+    skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
+    limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),
+    customer_id: Optional[int] = Query(None, description="Lọc theo ID khách hàng"),
+    status: Optional[AppointmentStatusEnum] = Query(None, description="Lọc theo trạng thái"),
+    start_date: Optional[datetime] = Query(None, description="Ngày bắt đầu"),
+    end_date: Optional[datetime] = Query(None, description="Ngày kết thúc"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lấy danh sách lịch hẹn với các tùy chọn lọc.
     
-#     - Có thể lọc theo ID khách hàng, trạng thái, hoặc khoảng thời gian.
-#     - Có thể phân trang kết quả với tham số skip và limit.
-#     """
-#     if customer_id is not None:
-#         appointments = await appointment_crud.get_appointments_by_customer(
-#             db, customer_id, skip=skip, limit=limit
-#         )
-#     elif start_date is not None and end_date is not None:
-#         status_list = [status.value] if status else None
-#         appointments = await appointment_crud.get_appointments_by_date_range(
-#             db, start_date, end_date, status=status_list, skip=skip, limit=limit
-#         )
-#     else:
-#         appointments = await appointment_crud.get_all_appointments(db, skip=skip, limit=limit)
+    - Có thể lọc theo ID khách hàng, trạng thái, hoặc khoảng thời gian.
+    - Có thể phân trang kết quả với tham số skip và limit.
+    """
+    # if customer_id is not None:
+    #     appointments = await appointment_crud.get_appointments_by_customer(
+    #         db, customer_id, skip=skip, limit=limit
+    #     )
+    # elif start_date is not None and end_date is not None:
+    #     status_list = [status.value] if status else None
+    #     appointments = await appointment_crud.get_appointments_by_date_range(
+    #         db, start_date, end_date, status=status_list, skip=skip, limit=limit
+    #     )
+    # else:
+    #     appointments = await appointment_crud.get_all_appointments(db, skip=skip, limit=limit)
         
-#         # Lọc theo trạng thái nếu có
-#         if status is not None:
-#             appointments = [a for a in appointments if a.status == status.value]
-            
-#     return appointments
+    #     # Lọc theo trạng thái nếu có
+    #     if status is not None:
+    #         appointments = [a for a in appointments if a.status == status.value]
+    appointments = await appointment_crud.get_appointment_with_filter(
+        db, skip=skip, limit=limit, customer_id=customer_id, status=status, start_date=start_date, end_date=end_date
+    )
+
+    logger.info("Fetched appointments with filters successfully")
+
+    return appointments
 
 # @router.get("/{appointment_id}")
 # async def read_appointment(
@@ -210,3 +211,17 @@ async def get_appointment_by_id(appointment_id: int, db: AsyncSession = Depends(
 #         raise HTTPException(status_code=400, detail=str(e))
     
 #     return None
+
+@router.get(URLS['APPOINTMENT']['GET_APPOINTMENT_BY_ID'], response_model=AppointmentResponse)
+async def get_appointment_by_id(appointment_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Lấy thông tin chi tiết của một lịch hẹn theo ID.
+    
+    - **appointment_id**: ID của lịch hẹn
+    """
+    appointment = await appointment_crud.get_appointment_by_id(db, appointment_id)
+    
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lịch hẹn")
+    
+    return AppointmentResponse.from_orm(appointment)

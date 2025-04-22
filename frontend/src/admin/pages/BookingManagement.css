@@ -1,0 +1,164 @@
+/* Primary color variable */
+:root {
+    --primary-color: #d30000;
+    --primary-hover: #b50000;
+    --light-gray: #f5f5f5;
+    --border-color: #dee2e6;
+}
+
+/* Button styling */
+.btn-custom {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-custom:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.btn-outline-custom {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-custom:hover {
+    color: white;
+    background-color: var(--primary-color);
+}
+
+/* Time filter tabs styling to match screenshot */
+.time-filter-container {
+    background-color: white;
+    border-radius: 4px;
+}
+
+.time-filter-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.time-filter-tab {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    color: #495057;
+    outline: none;
+}
+
+.time-filter-tab:hover {
+    color: var(--primary-color);
+}
+
+.time-filter-tab.active {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.time-filter-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--primary-color);
+}
+
+/* View toggle styling */
+.view-toggle-container {
+    display: flex;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.view-toggle-btn {
+    background: none;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    color: #495057;
+}
+
+.view-toggle-btn:first-child {
+    border-right: 1px solid var(--border-color);
+}
+
+.view-toggle-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Timeline styling */
+.timeline {
+    position: relative;
+}
+
+.timeline-block {
+    margin-bottom: 2rem;
+}
+
+.timeline-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-time-badge {
+    padding: 6px 12px;
+    background-color: var(--light-gray);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-weight: 600;
+    margin-right: 15px;
+    min-width: 80px;
+    text-align: center;
+}
+
+.timeline-header-line {
+    flex-grow: 1;
+    height: 1px;
+    background-color: var(--border-color);
+}
+
+/* Booking card styling */
+.booking-card {
+    border-left: 4px solid var(--primary-color);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.booking-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.booking-customer {
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.booking-details {
+    min-height: 50px;
+}
+
+.booking-id {
+    opacity: 0.7;
+    font-size: 0.8rem;
+}
+
+/* Empty state styling */
+.empty-state {
+    padding: 3rem 0;
+}
+
+.empty-state i {
+    opacity: 0.5;
+    font-size: 3rem;
+}

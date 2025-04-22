@@ -8,6 +8,7 @@ from db.session import init_db
 from api.v1.endpoints.customer_router import router as customer_router
 from api.v1.endpoints.motorcycle_router import router as motorcycle_router
 from api.v1.endpoints.appointment_router import router as appointment_router
+from api.v1.endpoints.reception_form_router import router as reception_router
 
 app = FastAPI(title="Customer Service API", version="1.0.0")
 
@@ -15,6 +16,7 @@ app = FastAPI(title="Customer Service API", version="1.0.0")
 app.include_router(customer_router, prefix="/api/v1", tags=["Customer"])
 app.include_router(motorcycle_router, prefix="/api/v1", tags=["Motorcycle"])
 app.include_router(appointment_router, prefix="/api/v1", tags=["Appointment"])
+app.include_router(reception_router, prefix="/api/v1", tags=["Reception"])
 
 # Cấu hình CORS cho phép truy cập từ các nguồn khác nhau
 app.add_middleware(

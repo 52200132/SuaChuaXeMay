@@ -30,7 +30,9 @@ const resourceService = {
         try {
             const response = await apiClient.get(URLS.SERVICE.GET_ALL_SERVICE_TYPE);
             // console.log('Dữ liệu dịch vụ:', response.data); // Log dữ liệu để kiểm tra
-            return response.data;
+            const serviceTypes = response.data;
+            // console.log('serviceTypes:', serviceTypes); // Log dữ liệu để kiểm tra
+            return serviceTypes;
         } catch (error) {
             console.error('Lỗi khi lấy danh sách dịch vụ:', error);
             throw error;
@@ -140,6 +142,18 @@ const customerService = {
         }
     },
 
+    customer: {
+        getCustomerById: async (id) => {
+            try {
+                const response = await apiCustomerService.get(URLS.CUSTOMER.GET_CUSTOMER_BY_ID.replace('{customer_id}', id));
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi lấy thông tin khách hàng ID=${id}:`, error);
+                throw error;
+            }
+        }
+    },
+
     motorcycle: {
         getAllServiceTypes: async () => {
             try {
@@ -149,7 +163,17 @@ const customerService = {
                 console.error('Lỗi khi lấy danh sách loại xe máy:', error);
                 throw error;
             }
-        }
+        },
+
+        getMotorcycleById: async (id) => {
+            try {
+                const response = await apiCustomerService.get(URLS.MOTORCYCLE.GET_MOTORCYCLE_BY_ID.replace('{motorcycle_id}', id));
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi lấy thông tin xe máy ID=${id}:`, error);
+                throw error;
+            }
+        },
     },
 
     appointment: {
@@ -179,6 +203,28 @@ const customerService = {
                 return response;
             } catch (error) {
                 console.error('Lỗi khi lấy danh sách lịch hẹn hôm nay:', error);
+                throw error;
+            }
+        },
+
+        getAllAppointments: async () => {
+            try {
+                const response = await apiCustomerService.get(URLS.APPOINTMENT.GET_ALL);
+                return response;
+            } catch (error) {
+                console.error('Lỗi khi lấy danh sách lịch hẹn:', error);
+                throw error;
+            }
+        },
+    },
+
+    reception: {
+        getAllReceptionists: async () => {
+            try {
+                const response = await apiCustomerService.get(URLS.RECEPTION.GET_ALL);
+                return response;
+            } catch (error) {
+                console.error('Lỗi khi lấy danh sách lễ tân:', error);
                 throw error;
             }
         }

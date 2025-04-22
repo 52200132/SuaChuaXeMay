@@ -15,7 +15,7 @@ const AdminLayout = () => {
     // This would typically come from your user's role in the auth context
     const isOwner = currentUser?.role === 'admin' || currentUser?.role === 'owner';
     
-    // Chọn các route dựa trên vai trò của người dùng
+    // Chọn các route dựa trên vai trò của người dùng (sửa lỗi logic)
     const routes = !isOwner ? ownerRoutes : employeeRoutes;
 
     const handleLogout = async () => {

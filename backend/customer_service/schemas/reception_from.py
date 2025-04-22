@@ -9,8 +9,10 @@ class ReceptionFormBase(BaseModel):
     motocycle_id: int = Field(..., description="ID của xe máy")
     customer_id: int = Field(..., description="ID của khách hàng")
     staff_id: int = Field(..., description="ID của nhân viên tiếp nhận")
-    is_returned: Optional[bool] = Field(False, description="Xe được bàn giao lại cho khách hay chưa")
     initial_conditon: str = Field(..., description="Tình trạng ban đầu do khách mô tả")
+    note: Optional[str] = Field(..., description="Ghi chú thêm từ nhân viên tiếp nhận")
+    is_returned: Optional[bool] = Field(False, description="Xe được bàn giao lại cho khách hay chưa")
+
 
 class ReceptionFormCreate(ReceptionFormBase):
     """Schema để tạo mới ReceptionForm"""
@@ -23,6 +25,8 @@ class ReceptionFormCreate(ReceptionFormBase):
                 "customer_id": 1,
                 "staff_id": 1,
                 "initial_conditon": "Xe bị hư hệ thống phanh, tiếng máy kêu to",
+                "note": "Khách hàng đã đồng ý sửa chữa",
+                "is_returned": False,
                 "images": [
                     {
                         "URL": "/uploads/reception/image1.jpg",
@@ -50,6 +54,8 @@ class ReceptionFormResponse(BaseModel):
     staff_id: int
     created_at: datetime
     initial_conditon: str
+    note: Optional[str] = None
+    is_returned: bool = False
     reception_images: List[ReceptionImageResponse] = []
 
     class Config:
@@ -62,6 +68,8 @@ class ReceptionFormResponse(BaseModel):
                 "staff_id": 1,
                 "created_at": datetime.now(),
                 "initial_conditon": "Xe bị hư hệ thống phanh, tiếng máy kêu to",
+                "note": "Khách hàng đã đồng ý sửa chữa",
+                "is_returned": False,
                 "reception_images": [
                     {
                         "img_id": 1,

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 
 from db.session import get_db
@@ -43,7 +44,7 @@ async def read_customers(
     customers = await customer_crud.get_all_customers(db, skip=skip, limit=limit)
     return customers
 
-@router.get("/{customer_id}", response_model=CustomerResponse)
+@router.get(URLS['CUSTOMER']['GET_CUSTOMER_BY_ID'], response_model=CustomerResponse)
 async def get_customer_by_id (customer_id: int, db: AsyncSession = Depends(get_db)):
     """Lấy thông tin chi tiết của một khách hàng theo ID"""
     customer = await customer_crud.get_customer_by_id(db, customer_id)

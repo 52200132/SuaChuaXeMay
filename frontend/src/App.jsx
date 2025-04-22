@@ -17,6 +17,7 @@ import './App.css';
 
 // import contexts
 import { DataProvider } from './contexts/DataContext';
+import AppDataProvider from './admin/contexts/AppDataContext';
 
 // Admin imports
 import AdminLayout from './admin/components/AdminLayout';
@@ -28,6 +29,7 @@ import Reports from './admin/pages/Reports';
 import Settings from './admin/pages/Settings';
 import AdminProfile from './admin/pages/Profile';
 import StaffLogin from './admin/pages/Login';
+import ReceiptManagement from './admin/pages/ReceiptManagement';
 
 // Import the new components
 import ServiceDetail from './pages/ServiceDetail';
@@ -39,16 +41,19 @@ function App() {
         <AuthProvider>
             <DataProvider>
                 <div className="App d-flex flex-column min-vh-100">
+
                     <Routes>
                         {/* Staff Login Route - No Header/Footer */}
                         <Route path="/admin/login" element={<StaffLogin />} />
-                        
+
                         {/* Admin Routes - No Header/Footer */}
                         <Route
                             path="/admin"
                             element={
                                 <PrivateRoute>
-                                    <AdminLayout />
+                                    <AppDataProvider>
+                                        <AdminLayout />
+                                    </AppDataProvider>
                                 </PrivateRoute>
                             }
                         >
@@ -57,13 +62,14 @@ function App() {
                             <Route path="bookings" element={<BookingManagement />} />
                             <Route path="bookings/:id" element={<BookingManagement />} />
                             <Route path="bookings/create" element={<BookingManagement />} />
+                            <Route path="receipts" element={<ReceiptManagement />} />
                             <Route path="services" element={<ServiceManagement />} />
                             <Route path="users" element={<UserManagement />} />
                             <Route path="reports" element={<Reports />} />
                             <Route path="settings" element={<Settings />} />
                             <Route path="profile" element={<AdminProfile />} />
                         </Route>
-                        
+
                         {/* Client Routes - With Header/Footer */}
                         <Route path="*" element={
                             <>

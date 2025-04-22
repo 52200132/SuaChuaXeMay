@@ -38,21 +38,25 @@ class MotocycleUpdate(BaseModel):
     #             raise ValueError('Biển số xe không hợp lệ')
     #     return v
 
-class MotocycleInDBBase(MotocycleBase):
-    """Base model cho dữ liệu Motocycle từ DB"""
-    motocycle_id: int
+class MotocycleResponse(BaseModel):
+    """Schema để trả về thông tin Motocycle"""
+    motocycle_id: Optional[int]
+    customer_id: Optional[int]
+    moto_type_id: Optional[int]
+    license_plate: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
     
     class Config:
-        orm_mode = True
-
-class MotocycleResponse(MotocycleInDBBase):
-    """Schema cơ bản để trả về thông tin Motocycle"""
-    pass
-
-class MotocycleDetailResponse(MotocycleInDBBase):
-    """Schema để trả về thông tin chi tiết Motocycle kèm thông tin loại xe"""
-    moto_type: MotocycleTypeResponse
-    
-    class Config:
-        orm_mode = True
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "motocycle_id": 1,
+                "customer_id": 1,
+                "moto_type_id": 1,
+                "license_plate": "59Y2-123.45",
+                "brand": "Honda",
+                "model": "SH"
+            }
+        }
 

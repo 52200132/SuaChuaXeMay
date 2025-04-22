@@ -4,6 +4,7 @@ from sqlalchemy import update, delete, and_, or_
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta
 from typing import List, Optional, Union, Dict, Any
+from fastapi import HTTPException, status
 
 from utils.logger import get_logger
 from models.models import Appointment, Customer
@@ -96,7 +97,7 @@ async def get_all_appointments(db: AsyncSession,
     """Lấy tất cả lịch hẹn"""
     result = await db.execute(
         select(Appointment)
-        .order_by(Appointment.appointment_date.desc())
+        .order_by(Appointment.appointment_id.asc())
         .offset(skip)
         .limit(limit)
     )
@@ -203,3 +204,53 @@ async def get_appointment_with_services(
     }
     
     return result
+
+async def get_appointment_with_filter(
+    db: AsyncSession,
+    customer_id: Optional[int] = None,
+    appointment_id: Optional[int] = None,
+    status: Optional[AppointmentStatusEnum] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    skip: int = 0,
+    limit: int = 100
+) -> List[Appointment]:
+    """Lấy danh sách lịch hẹn với các bộ lọc"""
+    try:
+        query = select(Appointment)
+        
+        if customer_id:
+            query = query.where(Appointment.customer_id == customer_id)
+        
+        if appointment_id:
+            query = query.where(Appointment.appointment_id == appointment_id)
+        
+        if status:
+            query = query.where(Appointment.status == status.value)
+        
+        # Handle case where only one date is provided
+        if start_date and not end_date:
+            query = query.where(Appointment.appointment_date >= start_date)
+        elif end_date and not start_date:
+            query = query.where(Appointment.appointment_date <= end_date)
+        elif start_date and end_date:
+            query = query.where(
+                and_(
+                    Appointment.appointment_date >= start_date,
+                    Appointment.appointment_date <= end_date
+                )
+            )
+        
+        query = query.order_by(Appointment.appointment_id.asc()).offset(skip).limit(limit)
+        result = await db.execute(query)
+
+    except IntegrityError as e:
+        await db.rollback()
+        logger.error(f"Lỗi khi lấy danh sách lịch hẹn: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Integrity Error")
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Lỗi khi lấy danh sách lịch hẹn: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+    return result.scalars().all()
