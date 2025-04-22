@@ -1,6 +1,9 @@
 from pydantic import BaseModel, Field, EmailStr, validator
 from typing import Optional
 import re
+# Thêm để lấy list motocycles
+from typing import List
+from schemas.motocycle import MotocycleResponse
 
 class CustomerBase(BaseModel):
     """Base model cho Customer"""
@@ -70,6 +73,36 @@ class CustomerResponse(BaseModel):
         }
     }
 
+class CustomerResponseWithMotocycles(BaseModel):
+    customer_id: int
+    fullname: str
+    phone_num: str
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    is_guest: Optional[bool] = True
+    motocycles: List[MotocycleResponse] = []  # Danh sách xe máy
+
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "customer_id": 1,
+                "fullname": "Người Dùng Demo",
+                "phone_num": "0000000000",
+                "email": "demo@gmail.com",
+                "password": "000000",
+                "is_guest": True,
+                "motocycles": [
+                    {
+                        "motorcycle_id": 1,
+                        "license_plate": "59A-12345",
+                        "brand": "Honda",
+                        "model": "Wave Alpha"
+                    }
+                ]
+            }
+        }
+    }
 class CustomerLogin(BaseModel):
     """Schema để đăng nhập Customer"""
     email: EmailStr = Field(..., description="Email của khách hàng")

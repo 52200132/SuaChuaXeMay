@@ -3,10 +3,11 @@ URLS = {
         'CREATE_CUSTOMER': '/customer/create',
         'LOGIN': '/customer/login',
         'GET_CUSTOMER_BY_ID': '/customer/{customer_id}',
-        # 'GET_ALL_CUSTOMERS': '/customers',
-        # 'GET_CUSTOMER_BY_ID': '/customers/{customer_id}',
-        # 'UPDATE_CUSTOMER': '/customers/{customer_id}',
-        # 'DELETE_CUSTOMER': '/customers/{customer_id}',
+        'GET_CUSTOMER_BY_PHONE': '/customer/phone/{phone_number}',# completed
+        'GET_ALL_CUSTOMERS': '/customers', # completed
+        'UPDATE_CUSTOMER': '/customer/update/{customer_id}', # completed
+        'DELETE_CUSTOMER': '/customer/delete/{customer_id}', # completed
+        'GET_CUSTOMER_WITH_MOTORCYCLES': '/customer/phone/{phone_number}/with-motorcycles', # completed
     },
     'MOTORCYCLE': {
         'GET_ALL_MOTORCYCLE_TYPES': '/motorcycle/types',

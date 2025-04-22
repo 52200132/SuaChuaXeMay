@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from db.session import get_db
 from crud import customer as customer_crud
-from schemas.customer import CustomerCreate, CustomerUpdate, CustomerResponse, CustomerLogin
+from schemas.customer import CustomerCreate, CustomerUpdate, CustomerResponse, CustomerResponseWithMotocycles, CustomerLogin
 from utils.logger import get_logger
 from .url import URLS
 
@@ -34,7 +34,7 @@ async def create_customer(customer_data: CustomerCreate, db: AsyncSession = Depe
             detail=str(e)
         )
 
-@router.get("/", response_model=List[CustomerResponse])
+@router.get(URLS['CUSTOMER']['GET_ALL_CUSTOMERS'], response_model=List[CustomerResponse])
 async def read_customers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
@@ -55,7 +55,7 @@ async def get_customer_by_id (customer_id: int, db: AsyncSession = Depends(get_d
         )
     return CustomerResponse.from_orm(customer)
 
-@router.get("/phone/{phone_num}", response_model=CustomerResponse)
+@router.get(URLS['CUSTOMER']['GET_CUSTOMER_BY_PHONE'], response_model=CustomerResponse)
 async def read_customer_by_phone(
     phone_num: str,
     db: AsyncSession = Depends(get_db)
@@ -67,9 +67,25 @@ async def read_customer_by_phone(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Không tìm thấy khách hàng với số điện thoại này"
         )
-    return customer
+    return CustomerResponse.from_orm(customer)
 
-@router.put("/{customer_id}", response_model=CustomerResponse)
+@router.get(URLS['CUSTOMER']['GET_CUSTOMER_WITH_MOTORCYCLES'], response_model=CustomerResponseWithMotocycles)
+async def get_customer_with_motorcycles(
+    phone_number: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Lấy thông tin khách hàng theo số điện thoại và bao gồm thông tin xe máy"""
+    customer = await customer_crud.get_customer_with_motorcycle_by_phone(db, phone_number)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy khách hàng với số điện thoại này"
+        )
+    # Truy vấn danh sách xe máy nếu chưa được tải trước
+    logger.info(f"Lấy thành công thông tin xe máy cho khách hàng: {customer.fullname}")
+    return CustomerResponseWithMotocycles.from_orm(customer)
+
+@router.put(URLS['CUSTOMER']['UPDATE_CUSTOMER'], response_model=CustomerResponse)
 async def update_customer(
     customer_id: int,
     customer_data: CustomerUpdate,
@@ -78,7 +94,7 @@ async def update_customer(
     """Cập nhật thông tin khách hàng"""
     try:
         # Kiểm tra xem khách hàng có tồn tại
-        existing_customer = await customer_crud.get_customer(db, customer_id)
+        existing_customer = await customer_crud.get_customer_by_id(db, customer_id)
         if not existing_customer:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -102,7 +118,7 @@ async def update_customer(
             detail=str(e)
         )
 
-@router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(URLS['CUSTOMER']['DELETE_CUSTOMER'], status_code=status.HTTP_204_NO_CONTENT)
 async def delete_customer(
     customer_id: int,
     db: AsyncSession = Depends(get_db)

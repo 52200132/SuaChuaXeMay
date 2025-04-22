@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update, delete
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound
+from sqlalchemy.orm import selectinload
 
 from utils.logger import get_logger
 from models.models import Customer
@@ -39,6 +40,13 @@ async def get_customer_by_phone(db: AsyncSession, phone_num: str) -> Customer:
     result = await db.execute(select(Customer).where(Customer.phone_num == phone_num))
     return result.scalar_one_or_none()
 
+async def get_customer_with_motorcycle_by_phone(db: AsyncSession, phone_num: str) -> Customer:
+    """Lấy thông tin khách hàng theo số điện thoại và bao gồm thông tin xe máy"""
+    result = await db.execute(
+        select(Customer).where(Customer.phone_num == phone_num).options(selectinload(Customer.motocycles))
+    )
+    return result.scalar_one_or_none()
+
 async def get_all_customers(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[Customer]:
     """Lấy danh sách khách hàng với phân trang"""
     result = await db.execute(select(Customer).offset(skip).limit(limit))
@@ -47,7 +55,7 @@ async def get_all_customers(db: AsyncSession, skip: int = 0, limit: int = 100) -
 async def update_customer(db: AsyncSession, customer_id: int, customer: CustomerUpdate) -> Customer:
     """Cập nhật thông tin khách hàng"""
     try:
-        db_customer = await get_customer(db, customer_id)
+        db_customer = await get_customer_by_id(db, customer_id)
         if not db_customer:
             return None
         
@@ -57,7 +65,7 @@ async def update_customer(db: AsyncSession, customer_id: int, customer: Customer
         stmt = update(Customer).where(Customer.customer_id == customer_id).values(**update_data)
         await db.execute(stmt)
         await db.commit()
-        return await get_customer(db, customer_id)
+        return await get_customer_by_id(db, customer_id)
     except IntegrityError:
         await db.rollback()
         logger.error("Lỗi khi cập nhật khách hàng")
@@ -65,7 +73,7 @@ async def update_customer(db: AsyncSession, customer_id: int, customer: Customer
 
 async def delete_customer(db: AsyncSession, customer_id: int) -> bool:
     """Xóa khách hàng khỏi cơ sở dữ liệu"""
-    db_customer = await get_customer(db, customer_id)
+    db_customer = await get_customer_by_id(db, customer_id)
     if not db_customer:
         return False
     
