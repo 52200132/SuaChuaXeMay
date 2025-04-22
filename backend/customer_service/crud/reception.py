@@ -53,10 +53,21 @@ async def create_reception_form(db: AsyncSession, reception_form: ReceptionFormC
         logger.error(f"Lỗi khi tạo biểu mẫu tiếp nhận: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Không thể tạo biểu mẫu tiếp nhận: {str(e)}")
 
-async def get_reception_form_by_id(db: AsyncSession, form_id: int) -> Optional[ReceptionForm]:
-    """Lấy thông tin một biểu mẫu tiếp nhận theo ID"""
+async def get_reception_form_today(db: AsyncSession) -> List[ReceptionForm]:
+    """Lấy danh sách biểu mẫu tiếp nhận trong ngày hôm nay"""
     result = await db.execute(
-        select(ReceptionForm).where(ReceptionForm.form_id == form_id)
+        select(ReceptionForm).options(selectinload(ReceptionForm.reception_images)).where(
+            and_(
+                ReceptionForm.created_at >= datetime.today().replace(hour=0, minute=0, second=0),
+                ReceptionForm.created_at <= datetime.today().replace(hour=23, minute=59, second=59)
+            )
+        )
+    )
+    return result.scalars().all()
+  
+async def get_reception_form_by_id(db: AsyncSession, form_id: int):
+    result = await db.execute(
+        select(ReceptionForm).options(selectinload(ReceptionForm.reception_images)).where(ReceptionForm.form_id == form_id)
     )
     return result.scalar_one_or_none()
 

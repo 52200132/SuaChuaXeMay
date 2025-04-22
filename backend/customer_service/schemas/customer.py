@@ -82,9 +82,9 @@ class CustomerResponseWithMotocycles(BaseModel):
     is_guest: Optional[bool] = True
     motocycles: List[MotocycleResponse] = []  # Danh sách xe máy
 
-    model_config = {
-        "from_attributes": True,
-        "json_schema_extra": {
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "customer_id": 1,
                 "fullname": "Người Dùng Demo",
@@ -102,7 +102,7 @@ class CustomerResponseWithMotocycles(BaseModel):
                 ]
             }
         }
-    }
+
 class CustomerLogin(BaseModel):
     """Schema để đăng nhập Customer"""
     email: EmailStr = Field(..., description="Email của khách hàng")

@@ -21,7 +21,17 @@ class MotocycleBase(BaseModel):
 
 class MotocycleCreate(MotocycleBase):
     """Schema để tạo mới Motocycle"""
-    pass
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "customer_id": 1,
+                "moto_type_id": 1,
+                "license_plate": "59Y2-123.45",
+                "brand": "Honda",
+                "model": "SH"
+            }
+        }
 
 class MotocycleUpdate(BaseModel):
     """Schema để cập nhật Motocycle"""
@@ -37,6 +47,17 @@ class MotocycleUpdate(BaseModel):
     #         if not re.match(r'^[0-9A-Z][0-9A-Z\-\. ]{4,19}$', v):
     #             raise ValueError('Biển số xe không hợp lệ')
     #     return v
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "customer_id": 1,
+                "moto_type_id": 1,
+                "license_plate": "59Y2-123.45",
+                "brand": "Honda",
+                "model": "SH"
+            }
+        }
 
 class MotocycleResponse(BaseModel):
     """Schema để trả về thông tin Motocycle"""
