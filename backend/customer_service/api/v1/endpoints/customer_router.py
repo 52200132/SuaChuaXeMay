@@ -71,11 +71,11 @@ async def read_customer_by_phone(
 
 @router.get(URLS['CUSTOMER']['GET_CUSTOMER_WITH_MOTORCYCLES'], response_model=CustomerResponseWithMotocycles)
 async def get_customer_with_motorcycles(
-    phone_number: str,
+    phone_num: str,
     db: AsyncSession = Depends(get_db)
 ):
     """Lấy thông tin khách hàng theo số điện thoại và bao gồm thông tin xe máy"""
-    customer = await customer_crud.get_customer_with_motorcycle_by_phone(db, phone_number)
+    customer = await customer_crud.get_customer_with_motorcycle_by_phone(db, phone_num)
     if customer is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -85,52 +85,52 @@ async def get_customer_with_motorcycles(
     logger.info(f"Lấy thành công thông tin xe máy cho khách hàng: {customer.fullname}")
     return CustomerResponseWithMotocycles.from_orm(customer)
 
-@router.put(URLS['CUSTOMER']['UPDATE_CUSTOMER'], response_model=CustomerResponse)
-async def update_customer(
-    customer_id: int,
-    customer_data: CustomerUpdate,
-    db: AsyncSession = Depends(get_db)
-):
-    """Cập nhật thông tin khách hàng"""
-    try:
-        # Kiểm tra xem khách hàng có tồn tại
-        existing_customer = await customer_crud.get_customer_by_id(db, customer_id)
-        if not existing_customer:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Không tìm thấy khách hàng"
-            )
+# @router.put(URLS['CUSTOMER']['UPDATE_CUSTOMER'], response_model=CustomerResponse)
+# async def update_customer(
+#     customer_id: int,
+#     customer_data: CustomerUpdate,
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     """Cập nhật thông tin khách hàng"""
+#     try:
+#         # Kiểm tra xem khách hàng có tồn tại
+#         existing_customer = await customer_crud.get_customer_by_id(db, customer_id)
+#         if not existing_customer:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="Không tìm thấy khách hàng"
+#             )
         
-        # Nếu số điện thoại được thay đổi, kiểm tra xem có trùng không
-        if customer_data.phone_num and customer_data.phone_num != existing_customer.phone_num:
-            phone_exists = await customer_crud.get_customer_by_phone(db, customer_data.phone_num)
-            if phone_exists:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Số điện thoại đã được đăng ký"
-                )
+#         # Nếu số điện thoại được thay đổi, kiểm tra xem có trùng không
+#         if customer_data.phone_num and customer_data.phone_num != existing_customer.phone_num:
+#             phone_exists = await customer_crud.get_customer_by_phone(db, customer_data.phone_num)
+#             if phone_exists:
+#                 raise HTTPException(
+#                     status_code=status.HTTP_400_BAD_REQUEST,
+#                     detail="Số điện thoại đã được đăng ký"
+#                 )
         
-        updated_customer = await customer_crud.update_customer(db, customer_id, customer_data)
-        return updated_customer
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+#         updated_customer = await customer_crud.update_customer(db, customer_id, customer_data)
+#         return updated_customer
+#     except ValueError as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail=str(e)
+#         )
 
-@router.delete(URLS['CUSTOMER']['DELETE_CUSTOMER'], status_code=status.HTTP_204_NO_CONTENT)
-async def delete_customer(
-    customer_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    """Xóa khách hàng"""
-    deleted = await customer_crud.delete_customer(db, customer_id)
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Không tìm thấy khách hàng"
-        )
-    return None
+# @router.delete(URLS['CUSTOMER']['DELETE_CUSTOMER'], status_code=status.HTTP_204_NO_CONTENT)
+# async def delete_customer(
+#     customer_id: int,
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     """Xóa khách hàng"""
+#     deleted = await customer_crud.delete_customer(db, customer_id)
+#     if not deleted:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Không tìm thấy khách hàng"
+#         )
+#     return None
 
 
 @router.post(URLS['CUSTOMER']['LOGIN'], response_model=CustomerResponse, status_code=status.HTTP_200_OK)

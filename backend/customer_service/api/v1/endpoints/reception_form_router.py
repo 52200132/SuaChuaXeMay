@@ -26,26 +26,17 @@ async def create_reception_form(
     """
     try:
         db_reception_form = await reception_crud.create_reception_form(db, reception_form)
+        # Tải trước dữ liệu liên quan
+        db_reception_form = await reception_crud.get_reception_form_by_id(db, db_reception_form.form_id)
+        logger.info(f"Tạo biểu mẫu tiếp nhận thành công với ID: {db_reception_form.reception_images}")
+        
         return db_reception_form
-    except HTTPException as e:
-        raise e
     except Exception as e:
         logger.error(f"Lỗi khi tạo biểu mẫu tiếp nhận: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Lỗi khi tạo biểu mẫu tiếp nhận: {str(e)}")
-
-@router.get(URLS['APPOINTMENT']['GET_APPOINTMENT_BY_ID'], response_model=ReceptionFormResponse)
-async def get_reception_form(
-    form_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Lấy thông tin biểu mẫu tiếp nhận theo ID.
-    """
-    db_reception_form = await reception_crud.get_reception_form_by_id(db, form_id)
-    if db_reception_form is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy biểu mẫu tiếp nhận")
-    return db_reception_form
-
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi tạo biểu mẫu tiếp nhận: {str(e)}"
+        )
 @router.get(URLS['RECEPTION']['GET_ALL'], response_model=List[ReceptionFormResponse])
 async def get_all_reception_forms(
     skip: int = 0,
@@ -67,6 +58,37 @@ async def get_all_reception_forms(
 
     return db_reception_forms
 
+@router.get(URLS['RECEPTION']['GET_ALL_TODAY'], response_model=List[ReceptionFormResponse])
+async def get_all_reception_forms_today(
+    db: AsyncSession = Depends(get_db)
+):
+    """
+        Lấy danh sách tất cả biểu mẫu tiếp nhận trong ngày hôm nay.
+    """
+    try:
+        db_reception_forms = await reception_crud.get_reception_form_today(db)
+        logger.info(f"Lất tất cả biểu mẫu tiếp nhận thành công")
+    except IntegrityError as e:
+        logger.error(f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Lỗi toàn vẹn dữ liệu: {str(e)}")
+    except Exception as e:
+        logger.error(f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
+
+    return db_reception_forms
+
+@router.get(URLS['RECEPTION']['GET_RECEPTION_BY_ID'], response_model=ReceptionFormResponse)
+async def get_reception_form(
+    form_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lấy thông tin biểu mẫu tiếp nhận theo ID.
+    """
+    db_reception_form = await reception_crud.get_reception_form_by_id(db, form_id)
+    if db_reception_form is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy biểu mẫu tiếp nhận")
+    return db_reception_form
 
 # @router.get("/", response_model=List[ReceptionFormResponse])
 # async def get_reception_forms(
@@ -119,18 +141,18 @@ async def update_return_status(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy biểu mẫu tiếp nhận")
     return db_reception_form
 
-@router.delete("/{form_id}", response_model=dict)
-async def delete_reception_form(
-    form_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Xóa biểu mẫu tiếp nhận.
-    """
-    result = await reception_crud.delete_reception_form(db, form_id)
-    if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy biểu mẫu tiếp nhận")
-    return {"message": "Đã xóa biểu mẫu tiếp nhận thành công"}
+# @router.delete("/{form_id}", response_model=dict)
+# async def delete_reception_form(
+#     form_id: int,
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     """
+#     Xóa biểu mẫu tiếp nhận.
+#     """
+#     result = await reception_crud.delete_reception_form(db, form_id)
+#     if not result:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy biểu mẫu tiếp nhận")
+#     return {"message": "Đã xóa biểu mẫu tiếp nhận thành công"}
 
 @router.post("/{form_id}/images", response_model=ReceptionImageResponse)
 async def add_reception_image(
