@@ -8,13 +8,14 @@ class Diagnosis(Base):
     __tablename__ = 'Diagnosis'
     
     diagnosis_id = Column(Integer, primary_key=True, autoincrement=True)
-    form_id = Column(Integer, ForeignKey('ReceptionForm.form_id'))
+    # form_id = Column(Integer, ForeignKey('ReceptionForm.form_id'))
+    form_id = Column(Integer)
     problem = Column(Text(collation='utf8mb4_unicode_ci'))  # Unicode text support for detailed problem descriptions
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
     estimated_cost = Column(Integer)
     
     # Relationships
-    form = relationship("ReceptionForm", back_populates="diagnoses")
+    # form = relationship("ReceptionForm", back_populates="diagnoses")
     orders = relationship("Order", back_populates="diagnosis")
 
 class Order(Base):
@@ -22,16 +23,18 @@ class Order(Base):
     
     order_id = Column(Integer, primary_key=True, autoincrement=True)
     diagnosis_id = Column(Integer, ForeignKey('Diagnosis.diagnosis_id'))
-    moto_type_id = Column(Integer, ForeignKey('MotocycleType.moto_type_id'))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    # motocycle_id = Column(Integer, ForeignKey('Motocycle.motocycle_id'))
+    motocycle_id = Column(Integer)
+    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, default=datetime.now)
     staff_id = Column(Integer, ForeignKey('Staff.staff_id'))
-    status = Column(Enum('pending', 'in_progress', 'completed', 'cancelled', name='order_status'))
+    status = Column(Enum('received',  'checking',   'wait_confirm', 'repairing', 'wait_delivery', 'delivered', name='order_status'))
     total_price = Column(Integer, default=0)
     
     # Relationships
     diagnosis = relationship("Diagnosis", back_populates="orders")
     staff = relationship("Staff", back_populates="orders")
-    moto_type = relationship("MotocycleType", back_populates="orders")
+    # motocycle_id = relationship("Motocycle", back_populates="orders")
     service_details = relationship("ServiceOrderDetail", back_populates="order")
     part_details = relationship("PartOrderDetail", back_populates="order")
     invoices = relationship("Invoice", back_populates="order")
@@ -88,7 +91,7 @@ class OrderStatusHistory(Base):
         'delivered',
         name='order_status_enum'
     ), nullable=False)
-    changed_at = Column(DateTime, default=datetime.utcnow)
+    changed_at = Column(DateTime, default=datetime.now)
     changed_by = Column(Integer, ForeignKey('Staff.staff_id'))
     
     # Relationships
