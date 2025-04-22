@@ -1,8 +1,9 @@
 URLS = {
     'CUSTOMER': {
-        'CREATE_CUSTOMER': '/customer/create',
-        'LOGIN': '/customer/login',
-        'GET_CUSTOMER_BY_ID': '/customer/{customer_id}',
+        'CREATE_CUSTOMER': '/customer/create', # completed
+        'LOGIN': '/customer/login', # completed
+        'GET_CUSTOMER_BY_ID': '/customer/{customer_id}', # completed
+        'GET_CUSTOMER_BY_PHONE': '/customer/phone/{phone_num}', # completed
         # 'GET_ALL_CUSTOMERS': '/customers',
         # 'GET_CUSTOMER_BY_ID': '/customers/{customer_id}',
         # 'UPDATE_CUSTOMER': '/customers/{customer_id}',

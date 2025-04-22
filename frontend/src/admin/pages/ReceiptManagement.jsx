@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, use } from 'react';
 import { Card, Table, Button, Pagination, Modal, Form, Row, Col, InputGroup, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import { debounce } from 'lodash';
 
 
 import StatusBadge from '../components/StatusBadge';
@@ -19,6 +20,12 @@ const ReceiptManagement = () => {
     // const [receiptIds, setReceiptIds] = useState([]);
     const [receptionsDisplay, setReceptionsDisplay] = useState({});
     const [filteredReceiptIds, setFilteredReceiptIds] = useState([]);
+
+    //
+    const [ currentCustomer, setCurrentCustomer ] = useState({});
+    const [ currentMotorcycle, setCurrentMotorcycle ] = useState({}); // danh sách xe của khách hàng
+    const [ customerNotFound, setCustomerNotFound ] = useState(false);
+    const [ motorcyclesNotFound, setMotorcyclesNotFound ] = useState(false);
 
     // Loading state
     const [loading, setLoading] = useState(true);
@@ -43,7 +50,9 @@ const ReceiptManagement = () => {
     const [formData, setFormData] = useState({
         customerName: '',
         phone: '',
+        email: '',
         plateNumber: '',
+        brand: '',
         motorcycleModel: '',
         initialCondition: '',
         note: '',
@@ -51,6 +60,7 @@ const ReceiptManagement = () => {
     });
     const [validated, setValidated] = useState(false);
 
+    
     // Load mock data khi component được mount
     useEffect(() => {
         // Mock data
@@ -188,6 +198,48 @@ const ReceiptManagement = () => {
         }
     }, [loading]);
 
+    // Hàm debounce để tìm kiếm khách hàng theo số điện thoại
+    const debouncedFindCustomer = useCallback(
+        debounce((phone) => {
+            customerService.customer.getCustomerByPhone(phone)
+            .then(response => {
+                const customer = response.data || response;
+                if (customer && customer.fullname) {
+                    setCurrentCustomer(customer);
+                    setFormData(prev => ({
+                        ...prev,
+                        customerName: customer.fullname || '',
+                        email: customer.email || ''
+                    }));
+                    setCustomerNotFound(false);
+                } else {
+                    setFormData(prev => ({
+                        ...prev,
+                        customerName: '',
+                        email: ''
+                    }));
+                    setCustomerNotFound(phone.length > 0); // chỉ báo khi đã nhập số
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi khi tìm khách hàng:', error);
+                setFormData(prev => ({
+                    ...prev,
+                    customerName: '',
+                    email: ''
+                }));
+                setCustomerNotFound(phone.length > 0); // chỉ báo khi đã nhập số
+            });
+        }, 1000),
+        []
+    );
+    // Cleanup effect để hủy bỏ hàm debounce khi component unmount
+    useEffect(() => {
+        return () => {
+            debouncedFindCustomer.cancel();
+        };
+    }, [debouncedFindCustomer]);
+
     const formatReciptData = (receipt, customer, motorcycle) => {
         const model = motorcycle.model;
         const brand = motorcycle.brand;
@@ -205,7 +257,6 @@ const ReceiptManagement = () => {
             updatedAt: receipt.updated_at || ''
         };
     };
-
 
 
     // Xử lý tìm kiếm và lọc
@@ -302,7 +353,9 @@ const ReceiptManagement = () => {
         setFormData({
             customerName: '',
             phone: '',
+            email: '',
             plateNumber: '',
+            brand: '',
             motorcycleModel: '',
             initialCondition: '',
             note: '',
@@ -312,14 +365,74 @@ const ReceiptManagement = () => {
         setShowCreateModal(true);
     };
 
+    // Hàm lấy thông tin khách hàng theo số điện thoại
+    const handlePhoneChange = (e) => {
+        const phone = e.target.value;
+        setFormData(prev => ({
+            ...prev,
+            phone
+        }));
+        debouncedFindCustomer(phone);
+
+        // // Tìm khách hàng theo số điện thoại
+        // const customer = Object.values(customersById).find(c => c.phone_num === phone);
+        // if (customer) {
+        //     setFormData(prev => ({
+        //         ...prev,
+        //         customerName: customer.fullname || '',
+        //         email: customer.email || ''
+        //     }));
+        //     setCustomerNotFound(false);
+        // } else {
+        //     setFormData(prev => ({
+        //         ...prev,
+        //         customerName: '',
+        //         email: ''
+        //     }));
+        //     setCustomerNotFound(phone.length > 0); // chỉ báo khi đã nhập số
+        // }
+    };
+
+    // Hàm lấy thông tin xe theo biển số
+    const handlePlateChange = (e) => {
+        const plateNumber = e.target.value;
+        setFormData(prev => ({
+            ...prev,
+            plateNumber
+        }));
+
+        // Tìm xe theo biển số
+        const motorcycle = Object.values(motorcyclesById).find(m => m.licence_plate === plateNumber);
+        if (motorcycle) {
+            setFormData(prev => ({
+                ...prev,
+                brand: motorcycle.brand || '',
+                motorcycleModel: motorcycle.model || ''
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                brand: '',
+                motorcycleModel: ''
+            }));
+        }
+    };
+
     // Xử lý thay đổi form
     const handleFormChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        if (name === 'phone') {
+            handlePhoneChange(e);
+        } else if (name === 'plateNumber') {
+            handlePlateChange(e);
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            }));
+        }
     };
+
 
     // Xử lý submit form chỉnh sửa
     const handleEditSubmit = (e) => {
@@ -754,6 +867,26 @@ const ReceiptManagement = () => {
                             <Col md={6}>
                                 <h6 className="mb-3">Thông tin khách hàng</h6>
                                 <Form.Group className="mb-3">
+                                    <Form.Label>Số điện thoại *</Form.Label>
+                                    <Form.Control
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        pattern="^0[0-9]{9,10}$" // Số điện thoại Việt Nam bắt đầu bằng 0, 10-11 số
+                                        onChange={handleFormChange}
+                                        required
+                                        maxLength={10}
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        Vui lòng nhập số điện thoại hợp lệ
+                                    </Form.Control.Feedback>
+                                    {customerNotFound && (
+                                        <div className="text-warning mt-1" style={{ fontSize: '0.95em' }}>
+                                            Khách hàng chưa có tài khoản!
+                                        </div>
+                                    )}
+                                </Form.Group>
+                                <Form.Group className="mb-3">
                                     <Form.Label>Họ và tên khách hàng *</Form.Label>
                                     <Form.Control
                                         type="text"
@@ -761,29 +894,52 @@ const ReceiptManagement = () => {
                                         value={formData.customerName}
                                         onChange={handleFormChange}
                                         required
+                                        disabled={!customerNotFound} //{!customerNotFound && !formData.customerName}
                                     />
                                     <Form.Control.Feedback type="invalid">
                                         Vui lòng nhập họ tên khách hàng
                                     </Form.Control.Feedback>
                                 </Form.Group>
-
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Số điện thoại *</Form.Label>
+                                    <Form.Label>Email</Form.Label>
                                     <Form.Control
-                                        type="text"
-                                        name="phone"
-                                        value={formData.phone}
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
                                         onChange={handleFormChange}
-                                        required
+                                        readOnly={!customerNotFound } // {!customerNotFound && !formData.email}
+                                        disabled={!customerNotFound } // {!customerNotFound && !formData.email}
+                                        placeholder="Email khách hàng (nếu có)"
                                     />
-                                    <Form.Control.Feedback type="invalid">
-                                        Vui lòng nhập số điện thoại khách hàng
-                                    </Form.Control.Feedback>
                                 </Form.Group>
                             </Col>
-
                             <Col md={6}>
                                 <h6 className="mb-3">Thông tin xe</h6>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Biển số xe *</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="plateNumber"
+                                        value={formData.plateNumber}
+                                        onChange={handleFormChange}
+                                        required
+                                        disabled={!customerNotFound} //{!customerNotFound && !formData.plateNumber}
+                                        placeholder="Ví dụ: 59X1-12345"
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        Vui lòng nhập biển số xe
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Hãng xe</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="brand"
+                                        value={formData.brand}
+                                        readOnly
+                                        placeholder="Hãng xe (tự động điền nếu có)"
+                                    />
+                                </Form.Group>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Loại xe *</Form.Label>
                                     <Form.Control
@@ -798,24 +954,8 @@ const ReceiptManagement = () => {
                                         Vui lòng nhập loại xe
                                     </Form.Control.Feedback>
                                 </Form.Group>
-
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Biển số xe *</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="plateNumber"
-                                        value={formData.plateNumber}
-                                        onChange={handleFormChange}
-                                        required
-                                        placeholder="Ví dụ: 59X1-12345"
-                                    />
-                                    <Form.Control.Feedback type="invalid">
-                                        Vui lòng nhập biển số xe
-                                    </Form.Control.Feedback>
-                                </Form.Group>
                             </Col>
                         </Row>
-
                         <h6 className="mt-2 mb-3">Tình trạng & Ghi chú</h6>
                         <Form.Group className="mb-3">
                             <Form.Label>Tình trạng ban đầu *</Form.Label>
@@ -832,7 +972,6 @@ const ReceiptManagement = () => {
                                 Vui lòng nhập tình trạng ban đầu của xe
                             </Form.Control.Feedback>
                         </Form.Group>
-
                         <Form.Group className="mb-3">
                             <Form.Label>Ghi chú</Form.Label>
                             <Form.Control

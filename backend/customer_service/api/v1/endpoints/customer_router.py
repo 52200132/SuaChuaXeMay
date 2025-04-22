@@ -55,7 +55,7 @@ async def get_customer_by_id (customer_id: int, db: AsyncSession = Depends(get_d
         )
     return CustomerResponse.from_orm(customer)
 
-@router.get("/phone/{phone_num}", response_model=CustomerResponse)
+@router.get(URLS['CUSTOMER']['GET_CUSTOMER_BY_PHONE'], response_model=CustomerResponse)
 async def read_customer_by_phone(
     phone_num: str,
     db: AsyncSession = Depends(get_db)
