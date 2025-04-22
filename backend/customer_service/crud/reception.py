@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete, and_, or_
+from sqlalchemy import insert, update, delete, and_, or_
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from typing import List, Optional, Dict, Any
@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from utils.logger import get_logger
 from models.models import ReceptionForm, ReceptionImage, Motocycle, Customer
-from schemas.reception_from import ReceptionFormCreate, ReceptionFormUpdate
+from schemas.reception_from import ReceptionFormCreate, ReceptionFormUpdate, ReceptionFormCreate2
 from schemas.reception_image import ReceptionImageCreate
 
 logger = get_logger(__name__)
@@ -53,6 +53,66 @@ async def create_reception_form(db: AsyncSession, reception_form: ReceptionFormC
         logger.error(f"Lỗi khi tạo biểu mẫu tiếp nhận: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Không thể tạo biểu mẫu tiếp nhận: {str(e)}")
 
+async def create_reception_form_without_motorcycle_id(
+    db: AsyncSession, 
+    reception_form: ReceptionFormCreate2
+
+) -> ReceptionForm:
+    """Tạo một biểu mẫu tiếp nhận mới mà không cần ID xe máy"""
+    try:
+        # Tạo đối tượng biểu mẫu tiếp nhận
+        # Tạo câu lệnh insert với returning
+        # ...existing code...
+
+        stmt = insert(Motocycle).values(
+            brand=reception_form.brand,
+            model=reception_form.model,
+            license_plate=reception_form.license_plate
+        )
+
+        # Thực thi câu lệnh INSERT
+        await db.execute(stmt)
+
+        # Lấy ID của xe máy vừa được chèn
+        result = await db.execute(select(Motocycle.motocycle_id).order_by(Motocycle.motocycle_id.desc()).limit(1))
+        motocycle_id = result.scalar_one()
+
+        # ...existing code...
+        
+        db_reception_form = ReceptionForm(
+            customer_id=reception_form.customer_id,
+            motocycle_id=motocycle_id,
+            staff_id=reception_form.staff_id,
+            is_returned=reception_form.is_returned,
+            initial_conditon=reception_form.initial_conditon,
+            note=reception_form.note
+        )
+        
+        db.add(db_reception_form)
+        await db.flush()  # Để lấy được ID của biểu mẫu mới tạo
+        
+        # Thêm các hình ảnh (nếu có)
+        if reception_form.images:
+            for image in reception_form.images:
+                db_image = ReceptionImage(
+                    form_id=db_reception_form.form_id,
+                    URL=image.URL,
+                    decription=image.decription
+                )
+                db.add(db_image)
+        
+        await db.commit()
+        await db.refresh(db_reception_form)
+        return db_reception_form
+    except IntegrityError as e:
+        await db.rollback()
+        logger.error(f"Lỗi khi tạo biểu mẫu tiếp nhận: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Lỗi toàn vẹn dữ liệu: {str(e)}")
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Lỗi khi tạo biểu mẫu tiếp nhận: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Không thể tạo biểu mẫu tiếp nhận: {str(e)}")
+
 async def get_reception_form_today(db: AsyncSession) -> List[ReceptionForm]:
     """Lấy danh sách biểu mẫu tiếp nhận trong ngày hôm nay"""
     result = await db.execute(
@@ -64,7 +124,23 @@ async def get_reception_form_today(db: AsyncSession) -> List[ReceptionForm]:
         )
     )
     return result.scalars().all()
-  
+
+async def get_reception_form_by_range_date(
+    db: AsyncSession, 
+    start_date: datetime, 
+    end_date: datetime
+) -> List[ReceptionForm]:
+    """Lấy danh sách biểu mẫu tiếp nhận trong khoảng thời gian"""
+    result = await db.execute(
+        select(ReceptionForm).options(selectinload(ReceptionForm.reception_images)).where(
+            and_(
+                ReceptionForm.created_at >= start_date,
+                ReceptionForm.created_at <= end_date
+            )
+        )
+    )
+    return result.scalars().all()
+
 async def get_reception_form_by_id(db: AsyncSession, form_id: int):
     result = await db.execute(
         select(ReceptionForm).options(selectinload(ReceptionForm.reception_images)).where(ReceptionForm.form_id == form_id)

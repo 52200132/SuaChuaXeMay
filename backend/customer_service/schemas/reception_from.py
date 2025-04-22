@@ -80,3 +80,40 @@ class ReceptionFormResponse(BaseModel):
                 ]
             }
         }
+class ReceptionFormCreate2(BaseModel):
+    """Schema để tạo mới ReceptionForm"""
+    customer_id: int = Field(..., description="ID của khách hàng")
+    brand: str = Field(..., description="Hãng xe")
+    model: str = Field(..., description="Mẫu xe")
+    license_plate: str = Field(..., description="Biển số xe")
+    staff_id: int = Field(..., description="ID của nhân viên tiếp nhận")
+    initial_conditon: str = Field(..., description="Tình trạng ban đầu do khách mô tả")
+    note: Optional[str] = Field(..., description="Ghi chú thêm từ nhân viên tiếp nhận")
+    is_returned: Optional[bool] = Field(False, description="Xe được bàn giao lại cho khách hay chưa")
+    images: Optional[List[ReceptionImageCreate]] = Field(None, description="Danh sách hình ảnh kèm theo")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "customer_id": 1,
+                "brand": "Honda",
+                "model": "SH 2020",
+                "license_plate": "29B1-23456",
+                "staff_id": 1,
+                "initial_conditon": "Xe bị hư hệ thống phanh, tiếng máy kêu to",
+                "note": "Khách hàng đã đồng ý sửa chữa",
+                "is_returned": False,
+                "images": [
+                    {
+                        "URL": "/uploads/reception/image1.jpg",
+                        "decription": "Hình ảnh phanh trước"
+                    },
+                    {
+                        "URL": "/uploads/reception/image2.jpg",
+                        "decription": "Hình ảnh động cơ"
+                    }
+                ]
+            }
+        }
+
+    
