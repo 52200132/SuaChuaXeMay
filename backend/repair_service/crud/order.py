@@ -35,7 +35,7 @@ async def create_order(db: AsyncSession, order: OrderCreate) -> Order:
     
 async def get_all(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[Order]:
     """Lấy danh sách đơn hàng với phân trang"""
-    result = await db.execute(select(Order).offset(skip).limit(limit))
+    result = await db.execute(select(Order).order_by(Order.order_id.asc()).offset(skip).limit(limit))
     return result.scalars().all()
 
 async def get_order_by_id(db: AsyncSession, order_id: int) -> Order:
@@ -59,13 +59,13 @@ async def update_order(db: AsyncSession, order_id: int, order: OrderUpdate) -> O
         await db.refresh(db_order)
         return OrderResponse.from_orm(db_order)
     except IntegrityError as e:
+        logger.error(f"IntegrityError: {e}")
         await db.rollback()
-        logger.error(f"Lỗi khi cập nhật đơn hàng: {str(e)}")
-        raise ValueError("Đơn hàng đã tồn tại")
+        raise e
     except Exception as e:
+        logger.error(f"Error updating part order detail: {e}")
         await db.rollback()
-        logger.error(f"Lỗi không xác định khi cập nhật đơn hàng: {str(e)}")
-        raise ValueError("Lỗi không xác định khi cập nhật đơn hàng")
+        raise e
 
 async def delete_order(db: AsyncSession, order_id: int) -> bool:
     """Xóa đơn hàng khỏi cơ sở dữ liệu"""
@@ -78,10 +78,10 @@ async def delete_order(db: AsyncSession, order_id: int) -> bool:
         await db.commit()
         return True
     except IntegrityError as e:
+        logger.error(f"IntegrityError: {e}")
         await db.rollback()
-        logger.error(f"Lỗi khi xóa đơn hàng: {str(e)}")
-        raise ValueError("Lỗi không xác định khi xóa đơn hàng")
+        raise e
     except Exception as e:
+        logger.error(f"Error updating part order detail: {e}")
         await db.rollback()
-        logger.error(f"Lỗi không xác định khi xóa đơn hàng: {str(e)}")
-        raise ValueError("Lỗi không xác định khi xóa đơn hàng")
+        raise e

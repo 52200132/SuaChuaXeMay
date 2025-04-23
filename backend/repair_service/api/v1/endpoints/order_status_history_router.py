@@ -26,12 +26,7 @@ async def get_order_status_history_by_id(history_id: int, db: Session = Depends(
 @router.get(URLS['ORDER_STATUS_HISTORY']['GET_ALL_STATUS_HISTORY_BY_ORDER'], response_model=List[OrderStatusHistoryResponse])
 async def get_all_status_history_by_order(order_id: int, db: Session = Depends(get_db)):
     db_status_history = await crud.get_status_history_by_order(db, order_id=order_id)
-    if db_status_history is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Không tìm thấy lịch sử các trạng thái đơn hàng với ID này",
-        )
-    return [OrderStatusHistoryResponse.from_orm(status) for status in db_status_history]
+    return db_status_history
 
 @router.post(URLS['ORDER_STATUS_HISTORY']['CREATE_STATUS_HISTORY'], response_model=OrderStatusHistoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_status_history(status_history: OrderStatusHistoryCreate, db: Session = Depends(get_db)):
@@ -41,8 +36,10 @@ async def create_status_history(status_history: OrderStatusHistoryCreate, db: Se
         return OrderStatusHistoryResponse.from_orm(db_status_history)
     except IntegrityError as e:
         await db.rollback()
-        logger.error(f"Lỗi khi tạo lịch sử trạng thái đơn hàng: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Thông tin không hợp lệ")
+        logger.error(f"Lỗi toàn vẹn dữ liệu khi tạo lịch sửa trạng thái đơn hàng: {str(e)} | Dữ liệu: {status_history.dict()}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Lỗi toàn vẹn dữ liệu: {str(e)}")
+
     except Exception as e:
-        logger.error(f"Lỗi khi tạo lịch sử trạng thái đơn hàng: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        await db.rollback()
+        logger.error(f"Lỗi không xác định khi tạo lịch sửa trạng thái đơn hàng: {str(e)} | Dữ liệu: {status_history.dict()}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Lỗi không xác định")

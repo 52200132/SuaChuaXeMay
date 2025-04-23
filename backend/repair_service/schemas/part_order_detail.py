@@ -9,8 +9,12 @@ class PartOrderDetailBase(BaseModel):
     quantity: int = 1
     is_selected: Optional[bool] = False
 
-class PartOrderDetailCreate(PartOrderDetailBase):
-    
+class PartOrderDetailCreate(BaseModel):
+    order_id: int = Field(..., description='Mã đơn hàng')
+    part_id: int = Field(..., description='Mã phụ tùng')
+    price: int = Field(..., description='Giá phụ tùng')
+    quantity: int = 1
+    is_selected: Optional[bool] = False
     class Config:
         from_attributes = True
         json_schema_extra = {
@@ -29,7 +33,8 @@ class PartOrderDetailUpdate(BaseModel):
     quantity: Optional[int] = None
     is_selected: Optional[bool] = None
 
-class PartOrderDetailResponse(PartOrderDetailBase):
+class PartOrderDetailResponse(BaseModel):
+    part_detail_ID: int
     order_id: int
     part_id: int
     price: int

@@ -109,7 +109,7 @@ async def update_appointment(db: AsyncSession,
 ) -> Optional[Appointment]:
     """Cập nhật thông tin lịch hẹn"""
     try:
-        db_appointment = await get_appointment(db, appointment_id)
+        db_appointment = await get_appointment_by_id(db, appointment_id)
         if not db_appointment:
             return None
         
@@ -124,7 +124,7 @@ async def update_appointment(db: AsyncSession,
             await db.execute(stmt)
         
         await db.commit()
-        return await get_appointment(db, appointment_id)
+        return await get_appointment_by_id(db, appointment_id)
         
     except Exception as e:
         await db.rollback()
@@ -138,7 +138,7 @@ async def update_appointment_status(
 ) -> Optional[Appointment]:
     """Cập nhật trạng thái lịch hẹn"""
     try:
-        db_appointment = await get_appointment(db, appointment_id)
+        db_appointment = await get_appointment_by_id(db, appointment_id)
         if not db_appointment:
             return None
         
@@ -153,7 +153,7 @@ async def update_appointment_status(
         await db.execute(stmt)
         await db.commit()
         
-        return await get_appointment(db, appointment_id)
+        return await get_appointment_by_id(db, appointment_id)
         
     except Exception as e:
         await db.rollback()
@@ -166,7 +166,7 @@ async def delete_appointment(
 ) -> bool:
     """Xóa lịch hẹn"""
     try:
-        db_appointment = await get_appointment(db, appointment_id)
+        db_appointment = await get_appointment_by_id(db, appointment_id)
         if not db_appointment:
             return False
         
@@ -190,7 +190,7 @@ async def get_appointment_with_services(
     appointment_id: int
 ) -> Dict[str, Any]:
     """Lấy thông tin lịch hẹn kèm danh sách dịch vụ"""
-    db_appointment = await get_appointment(db, appointment_id)
+    db_appointment = await get_appointment_by_id(db, appointment_id)
     if not db_appointment:
         return None
     
