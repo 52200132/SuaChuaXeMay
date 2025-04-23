@@ -16,7 +16,6 @@ async def create_order(db: AsyncSession, order: OrderCreate) -> Order:
         db_order = Order(
             diagnosis_id=order.diagnosis_id,
             motocycle_id=order.motocycle_id,
-            diagnosis_id=order.diagnosis_id,
             staff_id=order.staff_id,
             status=order.status,
         )
