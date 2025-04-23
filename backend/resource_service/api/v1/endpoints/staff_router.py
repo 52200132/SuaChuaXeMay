@@ -42,21 +42,29 @@ router = APIRouter()
     
 #     return staff_crud.create_staff(db, staff_data)
 
+@router.get(URLS['STAFF']['GET_ALL_STAFF'], response_model=List[StaffResponse])
+async def get_all_staffs(
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db)):
+    
+    db_staffs = await staff_crud.get_all_staff(db, skip=skip, limit=limit)
+    return db_staffs
 
-# @router.get("/", response_model=List[StaffResponse])
-# def read_staffs(
-#     skip: int = 0,
-#     limit: int = 100,
-#     role: Optional[StaffRoleEnum] = None,
-#     status: Optional[StaffStatusEnum] = None,
-#     search: Optional[str] = Query(None, min_length=2, max_length=50),
-#     db: AsyncSession = Depends(get_db),
-#     current_staff: dict = Depends(get_current_staff)
-# ):
-#     """
-#     Get list of staff members with optional filtering.
-#     """
-#     return staff_crud.get_staffs(db, skip, limit, role, status, search)
+@router.get(URLS['STAFF']['FILTER'], response_model=List[StaffResponse])
+async def get_filter_staffs(
+    skip: int = 0,
+    limit: int = 100,
+    role: Optional[StaffRoleEnum] = None,
+    status: Optional[StaffStatusEnum] = None,
+    search: Optional[str] = Query(None, min_length=2, max_length=50),
+    db: AsyncSession = Depends(get_db),
+    # current_staff: dict = Depends(get_current_staff)
+):
+    """
+    Get list of staff members with optional filtering.
+    """
+    return await staff_crud.get_staffs(db, skip, limit, role, status, search)
 
 
 # @router.get("/{staff_id}", response_model=StaffResponse)

@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["Service Types"])
 # router = APIRouter()
 
-@router.get(URLS['SERVICE']['GET_ALL_SERVICE_TYPE'], response_model=list[ServiceTypeResponse])
+@router.get(URLS['SERVICE']['GET_ALL_SERVICES'], response_model=list[ServiceTypeResponse])
 async def get_all_service_types(db: AsyncSession = Depends(get_db)) -> list[ServiceTypeResponse]:
     """
         Lấy tất cả ServiceType từ cơ sở dữ liệu.
@@ -58,7 +58,7 @@ async def create_service_type(service_type_in: ServiceTypeCreate, db: AsyncSessi
         logger.error(f"Error while creating service type: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not create service type.")
 
-@router.get(URLS['SERVICE']['GET_SERVICE_TYPE_BY_ID'], response_model=ServiceTypeResponse)
+@router.get(URLS['SERVICE']['GET_SERVICES_BY_SERVICE_TYPE_ID'], response_model=ServiceTypeResponse)
 async def get_service_type_by_id(service_type_id: int, db: AsyncSession = Depends(get_db)) -> ServiceTypeResponse:
     """
         Lấy ServiceType theo id từ cơ sở dữ liệu.
