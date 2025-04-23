@@ -9,44 +9,48 @@ from schemas.staff import StaffCreate, StaffUpdate, StaffRoleEnum, StaffStatusEn
 from utils.security import get_password_hash, verify_password
 from utils.logger import get_logger
 
+logger = get_logger(__name__)
 
 async def get_staff_by_id(db: AsyncSession, staff_id: int) -> Optional[Staff]:
     """Lấy thông tin nhân viên theo ID"""
     result = await db.execute(select(Staff).where(Staff.staff_id == staff_id))
     return result.scalars().first()
 
-
 async def get_staff_by_email(db: AsyncSession, email: str) -> Optional[Staff]:
     """Lấy thông tin nhân viên theo email"""
     result = await db.execute(select(Staff).where(Staff.email == email))
     return result.scalars().first()
 
+async def get_all_staff(db: AsyncSession, skip: int = 0, limit: int = 100) -> List[Staff]:
+    """Lấy danh sách tất cả nhân viên"""
+    result = await db.execute(select(Staff).order_by(Staff.staff_id.asc()).offset(skip).limit(limit))
+    return result.scalars().all()
 
-# async def get_staffs(
-#     db: AsyncSession, 
-#     skip: int = 0, 
-#     limit: int = 100, 
-#     role: Optional[StaffRoleEnum] = None,
-#     status: Optional[StaffStatusEnum] = None,
-#     search: Optional[str] = None
-# ) -> List[Staff]:
-#     """Get list of staff members with optional filters"""
-#     query = select(Staff)
+async def get_staffs(
+    db: AsyncSession, 
+    skip: int = 0, 
+    limit: int = 100, 
+    role: Optional[StaffRoleEnum] = None,
+    status: Optional[StaffStatusEnum] = None,
+    search: Optional[str] = None
+) -> List[Staff]:
+    """Get list of staff members with optional filters"""
+    query = select(Staff)
     
-#     # Apply filters if provided
-#     if role:
-#         query = query.where(Staff.role == role)
+    # Apply filters if provided
+    if role:
+        query = query.where(Staff.role == role)
     
-#     if status:
-#         query = query.where(Staff.status == status)
+    if status:
+        query = query.where(Staff.status == status)
     
-#     if search:
-#         search_term = f"%{search}%"
-#         query = query.where(Staff.fullname.ilike(search_term) | Staff.email.ilike(search_term))
+    if search:
+        search_term = f"%{search}%"
+        query = query.where(Staff.fullname.ilike(search_term) | Staff.email.ilike(search_term))
     
-#     query = query.offset(skip).limit(limit)
-#     result = await db.execute(query)
-#     return result.scalars().all()
+    query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 # async def create_staff(db: AsyncSession, staff: StaffCreate) -> Staff:

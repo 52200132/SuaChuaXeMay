@@ -16,6 +16,21 @@ class ServiceCreate(BaseModel):
             }
         }
 
+class ServiceUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    service_type_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "name": "Thay dầu động cơ",
+                "description": "Thay dầu động cơ cho xe máy",
+                "service_type_id": 1
+            }
+        }
+
 class ServiceResponse(BaseModel):
     service_id: int
     name: str

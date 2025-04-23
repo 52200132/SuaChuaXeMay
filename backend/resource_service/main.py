@@ -6,11 +6,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from db.session import init_db
 from api.v1.endpoints import service_router as service
 from api.v1.endpoints import staff_router as staff
+from api.v1.endpoints import part_router as part
+from api.v1.endpoints import service_type_router as service_type
 
 app = FastAPI(title="Resource Service API", version="1.0.0")
 
-app.include_router(service.router, prefix="/api/v1", tags=["Service Types"])
+# app.include_router(service.router, prefix="/api/v1", tags=["Service Types"])
+# app.include_router(service.router, prefix="/api/v1", tags=["Service"])
 app.include_router(staff.router, prefix="/api/v1", tags=["Staff"])
+# app.include_router(part.router, prefix="/api/v1", tags=["Part"])
+
 
 
 # Cấu hình CORS cho phép truy cập từ các nguồn khác nhau
