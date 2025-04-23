@@ -457,7 +457,7 @@ const ReceiptManagement = () => {
             .then(response => {
                 const order = response.data;
                 // TODO: thông báo toast
-                alert(`Đã tạo đơn hàng "${order.id} cho đơn tiếp nhận "${reception.form_id}"`);
+                alert(`Đã tạo đơn hàng "${order.order_id} cho đơn tiếp nhận "${reception.form_id}"`);
             });
 
             // Tạo đơn mới
@@ -651,7 +651,7 @@ const ReceiptManagement = () => {
                             <thead className="table-light">
                                 <tr>
                                     <th>Mã đơn</th>
-                                    <th>Thông tin khách hàng</th>
+                                    <th>Khách hàng</th>
                                     <th>Thông tin xe</th>
                                     <th>Ngày tiếp nhận</th>
                                     <th>Trạng thái</th>

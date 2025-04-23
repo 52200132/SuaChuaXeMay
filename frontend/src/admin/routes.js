@@ -7,6 +7,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import OrderManagement from './pages/OrderManagement';
+import AssignmentManagement from './pages/AssignmentManagement';
 
 // Xác định các route có thể truy cập cho tất cả nhân viên (bao gồm cả nhân viên cơ bản)
 export const employeeRoutes = [
