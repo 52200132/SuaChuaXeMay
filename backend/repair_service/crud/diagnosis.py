@@ -36,6 +36,12 @@ async def get_diagnosis_by_id(db: AsyncSession, diagnosis_id: int) -> Diagnosis:
     result = await db.execute(select(Diagnosis).where(Diagnosis.diagnosis_id == diagnosis_id))
     db_diagnosis = result.scalar_one_or_none()
     return db_diagnosis
+async def get_diagnosis_by_order_id (db: AsyncSession, order_id: int) -> Diagnosis:
+    """Lấy thông tin chẩn đoán theo ID đơn hàng"""
+    result = await db.execute(select(Diagnosis).where(Diagnosis.order_id == order_id))
+    db_diagnosis = result.scalar_one_or_none()
+    return db_diagnosis
+
 async def update_diagnosis(db: AsyncSession, diagnosis_id: int, diagnosis: DiagnosisUpdate) -> Diagnosis:
     """Cập nhật thông tin chẩn đoán"""
     try:

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from db.session import get_db
-from schemas.order_status_history import OrderStatusHistoryCreate, OrderStatusHistoryUpdate, OrderStatusHistoryResponse
+from schemas.order_status_history import OrderStatusHistoryCreate, OrderStatusHistoryResponse
 from crud import order_status_history as crud
 from .url import URLS
 
@@ -24,20 +24,21 @@ def read_order_status_history(history_id: int, db: Session = Depends(get_db)):
 def read_status_history_by_order(order_id: int, db: Session = Depends(get_db)):
     return crud.get_status_history_by_order(db, order_id=order_id)
 
-@router.post("/", response_model=OrderStatusHistoryResponse, status_code=status.HTTP_201_CREATED)
-def create_status_history(status_history: OrderStatusHistoryCreate, db: Session = Depends(get_db)):
-    return crud.create_order_status_history(db=db, status_history=status_history)
+@router.post(URLS['ORDER_STATUS_HISTORY']['CREATE_STATUS_HISTORY'], response_model=OrderStatusHistoryResponse, status_code=status.HTTP_201_CREATED)
+async def create_status_history(status_history: OrderStatusHistoryCreate, db: Session = Depends(get_db)):
+    new_orer_status_history = await crud.create_order_status_history(db=db, status_history=status_history)
+    return new_orer_status_history
 
-@router.put("/{history_id}", response_model=OrderStatusHistoryResponse)
-def update_status_history(history_id: int, status_history: OrderStatusHistoryUpdate, db: Session = Depends(get_db)):
-    db_status_history = crud.update_order_status_history(db, history_id=history_id, status_history=status_history)
-    if db_status_history is None:
-        raise HTTPException(status_code=404, detail="Order status history not found")
-    return db_status_history
+# @router.put("/{history_id}", response_model=OrderStatusHistoryResponse)
+# def update_status_history(history_id: int, status_history: OrderStatusHistoryUpdate, db: Session = Depends(get_db)):
+#     db_status_history = crud.update_order_status_history(db, history_id=history_id, status_history=status_history)
+#     if db_status_history is None:
+#         raise HTTPException(status_code=404, detail="Order status history not found")
+#     return db_status_history
 
-@router.delete("/{history_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_status_history(history_id: int, db: Session = Depends(get_db)):
-    result = crud.delete_order_status_history(db, history_id=history_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Order status history not found")
-    return None
+# @router.delete("/{history_id}", status_code=status.HTTP_204_NO_CONTENT)
+# def delete_status_history(history_id: int, db: Session = Depends(get_db)):
+#     result = crud.delete_order_status_history(db, history_id=history_id)
+#     if not result:
+#         raise HTTPException(status_code=404, detail="Order status history not found")
+#     return None

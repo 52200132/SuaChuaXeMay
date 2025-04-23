@@ -9,41 +9,45 @@ from .url import URLS
 
 router = APIRouter()
 
-@router.get("/", response_model=List[DiagnosisResponse])
-def read_diagnoses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """Get all diagnoses"""
-    return crud.get_diagnoses(db, skip=skip, limit=limit)
+# @router.get("/", response_model=List[DiagnosisResponse])
+# def read_diagnoses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+#     """Get all diagnoses"""
+#     return crud.get_diagnoses(db, skip=skip, limit=limit)
 
-@router.get("/{diagnosis_id}", response_model=DiagnosisResponse)
-def read_diagnosis(diagnosis_id: int, db: Session = Depends(get_db)):
+@router.get(URLS['DIAGNOSIS']['GET_DIAGNOSIS_BY_ID'], response_model=DiagnosisResponse)
+async def get_diagnosis_by_id(diagnosis_id: int, db: Session = Depends(get_db)):
     """Get a specific diagnosis by ID"""
-    db_diagnosis = crud.get_diagnosis(db, diagnosis_id=diagnosis_id)
+    db_diagnosis = await crud.get_diagnosis_by_id(db, diagnosis_id=diagnosis_id)
     if db_diagnosis is None:
         raise HTTPException(status_code=404, detail="Diagnosis not found")
     return db_diagnosis
 
-@router.get("/form/{form_id}", response_model=List[DiagnosisResponse])
-def read_diagnoses_by_form(form_id: int, db: Session = Depends(get_db)):
-    """Get all diagnoses for a specific reception form"""
-    return crud.get_diagnoses_by_form(db, form_id=form_id)
+@router.get(URLS['DIAGNOSIS']['GET_DIAGNOSIS_BY_ORDER_ID'], response_model=DiagnosisResponse)
+async def get_diagnosis_by_order_id(order_id: int, db: Session = Depends(get_db)):
+    """Get a specific diagnosis by order ID"""
+    db_diagnosis = await crud.get_diagnosis_by_order_id(db, order_id=order_id)
+    if db_diagnosis is None:
+        raise HTTPException(status_code=404, detail="Diagnosis not found")
+    return db_diagnosis
 
-@router.post("/", response_model=DiagnosisResponse, status_code=status.HTTP_201_CREATED)
-def create_diagnosis(diagnosis: DiagnosisCreate, db: Session = Depends(get_db)):
+@router.post(URLS['DIAGNOSIS']['CREATE_DIAGNOSIS'], response_model=DiagnosisResponse, status_code=status.HTTP_201_CREATED)
+async def create_diagnosis(diagnosis: DiagnosisCreate, db: Session = Depends(get_db)):
     """Create a new diagnosis"""
-    return crud.create_diagnosis(db=db, diagnosis=diagnosis)
+    new_diagnosis = await crud.create_diagnosis(db=db, diagnosis=diagnosis)
+    return new_diagnosis
 
-@router.put("/{diagnosis_id}", response_model=DiagnosisResponse)
-def update_diagnosis(diagnosis_id: int, diagnosis: DiagnosisUpdate, db: Session = Depends(get_db)):
-    """Update an existing diagnosis"""
-    db_diagnosis = crud.update_diagnosis(db, diagnosis_id=diagnosis_id, diagnosis=diagnosis)
-    if db_diagnosis is None:
-        raise HTTPException(status_code=404, detail="Diagnosis not found")
-    return db_diagnosis
+# @router.put("/{diagnosis_id}", response_model=DiagnosisResponse)
+# def update_diagnosis(diagnosis_id: int, diagnosis: DiagnosisUpdate, db: Session = Depends(get_db)):
+#     """Update an existing diagnosis"""
+#     db_diagnosis = crud.update_diagnosis(db, diagnosis_id=diagnosis_id, diagnosis=diagnosis)
+#     if db_diagnosis is None:
+#         raise HTTPException(status_code=404, detail="Diagnosis not found")
+#     return db_diagnosis
 
-@router.delete("/{diagnosis_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_diagnosis(diagnosis_id: int, db: Session = Depends(get_db)):
-    """Delete a diagnosis"""
-    result = crud.delete_diagnosis(db, diagnosis_id=diagnosis_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Diagnosis not found")
-    return None
+# @router.delete("/{diagnosis_id}", status_code=status.HTTP_204_NO_CONTENT)
+# def delete_diagnosis(diagnosis_id: int, db: Session = Depends(get_db)):
+#     """Delete a diagnosis"""
+#     result = crud.delete_diagnosis(db, diagnosis_id=diagnosis_id)
+#     if not result:
+#         raise HTTPException(status_code=404, detail="Diagnosis not found")
+#     return None

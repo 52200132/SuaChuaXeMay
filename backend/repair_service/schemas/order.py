@@ -31,8 +31,7 @@ class OrderCreate(BaseModel):
         from_attributes = True
         json_schema_extra = {
             "example": {
-                "motocycle_id": 1,
-                "status": OrderStatusEnum.RECEIVED
+                "motocycle_id": 1
             }
         }
 
