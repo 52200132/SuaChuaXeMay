@@ -39,11 +39,14 @@ const URLS = {
         // 'GET_APPOINTMENT_BY_ID': '/appointment/{appointment_id}',
     },
     'RECEPTION': {
-        'CREATE': '/reception/create',
-        'GET_ALL': '/receptions',
-        'GET_ALL_TODAY': '/reception/today',
-        'GET_RECEPTION_BY_ID': '/reception/{form_id}',
-        'GET_RECEPTION_BY_DATE_RANGE': '/reception/date-range',
+        'CREATE': '/reception/create', // completed
+        'CREATE_WITHOUT_MOTORCYCLE_ID': '/reception/create/without-motorcycle-id', // 
+        'CREATE_WITHOUT_CUSTOMER_ID_AND_WITHOUT_MOTORCYCLE_ID': '/reception/create/without-customer-id-and-with-motorcycle-id', // completed
+
+        'GET_ALL': '/receptions', // completed
+        'GET_ALL_TODAY': '/receptions/today', // completed
+        'GET_RECEPTION_BY_ID': '/reception/{form_id}', // completed
+        'GET_RECEPTION_BY_DATE_RANGE': '/receptions/date-range', // completed
     },
 }
 

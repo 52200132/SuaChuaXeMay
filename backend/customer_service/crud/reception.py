@@ -9,8 +9,13 @@ from sqlalchemy.orm import selectinload
 
 from utils.logger import get_logger
 from models.models import ReceptionForm, ReceptionImage, Motocycle, Customer
-from schemas.reception_from import ReceptionFormCreate, ReceptionFormUpdate, ReceptionFormCreate2
-from schemas.reception_image import ReceptionImageCreate
+from schemas.reception_from import (
+    ReceptionFormCreate, 
+    ReceptionFormUpdate, 
+    ReceptionFormCreate2, 
+    ReceptionFormCreateNoCustomerIdNoMotoCycleId, 
+    ReceptionImageCreate
+    )
 
 logger = get_logger(__name__)
 
@@ -56,7 +61,6 @@ async def create_reception_form(db: AsyncSession, reception_form: ReceptionFormC
 async def create_reception_form_without_motorcycle_id(
     db: AsyncSession, 
     reception_form: ReceptionFormCreate2
-
 ) -> ReceptionForm:
     """Tạo một biểu mẫu tiếp nhận mới mà không cần ID xe máy"""
     try:
@@ -65,6 +69,8 @@ async def create_reception_form_without_motorcycle_id(
         # ...existing code...
 
         stmt = insert(Motocycle).values(
+            moto_type_id=reception_form.moto_type_id,
+            customer_id=reception_form.customer_id,
             brand=reception_form.brand,
             model=reception_form.model,
             license_plate=reception_form.license_plate
@@ -112,6 +118,50 @@ async def create_reception_form_without_motorcycle_id(
         await db.rollback()
         logger.error(f"Lỗi khi tạo biểu mẫu tiếp nhận: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Không thể tạo biểu mẫu tiếp nhận: {str(e)}")
+
+async def create_reception_form_without_customer_id_and_without_motorcycle_id(
+    db: AsyncSession, 
+    reception_form: ReceptionFormCreateNoCustomerIdNoMotoCycleId
+) -> ReceptionForm:
+    """Tạo một biểu mẫu tiếp nhận mới mà không cần ID khách hàng và ID xe máy"""
+    # Tạo customer
+    customer = Customer(
+        fullname=reception_form.fullname,
+        phone_num=reception_form.phone_num,
+        email=reception_form.email
+    )
+    db.add(customer)
+    await db.flush()  # Để lấy được ID của khách hàng mới tạo
+    customer_id = customer.customer_id
+
+    # Tạo motocycle
+    motocycle = Motocycle(
+        customer_id=customer_id,
+        moto_type_id=reception_form.moto_type_id,
+        brand=reception_form.brand,
+        model=reception_form.model,
+        license_plate=reception_form.license_plate
+    )
+    db.add(motocycle)
+    await db.flush()  # Để lấy được ID của xe máy mới tạo
+    motocycle_id = motocycle.motocycle_id
+
+    db_reception_form = await create_reception_form(
+        db,
+        ReceptionFormCreate(
+            customer_id=customer_id,
+            motocycle_id=motocycle_id,
+            staff_id=reception_form.staff_id,
+            is_returned=reception_form.is_returned,
+            initial_conditon=reception_form.initial_conditon,
+            note=reception_form.note,
+            images=reception_form.images
+        )
+    )
+
+    # logger.info(f"Đã tạo biểu mẫu tiếp nhận mới với ID: {db_reception_form.form_id}")
+
+    return db_reception_form
 
 async def get_reception_form_today(db: AsyncSession) -> List[ReceptionForm]:
     """Lấy danh sách biểu mẫu tiếp nhận trong ngày hôm nay"""

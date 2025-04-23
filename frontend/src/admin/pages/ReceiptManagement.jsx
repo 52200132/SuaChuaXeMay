@@ -24,6 +24,10 @@ const ReceiptManagement = () => {
     const [ currentCustomerWithMotorcycle, setCurrentCustomerWithMotorcycle ] = useState({});
     const [ customerNotFound, setCustomerNotFound ] = useState(false);
     const [ motorcyclesNotFound, setMotorcyclesNotFound ] = useState(false);
+    const [motoTypes, setMotoTypes] = useState([
+        { id: 1, name: 'Xe tay ga' },
+        { id: 2, name: 'Xe số' },
+    ]);
 
     //
     const { currentStaff } = useStaffAuth();
@@ -159,8 +163,19 @@ const ReceiptManagement = () => {
         // setReceptionsDisplay(newReceiptsById);
 
         const fetchData = async () => {
-
+            
             setLoading(true);
+
+            console.log("receiptIds", receiptIds);
+            if (receiptIds?.size && receiptIds?.size > 0) {
+                Array.from(receiptIds).forEach(id => { 
+                    const receipt = receiptsById[id];
+                    console.log("receipt", receipt);
+                    receptionsDisplay[id] = formatReciptData(receipt, customersById[receipt.customer_id], motorcyclesById[receipt.motocycle_id]);
+                });
+                setLoading(false); 
+                return; 
+            } // Lấy rồi không cần lấy lại nữa
 
             await fetchAndStoreData('receipts', customerService.reception.getAllReceptionists, 'form_id')
                 .then(async response => {
@@ -174,6 +189,8 @@ const ReceiptManagement = () => {
                                 customersById[customerId] || (await customerService.customer.getCustomerById(customerId)).data,
                                 motorcyclesById[motorcycleId] || (await customerService.motorcycle.getMotorcycleById(motorcycleId)).data
                             ]);
+                            setData('customers', customer, customerId);
+                            setData('motorcycles', motorcycle, motorcycleId);
                             return [item.form_id, formatReciptData(item, customer, motorcycle)];
                         })
                     );
@@ -197,13 +214,14 @@ const ReceiptManagement = () => {
     }, [formData]);
 
     useEffect(() => {
-        console.log('Loading state:', loading); // Log loading state để kiểm tra
+        console.log('Loading state: - useEffect:', loading); // Log loading state để kiểm tra
         if (!loading) {
-            console.log(receiptIds);
-            setFilteredReceiptIds(Array.from(receiptIds));
-            setTotalPages(Math.ceil(filteredReceiptIds / 10));
-            console.log('total pages:', totalPages); // Log tổng số trang để kiểm tra
-            console.log('Receptions display:', receptionsDisplay); // Log dữ liệu tiếp nhận để kiểm tra
+            console.log('Loading state: - useEffect:', receiptIds);
+            const rID = Array.from(receiptIds);
+            setFilteredReceiptIds(rID);
+            setTotalPages(Math.ceil(rID.length / 10));
+            console.log('total pages - useEffect:', totalPages); // Log tổng số trang để kiểm tra
+            console.log('Receptions display - useEffect:', receptionsDisplay); // Log dữ liệu tiếp nhận để kiểm tra
         }
     }, [loading]);
 
@@ -222,8 +240,10 @@ const ReceiptManagement = () => {
                 const customer = response.data || response; // dữ liệu của khách có chứa danh sách xe
                 if (customer && customer.fullname) {
                     setCurrentCustomerWithMotorcycle(customer);
+
                     setMultipleData('motorcycles', customer.motocycles, 'motocycle_id');
                     setData('customers', customer, customer.customer_id);
+
                     setFormData(prev => ({
                         ...prev,
                         customerId: customer.customer_id || '',
@@ -247,6 +267,7 @@ const ReceiptManagement = () => {
                     customerName: '',
                     email: ''
                 }));
+                setCurrentCustomerWithMotorcycle({});
                 setCustomerNotFound(phone.length > 0); // chỉ báo khi đã nhập số
             });
         }, 500),
@@ -358,6 +379,7 @@ const ReceiptManagement = () => {
                 brand: motorcycle.brand || '',
                 motorcycleModel: motorcycle.model || '',
                 motocycleId: motorcycle.motocycle_id || '',
+                motoTypeId: motorcycle.moto_type_id || ''
             }));
         } else {
             setFormData(prev => ({
@@ -365,6 +387,7 @@ const ReceiptManagement = () => {
                 brand: '',
                 motorcycleModel: '',
                 motocycleId: '',
+                motoTypeId: ''
             }));
         }
     }
@@ -408,7 +431,8 @@ const ReceiptManagement = () => {
             motorcycleModel: '',
             initialCondition: '',
             note: '',
-            isReturned: false
+            isReturned: false,
+            motoTypeId: '',
         }));
         setValidated(false);
         setShowCreateModal(true);
@@ -471,6 +495,20 @@ const ReceiptManagement = () => {
         setShowEditModal(false);
     };
 
+    const createNewReceipt = async (formData) => {
+        try {
+            if (formData.customerId && !formData.motocycleId) { // TODO: Tạo đơn tiếp nhận dựa - khi khách chưa có xe
+                return await customerService.reception.createReceptionWithoutMotorcycleId(formData);
+            } else if (formData.customerId && formData.motocycleId) { // TODO: Tạo đơn tiếp nhận dựa - khi khách có xe
+                return await customerService.reception.createReception(formData);
+            }
+        } catch (error) {
+            console.error('Lỗi khi tạo đơn tiếp nhận:', error);
+            throw error;
+        }
+
+    };
+
     // TODO: Xử lý submit form tạo mới
     const handleCreateSubmit = async (e) => {
         e.preventDefault();
@@ -485,15 +523,36 @@ const ReceiptManagement = () => {
         console.log("formData", formData);
         try {
             setLoading(true);
-            const response = await customerService.reception.createReception(formData);
+
+            const response = await createNewReceipt(formData);
             const reception = response.data;
             // Tạo đơn mới
             setData('receipts', reception, reception.form_id);
+
+            const getMotocycle = await (async () => {
+                if (!motorcyclesById[reception.motocycle_id]) { 
+                    const response = await customerService.motorcycle.getMotorcycleById(reception.motocycle_id);
+                    setData('motorcycles', response.data, reception.motocycle_id);
+                    return response.data;
+                }
+                return motorcyclesById[reception.motocycle_id];
+            })();
+
+            const getCustomer = await (async () => {
+                if (!customersById[reception.customer_id]) { 
+                    const response = await customerService.customer.getCustomerById(reception.customer_id);
+                    setData('customers', response.data, reception.customer_id);
+                    return response.data;
+                }
+                return customersById[reception.customer_id];
+            })();
+
             setReceptionsDisplay(prev => ({
                 ...prev,
-                [reception.form_id]: formatReciptData(reception, customersById[reception.customer_id], motorcyclesById[reception.motocycle_id])
+                [reception.form_id]: formatReciptData(reception, getCustomer, getMotocycle)
             }));
             setFilteredReceiptIds(prev => [...prev, reception.form_id]);
+            setTotalPages(Math.ceil((filteredReceiptIds.length + 1) / 10));
             setShowCreateModal(false);
             
             alert('Tạo đơn tiếp nhận thành công!');
@@ -505,33 +564,6 @@ const ReceiptManagement = () => {
         } finally {
             setShowCreateModal(false);
         }
-
-        // Tạo ID mới
-        const newId = `RN-${new Date().getFullYear()}-${String(filteredReceiptIds.length + 1).padStart(3, '0')}`;
-        const today = new Date().toISOString().split('T');
-
-        const newReceipt = {
-            // id: newId,
-            customerName: formData.customerName,
-            phone: formData.phone,
-            plateNumber: formData.plateNumber,
-            motorcycleModel: formData.motorcycleModel,
-            initialCondition: formData.initialCondition,
-            note: formData.note,
-            isReturned: formData.isReturned,
-            createdAt: today,
-            returnedAt: today
-        };
-
-        // Cập nhật state
-        // setReceiptsById(prev => ({
-        //     ...prev,
-        //     [newId]: newReceipt
-        // }));
-
-        // setReceiptIds(prev => [...prev, newId]);
-        // setFilteredReceiptIds(prev => [...prev, newId]);
-        setTotalPages(Math.ceil((filteredReceiptIds.length + 1) / 10));
 
         setShowCreateModal(false);
     };
@@ -992,33 +1024,53 @@ const ReceiptManagement = () => {
                                     <Form.Control.Feedback type="invalid">
                                         Vui lòng nhập biển số xe
                                     </Form.Control.Feedback>
-                                </Form.Group>
+                                    </Form.Group>
+                                    <Row>
+                                        <Col md={6}>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Hãng xe</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="brand"
+                                                onChange={handleFormChange}
+                                                value={formData.brand}
+                                                readOnly={!formData.phone}
+                                                required
+                                                placeholder="Hãng xe (tự động điền nếu có)"
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={6}>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Loại xe *</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="motorcycleModel"
+                                                value={formData.motorcycleModel}
+                                                onChange={handleFormChange}
+                                                readOnly={!formData.phone}
+                                                required
+                                                placeholder="Ví dụ: Honda Wave, Yamaha Exciter..."
+                                            />
+                                            <Form.Control.Feedback type="invalid">
+                                                Vui lòng nhập loại xe
+                                            </Form.Control.Feedback>
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Hãng xe</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="brand"
+                                    <Form.Label>Chọn loại xe *</Form.Label>
+                                    <Form.Select
+                                        name="motoTypeId"
+                                        value={formData.motoTypeId}
                                         onChange={handleFormChange}
-                                        value={formData.brand}
-                                        readOnly={!formData.phone}
                                         required
-                                        placeholder="Hãng xe (tự động điền nếu có)"
-                                    />
-                                </Form.Group>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Loại xe *</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="motorcycleModel"
-                                        value={formData.motorcycleModel}
-                                        onChange={handleFormChange}
-                                        readOnly={!formData.phone}
-                                        required
-                                        placeholder="Ví dụ: Honda Wave, Yamaha Exciter..."
-                                    />
-                                    <Form.Control.Feedback type="invalid">
-                                        Vui lòng nhập loại xe
-                                    </Form.Control.Feedback>
+                                    >
+                                        <option value="">-- Chọn loại xe --</option>
+                                        {motoTypes.map(type => (
+                                            <option key={type.id} value={type.id}>{type.name}</option>
+                                        ))}
+                                    </Form.Select>
                                 </Form.Group>
                             </Col>
                         </Row>

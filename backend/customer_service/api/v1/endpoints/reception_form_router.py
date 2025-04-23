@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 
 from crud import reception as reception_crud
-from schemas.reception_from import ReceptionFormCreate, ReceptionFormResponse, ReceptionFormUpdate, ReceptionFormCreate2
+from schemas.reception_from import ReceptionFormCreate, ReceptionFormResponse, ReceptionFormUpdate, ReceptionFormCreate2, ReceptionFormCreateNoCustomerIdNoMotoCycleId
 from schemas.reception_image import ReceptionImageCreate, ReceptionImageResponse
 from db.session import get_db
 from utils.logger import get_logger
@@ -62,6 +62,30 @@ async def create_reception_form_without_motorcycle_id(
         )
     
     
+@router.post(URLS['RECEPTION']['CREATE_WITHOUT_CUSTOMER_ID_AND_WITHOUT_MOTORCYCLE_ID'], response_model=ReceptionFormResponse)
+async def create_reception_form_without_customer_id_and_without_motorcycle_id(
+    reception_form: ReceptionFormCreateNoCustomerIdNoMotoCycleId,
+    db: AsyncSession = Depends(get_db)
+    ):
+    """
+    Tạo một biểu mẫu tiếp nhận mới mà không cần ID khách hàng và ID xe máy.
+    """
+    try:
+        # Tạo một biểu mẫu tiếp nhận mới
+        db_reception_form_new = await reception_crud.create_reception_form_without_customer_id_and_without_motorcycle_id(db, reception_form)
+        logger.info(f"Tạo biểu mẫu tiếp nhận thành công với ID: {db_reception_form_new.form_id}")
+        
+        # Tải thêm dữ liệu ảnh liên quan
+        db_reception_form = await reception_crud.get_reception_form_by_id(db, db_reception_form_new.form_id)
+
+        return db_reception_form
+    except Exception as e:
+        logger.error(f"Lỗi khi tạo biểu mẫu tiếp nhận: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi tạo biểu mẫu tiếp nhận: {str(e)}"
+        )
+
 @router.get(URLS['RECEPTION']['GET_ALL'], response_model=List[ReceptionFormResponse])
 async def get_all_reception_forms(
     skip: int = 0,

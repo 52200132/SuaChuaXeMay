@@ -255,6 +255,25 @@ const customerService = {
                 throw error;
             }
         },
+        createReceptionWithoutMotorcycleId: async (formData) => {
+            try {
+                const receptionData = {
+                    customer_id: formData.customerId,
+                    note: formData.note,
+                    initial_conditon: formData.initialCondition,
+                    staff_id: formData.staffId,
+                    moto_type_id: formData.motoTypeId,
+                    model: formData.motorcycleModel,
+                    brand: formData.brand,
+                    license_plate: formData.plateNumberManual || formData.plateNumber,
+                };
+                const response = await apiCustomerService.post(URLS.RECEPTION.CREATE_WITHOUT_MOTORCYCLE_ID, receptionData);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo lễ tân:', error);
+                throw error;
+            }
+        },
         getAllReceptionists: async () => {
             try {
                 const response = await apiCustomerService.get(URLS.RECEPTION.GET_ALL);
