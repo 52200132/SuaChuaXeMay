@@ -5,7 +5,7 @@ from typing import List
 from db.session import get_db
 from schemas.diagnosis import DiagnosisCreate, DiagnosisUpdate, DiagnosisResponse
 from crud import diagnosis as crud
-
+from .url import URLS
 
 router = APIRouter()
 

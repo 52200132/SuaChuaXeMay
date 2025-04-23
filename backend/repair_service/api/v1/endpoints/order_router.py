@@ -4,47 +4,32 @@ from typing import List
 
 from db.session import get_db
 from schemas.order import OrderCreate, OrderUpdate, OrderResponse
-from crud import order as crud
+from crud import order as order_crud
+from .url import URLS
 
 router = APIRouter()
 
-@router.get("/", response_model=List[OrderResponse])
-def read_orders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_orders(db, skip=skip, limit=limit)
+@router.get(URLS['ORDER']['GET_ALL_ORDERS'], response_model=List[OrderResponse])
+async def read_orders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Lấy danh sách đơn hàng"""
+    orders = await order_crud.get_all_orders(db, skip=skip, limit=limit)
+    return orders
 
-@router.get("/{order_id}", response_model=OrderResponse)
-def read_order(order_id: int, db: Session = Depends(get_db)):
-    db_order = crud.get_order(db, order_id=order_id)
+@router.get(URLS['ORDER']['GET_ORDER_BY_ID'], response_model=OrderResponse)
+async def read_order(order_id: int, db: Session = Depends(get_db)):
+    db_order = await order_crud.get_order_by_id(db, order_id=order_id)
     if db_order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
     return db_order
 
-@router.get("/diagnosis/{diagnosis_id}", response_model=List[OrderResponse])
-def read_orders_by_diagnosis(diagnosis_id: int, db: Session = Depends(get_db)):
-    return crud.get_orders_by_diagnosis(db, diagnosis_id=diagnosis_id)
-
-@router.get("/staff/{staff_id}", response_model=List[OrderResponse])
-def read_orders_by_staff(staff_id: int, db: Session = Depends(get_db)):
-    return crud.get_orders_by_staff(db, staff_id=staff_id)
-
-@router.get("/status/{status}", response_model=List[OrderResponse])
-def read_orders_by_status(status: str, db: Session = Depends(get_db)):
-    return crud.get_orders_by_status(db, status=status)
-
-@router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
-def create_order(order: OrderCreate, db: Session = Depends(get_db)):
-    return crud.create_order(db=db, order=order)
+@router.post(URLS['ORDER']['CREATE_ORDER'], response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
+async def create_new_order(order: OrderCreate, db: Session = Depends(get_db)):
+    new_order = await order_crud.create_order(db=db, order=order)
+    return new_order
 
 @router.put("/{order_id}", response_model=OrderResponse)
-def update_order(order_id: int, order: OrderUpdate, db: Session = Depends(get_db)):
-    db_order = crud.update_order(db, order_id=order_id, order=order)
+async def update_order(order_id: int, order: OrderUpdate, db: Session = Depends(get_db)):
+    db_order = order_crud.update_order(db, order_id=order_id, order=order)
     if db_order is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return db_order
-
-@router.delete("/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_order(order_id: int, db: Session = Depends(get_db)):
-    result = crud.delete_order(db, order_id=order_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Order not found")
-    return None

@@ -5,6 +5,7 @@ from typing import List
 from db.session import get_db
 from schemas.service_order_detail import ServiceOrderDetailCreate, ServiceOrderDetailUpdate, ServiceOrderDetailResponse
 from crud import service_order_detail as crud
+from .url import URLS
 
 router = APIRouter()
 

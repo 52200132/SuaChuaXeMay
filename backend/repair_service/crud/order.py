@@ -13,12 +13,13 @@ logger = get_logger(__name__)
 async def create_order(db: AsyncSession, order: OrderCreate) -> Order:
     """Tạo đơn hàng mới trong cơ sở dữ liệu"""
     try:
-        db_order = Order(
-            diagnosis_id=order.diagnosis_id,
-            motocycle_id=order.motocycle_id,
-            staff_id=order.staff_id,
-            status=order.status,
-        )
+        logger.info(f"Tạo đơn hàng mới với thông tin: {order}")
+        db_order = None
+        if order.staff_id == 0:
+            db_order = Order(motocycle_id=order.motocycle_id, status=order.status)
+        else:
+            db_order = Order(motocycle_id=order.motocycle_id, staff_id=order.staff_id, status=order.status)
+        
         db.add(db_order)
         await db.commit()
         await db.refresh(db_order)

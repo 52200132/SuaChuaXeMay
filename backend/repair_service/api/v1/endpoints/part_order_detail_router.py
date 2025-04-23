@@ -5,6 +5,7 @@ from typing import List
 from db.session import get_db
 from schemas.part_order_detail import PartOrderDetailCreate, PartOrderDetailUpdate, PartOrderDetailResponse
 from crud import part_order_detail as crud
+from .url import URLS
 
 router = APIRouter()
 
