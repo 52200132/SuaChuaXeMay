@@ -47,6 +47,7 @@ class OrderResponse(BaseModel):
     staff_id: Optional[int] = 0
     status: OrderStatusEnum
     total_price: Optional[int] = 0
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -56,7 +57,8 @@ class OrderResponse(BaseModel):
                 "motocycle_id": 1,
                 "staff_id": 1,
                 "status": OrderStatusEnum.RECEIVED,
-                "total_price": 0
+                "total_price": 0,
+                "created_at": "2023-10-01T12:00:00"
             }
         }
 # class OrderInDB(OrderBase):

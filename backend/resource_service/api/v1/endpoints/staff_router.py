@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 from datetime import timedelta
 
@@ -59,22 +60,22 @@ router = APIRouter()
 #     return staff_crud.get_staffs(db, skip, limit, role, status, search)
 
 
-# @router.get("/{staff_id}", response_model=StaffResponse)
-# def read_staff(
-#     staff_id: int,
-#     db: AsyncSession = Depends(get_db),
-#     current_staff: dict = Depends(get_current_staff)
-# ):
-#     """
-#     Get a specific staff member by ID.
-#     """
-#     db_staff = staff_crud.get_staff(db, staff_id)
-#     if db_staff is None:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Staff not found"
-#         )
-#     return db_staff
+@router.get(URLS['STAFF']['GET_STAFF_BY_ID'], response_model=StaffResponse)
+async def read_staff(
+    staff_id: int,
+    db: AsyncSession = Depends(get_db),
+    # current_staff: dict = Depends(get_current_staff)
+):
+    """
+    Lấy thông tin nhân viên theo ID.
+    """
+    db_staff = await staff_crud.get_staff_by_id(db, staff_id)
+    if db_staff is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy nhân viên"
+        )
+    return db_staff
 
 
 # @router.put("/{staff_id}", response_model=StaffResponse)
@@ -184,15 +185,15 @@ async def login_staff(login_data: StaffLogin, db: AsyncSession = Depends(get_db)
 #     db: AsyncSession = Depends(get_db),
 #     current_staff: dict = Depends(get_current_staff)
 # ):
-#     """
-#     Update a staff member's status.
-#     Staff can update their own status, but only managers can update other staff statuses.
-#     """
-#     # Check permissions
-#     if current_staff["staff_id"] != staff_id and current_staff["role"] != "manager":
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="You don't have permission to update this staff member's status"
-#         )
+    """
+    Update a staff member's status.
+    Staff can update their own status, but only managers can update other staff statuses.
+    """
+    # Check permissions
+    if current_staff["staff_id"] != staff_id and current_staff["role"] != "manager":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to update this staff member's status"
+        )
     
-#     return staff_crud.update_staff_status(db, staff_id, status)
+    return staff_crud.update_staff_status(db, staff_id, status)

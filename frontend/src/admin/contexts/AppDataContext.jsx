@@ -20,12 +20,16 @@ export const AppDataProvider = ({ children }) => {
         servicesIds: new Set(),  // IDs of services
         products: {},     // Product data by ID
         productsIds: new Set(),  // IDs of products
-        employees: {},    // Employee data by ID
-        employeesIds: new Set(),  // IDs of employees
         settings: {},     // App settings
         settingsIds: new Set(),  // IDs of settings
         stats: {},        // Statistics and analytics data
         statsIds: new Set(),  // IDs of stats
+
+        orders: {},     // Order data by ID
+        ordersIds: new Set(),  // IDs of orders
+
+        motorcycles: {},     // Motorcycle data by ID
+        motorcyclesIds: new Set(),  // IDs of motorcycles
     });
 
     // State to track loading status for different categories

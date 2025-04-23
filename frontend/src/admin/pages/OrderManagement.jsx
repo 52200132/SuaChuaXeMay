@@ -6,21 +6,20 @@ import StatusBadge from '../components/StatusBadge';
 import { useAppData } from '../contexts/AppDataContext';
 import { customerService, resourceService, repairService } from '../../services/api';
 import './OrderManagement.css';
-import { set } from 'date-fns';
 
 const OrderManagement = () => {
     // Lấy từ context
-    const { getData, getIds, setData, fetchAndStoreData, setMultipleData } = useAppData();
-    const ordersById = getData('orders');
-    const ordersIds = getIds('ordersIds');
-    const customersById = getData('customers');
-    const motorcyclesById = getData('motorcycles');
-    const diagnosisById = getData('diagnosis');
-    const staffsById = getData('staffs');
+    const { getData, getIds, setData, fetchAndStoreData, setMultipleData, errors, setError } = useAppData();
+    const ordersById = getData('orders') || {};
+    const ordersIds = getData('ordersIds') || new Set();
+    const customersById = getData('customers') || {};
+    const motorcyclesById = getData('motorcycles') || {};
+    const diagnosisById = getData('diagnosis') || {};
+    const staffsById = getData('staffs') || {};
 
     // State quản lý danh sách đơn hàng
     const [orders, setOrders] = useState([]);
-    const [filteredOrders, setFilteredOrders] = useState([]);
+    const [fileredOrdersIds, setFilteredOrdersIds] = useState([]);
     const [ordersDisplay, setOrdersDisplay] = useState({});
     
     // State cho filter và phân trang
@@ -29,6 +28,7 @@ const OrderManagement = () => {
         status: '',
         startDate: '',
         endDate: '',
+        motocycleId: ''
     });
 
     const tableOrderStatus = {
@@ -55,7 +55,7 @@ const OrderManagement = () => {
     // State cho modal
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [currentOrder, setCurrentOrder] = useState(null);
+    const [currentOrder, setCurrentOrder] = useState({});
     
     // State cho form chỉnh sửa
     const [formData, setFormData] = useState({
@@ -68,149 +68,93 @@ const OrderManagement = () => {
     
     // Load mock data
     useEffect(() => {
-        const mockOrders = [
-            {
-                orderId: 'ORD-2023-001',
-                customerName: 'Nguyễn Văn A',
-                customerPhone: '0912345678',
-                createdDate: '2023-06-15',
-                createdTime: '08:30',
-                technicianName: 'Kỹ thuật viên 1',
-                status: 'Đang xử lý',
-                items: [
-                    { name: 'Thay nhớt', quantity: 1, price: 150000 },
-                    { name: 'Vệ sinh bugi', quantity: 1, price: 50000 }
-                ],
-                totalAmount: 200000,
-                note: 'Khách hẹn lấy xe vào cuối tuần'
-            },
-            {
-                orderId: 'ORD-2023-002',
-                customerName: 'Trần Thị B',
-                customerPhone: '0987654321',
-                createdDate: '2023-06-16',
-                createdTime: '10:15',
-                technicianName: 'Kỹ thuật viên 2',
-                status: 'Hoàn thành',
-                items: [
-                    { name: 'Thay lốp xe', quantity: 2, price: 400000 },
-                    { name: 'Thay bugi', quantity: 1, price: 120000 }
-                ],
-                totalAmount: 520000,
-                note: 'Đã thanh toán đầy đủ'
-            },
-            {
-                orderId: 'ORD-2023-003',
-                customerName: 'Lê Văn C',
-                customerPhone: '0977123456',
-                createdDate: '2023-06-17',
-                createdTime: '13:45',
-                technicianName: 'Kỹ thuật viên 3',
-                status: 'Đang xử lý',
-                items: [
-                    { name: 'Sửa chữa động cơ', quantity: 1, price: 750000 }
-                ],
-                totalAmount: 750000,
-                note: 'Cần liên hệ với khách khi phát hiện thêm vấn đề'
-            },
-            {
-                orderId: 'ORD-2023-004',
-                customerName: 'Phạm Thị D',
-                customerPhone: '0909123456',
-                createdDate: '2023-06-18',
-                createdTime: '09:30',
-                technicianName: 'Kỹ thuật viên 1',
-                status: 'Hoàn thành',
-                items: [
-                    { name: 'Bảo dưỡng định kỳ', quantity: 1, price: 350000 },
-                    { name: 'Thay dầu số', quantity: 1, price: 120000 }
-                ],
-                totalAmount: 470000,
-                note: 'Khách đã thanh toán qua chuyển khoản'
-            },
-            {
-                orderId: 'ORD-2023-005',
-                customerName: 'Hoàng Văn E',
-                customerPhone: '0918765432',
-                createdDate: '2023-06-19',
-                createdTime: '15:20',
-                technicianName: 'Kỹ thuật viên 4',
-                status: 'Chờ thanh toán',
-                items: [
-                    { name: 'Thay nhông sên dĩa', quantity: 1, price: 520000 },
-                    { name: 'Vệ sinh hệ thống nhiên liệu', quantity: 1, price: 280000 }
-                ],
-                totalAmount: 800000,
-                note: 'Khách hẹn thanh toán khi nhận xe'
-            },
-            {
-                orderId: 'ORD-2023-006',
-                customerName: 'Vũ Thị F',
-                customerPhone: '0919123456',
-                createdDate: '2023-06-20',
-                createdTime: '11:00',
-                technicianName: 'Kỹ thuật viên 2',
-                status: 'Đã hủy',
-                items: [
-                    { name: 'Sửa chữa hệ thống điện', quantity: 1, price: 320000 }
-                ],
-                totalAmount: 320000,
-                note: 'Khách hủy đơn vì có việc gấp'
-            },
-            {
-                orderId: 'ORD-2023-007',
-                customerName: 'Đặng Văn G',
-                customerPhone: '0909765432',
-                createdDate: '2023-06-21',
-                createdTime: '14:15',
-                technicianName: 'Kỹ thuật viên 3',
-                status: 'Đang xử lý',
-                items: [
-                    { name: 'Sửa phanh xe', quantity: 2, price: 260000 },
-                    { name: 'Thay dây phanh', quantity: 2, price: 180000 }
-                ],
-                totalAmount: 440000,
-                note: 'Cần kiểm tra kỹ hệ thống phanh'
-            }
-        ];
-        
-        setOrders(mockOrders);
-        setFilteredOrders(mockOrders);
-        setTotalPages(Math.ceil(mockOrders.length / 10));
-        setLoading(false);
 
         // TODO: Fetch dữ liệu từ API
         const fetchData = async () => { 
             setLoading(true);
 
+            errors.customers = [];
+            errors.motorcycles = [];
+            errors.staffs = [];
+            errors.diagnosis = [];
+
             await fetchAndStoreData('orders', repairService.order.getAllOrders, 'order_id')
-            .then( async response => {
-                const orderData = response.dataArray;
-                const entries = await Promise.all(orderData.map(async order => {
-                    const customerId = order.customer_id;
-                    const motorcycleId = order.motorcycle_id;
-                    const staffId = order.staff_id;
+                .then(async response => {
+                    const orderData = response.dataArray;
 
-                    const [ customer, motorcycle, staff, diagnosis ] = await Promise.all([
-                        customersById[customerId] || (await customerService.customer.getCustomerById(customerId)).data,
-                        motorcyclesById[motorcycleId] || (await customerService.motorcycle.getMotorcycleById(motorcycleId)).data,
-                        staffsById[staffId] || (await resourceService.staff.getStaffById(staffId)).data,
-                        diagnosisById[order.diagnosis_id] || (await repairService.diagnosis.getDiagnosisByOrderId(order.order_id)).data,
-                    ]);
+                    // Sử dụng Promise.allSettled cho map chính
+                    const results = await Promise.allSettled(orderData.map(async order => {
+                        // const customerId = order.customer_id;
+                        const motorcycleId = order.motocycle_id;
+                        const staffId = order.staff_id;
 
-                    setData('customers', customer, customerId);
-                    setData('motorcycles', motorcycle, motorcycleId);
-                    setData('staffs', staff, staffId);
-                    setData('diagnosis', diagnosis, order.diagnosis_id);
+                        // Sử dụng Promise.allSettled cho các fetch phụ để biết cái nào lỗi
+                        const [ motorcycleResult, staffResult, diagnosisResult] = await Promise.allSettled([
+                            motorcyclesById[motorcycleId] ? Promise.resolve({ data: motorcyclesById[motorcycleId] }) : customerService.motorcycle.getMotorcycleById(motorcycleId),
+                            staffsById[staffId] ? Promise.resolve({ data: staffsById[staffId] }) : resourceService.staff.getStaffById(staffId),
+                            diagnosisById[order.order_id] ? Promise.resolve({ data: diagnosisById[order.order_id] }) : repairService.diagnosis.getDiagnosisByOrderId(order.order_id),
+                        ]);
 
-                    return [ order.order_id, formatOrder(order, customer, motorcycle, staff, diagnosis) ];
-                }));
-                const newOrderDisplay = Object.fromEntries(entries);
-                set
-            })
-            .catch(error => {
-                console.error('Lỗi khi lấy dữ liệu từ api', error);
-            });
+                        const customerId = motorcycleResult.value?.data?.customer_id || '';
+                        // Lấy dữ liệu khách hàng từ context hoặc gọi API nếu không có trong context
+                        const [ customerResult ] = await Promise.allSettled([
+                            customersById[customerId] ? Promise.resolve({ data: customersById[customerId] }) : customerService.customer.getCustomerById(customerId)
+                        ]);
+
+                        // Lấy dữ liệu nếu thành công, hoặc dùng object rỗng nếu thất bại
+                        const customer = customerResult.status === 'fulfilled' ? customerResult.value?.data || {} : {};
+                        const motorcycle = motorcycleResult.status === 'fulfilled' ? motorcycleResult.value?.data || {} : {};
+                        const staff = staffResult.status === 'fulfilled' ? staffResult.value?.data || {} : {};
+                        const diagnosis = diagnosisResult.status === 'fulfilled' ? diagnosisResult.value?.data || {} : {};
+
+                        // Ghi log lỗi cụ thể nếu có
+                        Object.entries({
+                            customers: customerResult,
+                            motorcycles: motorcycleResult,
+                            staffs: staffResult,
+                            diagnosis: diagnosisResult,
+                        }).forEach(([key, res]) => { 
+                            errors[key].push(res.status === 'rejected' ? `Lỗi khi lấy ${key} cho đơn ${order.order_id}: ${res.reason.response?.data?.detail}` : null);
+                        })
+
+                        // Vẫn lưu dữ liệu (có thể là rỗng) vào context
+                        setData('customers', customer, customerId);
+                        setData('motorcycles', motorcycle, motorcycleId);
+                        setData('staffs', staff, staffId);
+                        setData('diagnosis', diagnosis, order.order_id);
+
+                        // Luôn trả về để format, hàm formatOrder cần xử lý dữ liệu thiếu
+                        return [order.order_id, formatOrder(order, customer, motorcycle, staff, diagnosis)];
+                    }));
+
+                    // Lọc ra các kết quả thành công từ map chính
+                    const successfulEntries = results
+                        .filter(result => result.status === 'fulfilled')
+                        .map(result => result.value); // Lấy giá trị trả về [order_id, formattedOrder]
+
+                    const newOrderDisplay = Object.fromEntries(successfulEntries);
+
+                    // Ghi log các lỗi bị bắt bởi Promise.allSettled ở map chính (nếu có lỗi logic bên trong map không bị try...catch)
+                    results.forEach(result => {
+                        if (result.status === 'rejected') {
+                            console.error("Một promise xử lý đơn hàng đã thất bại hoàn toàn:", result.reason);
+                        }
+                    });
+
+                    Object.entries(errors).forEach(([key, value]) => {
+                        console.log(`Errors for ${key}:`, value.filter(v => v !== null)); // Lọc ra các lỗi không null
+                    });
+
+                    console.log('useEffect - Đơn hàng:', orderData);
+                    console.log('useEffect - Danh sách đơn hàng:', newOrderDisplay);
+
+                    setOrdersDisplay(newOrderDisplay);
+                })
+                .catch(error => {
+                    // Catch này chỉ bắt lỗi của fetchAndStoreData hoặc lỗi không mong muốn khác
+                    console.error('Lỗi nghiêm trọng khi lấy danh sách đơn hàng hoặc xử lý chung:', error);
+                    setLoading(false);
+                });
 
             setLoading(false);
         }
@@ -218,25 +162,37 @@ const OrderManagement = () => {
         fetchData();
     }, []);
 
+    // TODO: Khi load dữ liệu xong
+    useEffect(() => {
+        console.log('useEffect - Trạng thái của loading', loading);
+        console.log('Các dữ liệu lấy được', ordersById, ordersIds, getIds('orders'));
+        if (!loading) {
+            console.log('useEffect - Dữ liệu display', ordersDisplay);
+            setFilteredOrdersIds(getIds('orders'));
+            setTotalPages(Math.ceil(getIds('orders').length / 10));
+            console.log('useEffect - fillteredOrdersIds và totalPages', fileredOrdersIds, totalPages)
+        }
+    }, [loading, ordersById]);
+
     const formatOrder = (order, customer, motorcycle, staff, diagnosis) => { 
-        const [ createdAtDate, createdAtTime ] = order.created_at.split('T');
+        const [ createdAtDate, createdAtTime ] = order?.created_at?.split('T') || ['', ''];
         return {
             orderId: order.order_id,
             // cutomer info
-            customerName: customer.fullname,
-            customerPhone: customer.phone_num,
+            customerName: customer?.fullname || '',
+            customerPhone: customer?.phone_num || '',
             // moto info
-            plateNumber: motorcycle.license_plate,
-            motorcycleModel: `${motorcycle.brand} ${motorcycle.model}`,
+            plateNumber: motorcycle?.license_plate || '',
+            motorcycleModel: `${motorcycle?.brand || ''} ${motorcycle?.model || ''}`,
             // staff info
-            technicianName: staff.fullname,
+            technicianName: staff?.fullname || 'Chưa phân công',
 
-            status: tableOrderStatus[order.status],
-            totalAmount: order.total_price,
-            createdDate: createdAtDate,
-            createdTime: createdAtTime,
+            status: tableOrderStatus[order.status] || '',
+            totalAmount: order.total_price || '',
+            createdDate: createdAtDate || '',
+            createdTime: createdAtTime || '',
             // diagnosis
-            diagnosis: diagnosis.problem,
+            diagnosis: diagnosis?.problem || '',
         }
     }
     
@@ -269,7 +225,7 @@ const OrderManagement = () => {
             filtered = filtered.filter(order => order.createdDate <= filters.endDate);
         }
         
-        setFilteredOrders(filtered);
+        // setFilteredOrders(filtered);
         setTotalPages(Math.ceil(filtered.length / 10));
         setCurrentPage(1);
     };
@@ -282,7 +238,7 @@ const OrderManagement = () => {
             startDate: '',
             endDate: '',
         });
-        setFilteredOrders(orders);
+        // setFilteredOrders(orders);
         setTotalPages(Math.ceil(orders.length / 10));
         setCurrentPage(1);
     };
@@ -300,7 +256,7 @@ const OrderManagement = () => {
     const getCurrentItems = () => {
         const indexOfLastItem = currentPage * 10;
         const indexOfFirstItem = indexOfLastItem - 10;
-        return filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
+        return fileredOrdersIds.slice(indexOfFirstItem, indexOfLastItem).map(id => ordersDisplay[id]);
     };
     
     // Xử lý modal xem chi tiết
@@ -353,7 +309,7 @@ const OrderManagement = () => {
         });
         
         setOrders(updatedOrders);
-        setFilteredOrders(updatedOrders);
+        // setFilteredOrders(updatedOrders);
         setShowEditModal(false);
     };
     
@@ -568,7 +524,7 @@ const OrderManagement = () => {
                                     ))
                                 )}
 
-                                {!loading && filteredOrders.length === 0 && (
+                                {!loading && fileredOrdersIds.length === 0 && (
                                     <tr>
                                         <td colSpan="6" className="text-center py-4">
                                             <div className="text-muted">
@@ -611,7 +567,7 @@ const OrderManagement = () => {
                                 </Col>
                             </Row>
 
-                            <h6 className="text-muted mb-3">Chi tiết dịch vụ/sản phẩm</h6>
+                            {/* <h6 className="text-muted mb-3">Chi tiết dịch vụ/sản phẩm</h6>
                             <div className="table-responsive mb-4">
                                 <Table bordered hover>
                                     <thead className="table-light">
@@ -639,11 +595,11 @@ const OrderManagement = () => {
                                         </tr>
                                     </tbody>
                                 </Table>
-                            </div>
+                            </div> */}
 
                             <div className="p-3 bg-light rounded">
-                                <h6>Ghi chú:</h6>
-                                <p className="mb-0">{currentOrder.note || "Không có ghi chú"}</p>
+                                <h6>Chuẩn đoán:</h6>
+                                <p className="mb-0">{currentOrder.diagnosis || "Chuẩn đoán chưa được thêm"}</p>
                             </div>
                         </div>
                     )}

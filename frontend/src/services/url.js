@@ -8,9 +8,7 @@ const URLS = {
     },
     'STAFF': {
         'LOGIN' : '/staff/login',
-        // 'GET_ALL_STAFF_TYPE' : '/staff/staff-type/get-all',
-        // 'GET_STAFF_TYPE_BY_ID' : '/staff/staff-type/{staff-type-id}',
-        'GET_STAFFS_BY_STAFF_TYPE_ID' : '/staff/staff-type/{staff_type_id}/get-staffs',
+        'GET_STAFF_BY_ID' : '/staff/{staff_id}',
     },
 
     // customer service
@@ -50,7 +48,7 @@ const URLS = {
     },
 
     // repair service
-    'ORDER':{
+    'ORDER': {
         'CREATE_ORDER':'/order/create',
         'GET_ALL_ORDERS':'/orders',
         'GET_ORDER_BY_ID':'/order/{order_id}',
@@ -59,6 +57,7 @@ const URLS = {
     'DIAGNOSIS':{
         'CREATE_DIAGNOSIS':'/diagnosis/create',
         'GET_DIAGNOSIS_BY_ID':'/diagnosis/{diagnosis_id}',
+        'GET_DIAGNOSIS_BY_ORDER_ID':'/diagnosis/order/{order_id}',
     },
     'ORDER_STATUS_HISTORY':{
         'CREATE_STATUS_HISTORY':'/order/status-history/create',

@@ -290,16 +290,44 @@ const customerService = {
                 const response = await apiCustomerService.post(URLS.RECEPTION.CREATE_WITHOUT_MOTORCYCLE_ID, receptionData);
                 return response;
             } catch (error) {
-                console.error('api - Lỗi khi tạo lễ tân:', error);
+                console.error('api - Lỗi khi tạo đơn tiếp nhận không ID xe:', error);
                 throw error;
             }
         },
+
+        createReceptionWithoutMotorcycleIdAndCustomerId: async (formData) => {
+            try {
+                const receptionData = {
+                    email: formData.email,
+                    fullname: formData.customerName,
+                    phone_num: formData.phone,
+
+                    note: formData.note,
+                    initial_conditon: formData.initialCondition,
+
+                    staff_id: formData.staffId,
+                    
+                    moto_type_id: formData.motoTypeId,
+                    model: formData.motorcycleModel,
+                    brand: formData.brand,
+                    license_plate: formData.plateNumber,
+
+                    images: []
+                };
+                const response = await apiCustomerService.post(URLS.RECEPTION.CREATE_WITHOUT_CUSTOMER_ID_AND_WITHOUT_MOTORCYCLE_ID, receptionData);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo đơn tiếp nhận không ID xe và ID khách:', error);
+                throw error;
+            }
+        },
+
         getAllReceptionists: async () => {
             try {
                 const response = await apiCustomerService.get(URLS.RECEPTION.GET_ALL);
                 return response;
             } catch (error) {
-                console.error('Lỗi khi lấy danh sách lễ tân:', error);
+                console.error('api - Lỗi khi lấy danh sách lễ tân:', error);
                 throw error;
             }
         }

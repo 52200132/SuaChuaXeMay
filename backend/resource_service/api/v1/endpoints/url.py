@@ -8,5 +8,6 @@ URLS = {
 
     'STAFF': {
         'LOGIN' : '/staff/login',
+        'GET_STAFF_BY_ID' : '/staff/{staff_id}',
     }
 }

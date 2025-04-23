@@ -49,18 +49,24 @@ class StaffUpdate(BaseModel):
         return v
 
 
-class StaffInDB(StaffBase):
+class StaffResponse(BaseModel):
     staff_id: int
+    fullname: str
+    role: StaffRoleEnum
+    status: StaffStatusEnum
+    email: EmailStr
     
     class Config:
         from_attributes = True
-
-
-class StaffResponse(StaffBase):
-    staff_id: int
-    
-    class Config:
-        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "staff_id": 1,
+                "fullname": "Nguyen Van A",
+                "role": StaffRoleEnum.RECEPTIONIST,
+                "status": StaffStatusEnum.IDLE,
+                "email": "nhanvien@gmail.com"
+            }
+        }
 
 
 class StaffLogin(BaseModel):

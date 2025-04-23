@@ -1,5 +1,5 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.exceptions import RequestValidationError
+from fastapi import FastAPI, HTTPException, status
+from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -32,7 +32,7 @@ async def validation_exception_handler(request, exc):
         errors.append({"field": field, "message": msg})
     
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"detail": errors},
     )
 
@@ -41,6 +41,19 @@ async def http_exception_handler(request, exc):
     return JSONResponse(
         status_code=exc.status_code,
         content={"satus": exc.status_code, "detail": exc.detail}
+    )
+
+@app.exception_handler(ResponseValidationError)
+async def response_validation_exception_handler(request, exc):
+    errors = []
+    for error in exc.errors():
+        field = error.get("loc", [])
+        msg = error.get("msg", "")
+        errors.append({"field": field, "message": msg})
+    
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": errors},
     )
 
 @app.on_event("startup")
