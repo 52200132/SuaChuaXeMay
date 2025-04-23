@@ -11,14 +11,14 @@ from api.v1.endpoints.order_status_history_router import router as order_status_
 from api.v1.endpoints.part_order_detail_router import router as part_order_detail_router
 from api.v1.endpoints.service_order_detail_router import router as service_order_detail_router
 
-app = FastAPI(title="Customer Service API", version="1.0.0")
+app = FastAPI(title="Repair Service API", version="1.0.0")
 
 # Đăng ký các router
 app.include_router(order_router, prefix="/api/v1", tags=["order"])
 app.include_router(diagnosis_router, prefix="/api/v1", tags=["diagnosis"])
 app.include_router(order_status_history_router, prefix="/api/v1", tags=["order-status-history"])
-# app.include_router(part_order_detail_router, prefix="/api/v1", tags=["part-order-detail"])
-# app.include_router(service_order_detail_router, prefix="/api/v1", tags=["service-order-detail"])
+app.include_router(part_order_detail_router, prefix="/api/v1", tags=["part-order-detail"])
+app.include_router(service_order_detail_router, prefix="/api/v1", tags=["service-order-detail"])
 
 # Cấu hình CORS cho phép truy cập từ các nguồn khác nhau
 app.add_middleware(

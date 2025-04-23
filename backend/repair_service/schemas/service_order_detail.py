@@ -8,8 +8,11 @@ class ServiceOrderDetailBase(BaseModel):
     price: int = Field(..., description='Giá dịch vụ')
     is_selected: Optional[bool] = False
 
-class ServiceOrderDetailCreate(ServiceOrderDetailBase):
-    
+class ServiceOrderDetailCreate(BaseModel):
+    order_id: int = Field(..., description='Mã đơn hàng')
+    service_id: int = Field(..., description='Mã dịch vụ')
+    price: int = Field(..., description='Giá dịch vụ')
+    is_selected: Optional[bool] = False
     class Config:
         from_attributes = True
         json_schema_extra = {

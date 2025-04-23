@@ -9,8 +9,10 @@ class DiagnosisBase(BaseModel):
     created_at: datetime = Field(default= datetime.now(), description='Ngày chẩn đoán')
     estimated_cost: int = Field(..., description='Chi phí ước tính')
 
-class DiagnosisCreate(DiagnosisBase):
-    
+class DiagnosisCreate(BaseModel):
+    form_id: int = Field(..., description='Mã phiếu sửa chữa')
+    problem: str = Field(..., description='Vấn đề phát hiện')
+    estimated_cost: int = Field(..., description='Chi phí ước tính')
     class Config:
         from_attributes = True
         json_schema_extra = {
@@ -25,7 +27,8 @@ class DiagnosisUpdate(BaseModel):
     problem: Optional[str] = None
     estimated_cost: Optional[int] = None
 
-class DiagnosisResponse(DiagnosisBase):
+class DiagnosisResponse(BaseModel):
+    diagnosis_id: int
     form_id: int
     problem: str
     created_at: datetime
