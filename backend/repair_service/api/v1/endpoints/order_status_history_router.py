@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-
+from sqlalchemy.exc import IntegrityError
+from utils.logger import get_logger
 from db.session import get_db
 from schemas.order_status_history import OrderStatusHistoryCreate, OrderStatusHistoryResponse
 from crud import order_status_history as crud
@@ -9,36 +10,39 @@ from .url import URLS
 
 router = APIRouter()
 
-@router.get("/", response_model=List[OrderStatusHistoryResponse])
-def read_order_status_histories(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_order_status_histories(db, skip=skip, limit=limit)
+logger = get_logger(__name__)
 
-@router.get("/{history_id}", response_model=OrderStatusHistoryResponse)
-def read_order_status_history(history_id: int, db: Session = Depends(get_db)):
-    db_status_history = crud.get_order_status_history(db, history_id=history_id)
+@router.get(URLS['ORDER_STATUS_HISTORY']['GET_STATUS_HISTORY_BY_ID'], response_model=OrderStatusHistoryResponse)
+async def get_order_status_history_by_id(history_id: int, db: Session = Depends(get_db)):
+    db_status_history = await crud.get_order_status_history_by_id(db, history_id=history_id)
+    
     if db_status_history is None:
-        raise HTTPException(status_code=404, detail="Order status history not found")
-    return db_status_history
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy lịch sử trạng thái đơn hàng với ID này",
+        )
+    return OrderStatusHistoryResponse.from_orm(db_status_history)
 
-@router.get("/order/{order_id}", response_model=List[OrderStatusHistoryResponse])
-def read_status_history_by_order(order_id: int, db: Session = Depends(get_db)):
-    return crud.get_status_history_by_order(db, order_id=order_id)
+@router.get(URLS['ORDER_STATUS_HISTORY']['GET_ALL_STATUS_HISTORY_BY_ORDER'], response_model=List[OrderStatusHistoryResponse])
+async def get_all_status_history_by_order(order_id: int, db: Session = Depends(get_db)):
+    db_status_history = await crud.get_status_history_by_order(db, order_id=order_id)
+    if db_status_history is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy lịch sử các trạng thái đơn hàng với ID này",
+        )
+    return [OrderStatusHistoryResponse.from_orm(status) for status in db_status_history]
 
 @router.post(URLS['ORDER_STATUS_HISTORY']['CREATE_STATUS_HISTORY'], response_model=OrderStatusHistoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_status_history(status_history: OrderStatusHistoryCreate, db: Session = Depends(get_db)):
-    new_orer_status_history = await crud.create_order_status_history(db=db, status_history=status_history)
-    return new_orer_status_history
-
-# @router.put("/{history_id}", response_model=OrderStatusHistoryResponse)
-# def update_status_history(history_id: int, status_history: OrderStatusHistoryUpdate, db: Session = Depends(get_db)):
-#     db_status_history = crud.update_order_status_history(db, history_id=history_id, status_history=status_history)
-#     if db_status_history is None:
-#         raise HTTPException(status_code=404, detail="Order status history not found")
-#     return db_status_history
-
-# @router.delete("/{history_id}", status_code=status.HTTP_204_NO_CONTENT)
-# def delete_status_history(history_id: int, db: Session = Depends(get_db)):
-#     result = crud.delete_order_status_history(db, history_id=history_id)
-#     if not result:
-#         raise HTTPException(status_code=404, detail="Order status history not found")
-#     return None
+    
+    try:
+        db_status_history = await crud.create_order_status_history(db=db, status_history=status_history)
+        return OrderStatusHistoryResponse.from_orm(db_status_history)
+    except IntegrityError as e:
+        await db.rollback()
+        logger.error(f"Lỗi khi tạo lịch sử trạng thái đơn hàng: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Thông tin không hợp lệ")
+    except Exception as e:
+        logger.error(f"Lỗi khi tạo lịch sử trạng thái đơn hàng: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

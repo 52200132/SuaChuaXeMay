@@ -12,8 +12,8 @@ URLS = {
     },
     'ORDER_STATUS_HISTORY':{
         'CREATE_STATUS_HISTORY':'/order/status-history/create',
-        'GET_ALL_STATUS_HISTORY_BY_ORDER':'order/status-histories/{order_id}',
-        'GET_STATUS_HISTORY_BY_ID':'order/status-history/{history_id}',
+        'GET_ALL_STATUS_HISTORY_BY_ORDER':'/order/status-histories/{order_id}',
+        'GET_STATUS_HISTORY_BY_ID':'/order/status-history/{history_id}',
     },
     'PART_ORDER_DETAIL':{
         'CREATE_PART_ORDER_DETAIL':'/part-order-detail/create',
