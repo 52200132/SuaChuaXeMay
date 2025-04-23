@@ -6,11 +6,7 @@ from db.session import get_db
 from schemas.service_order_detail import ServiceOrderDetailCreate, ServiceOrderDetailUpdate, ServiceOrderDetailResponse
 from crud import service_order_detail as crud
 
-router = APIRouter(
-    prefix="/service-order-details",
-    tags=["service order details"],
-    responses={404: {"description": "Not found"}},
-)
+router = APIRouter()
 
 @router.get("/", response_model=List[ServiceOrderDetailResponse])
 def read_service_order_details(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

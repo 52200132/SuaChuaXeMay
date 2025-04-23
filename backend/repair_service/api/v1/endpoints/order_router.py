@@ -6,11 +6,7 @@ from db.session import get_db
 from schemas.order import OrderCreate, OrderUpdate, OrderResponse
 from crud import order as crud
 
-router = APIRouter(
-    prefix="/orders",
-    tags=["orders"],
-    responses={404: {"description": "Not found"}},
-)
+router = APIRouter()
 
 @router.get("/", response_model=List[OrderResponse])
 def read_orders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

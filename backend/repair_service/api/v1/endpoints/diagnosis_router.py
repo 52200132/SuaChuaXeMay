@@ -6,11 +6,8 @@ from db.session import get_db
 from schemas.diagnosis import DiagnosisCreate, DiagnosisUpdate, DiagnosisResponse
 from crud import diagnosis as crud
 
-router = APIRouter(
-    prefix="/diagnoses",
-    tags=["diagnoses"],
-    responses={404: {"description": "Not found"}},
-)
+
+router = APIRouter()
 
 @router.get("/", response_model=List[DiagnosisResponse])
 def read_diagnoses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

@@ -6,11 +6,7 @@ from db.session import get_db
 from schemas.part_order_detail import PartOrderDetailCreate, PartOrderDetailUpdate, PartOrderDetailResponse
 from crud import part_order_detail as crud
 
-router = APIRouter(
-    prefix="/part-order-details",
-    tags=["part order details"],
-    responses={404: {"description": "Not found"}},
-)
+router = APIRouter()
 
 @router.get("/", response_model=List[PartOrderDetailResponse])
 def read_part_order_details(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

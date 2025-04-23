@@ -3,8 +3,8 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
-from .service_order_detail import ServiceOrderDetail
-from .part_order_detail import PartOrderDetail
+from schemas.service_order_detail import ServiceOrderDetailResponse
+from schemas.part_order_detail import PartOrderDetailResponse
 
 class OrderStatusEnum(str, Enum):
 
@@ -75,8 +75,8 @@ class OrderResponse(BaseModel):
 #     pass
 
 # class OrderWithDetails(Order):
-#     service_details: List[ServiceOrderDetail] = []
-#     part_details: List[PartOrderDetail] = []
+#     service_details: List[ServiceOrderDetailResponse] = []
+#     part_details: List[PartOrderDetailResponse] = []
 
 # class OrderSummary(BaseModel):
 #     order_id: int

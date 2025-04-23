@@ -8,21 +8,20 @@ class Diagnosis(Base):
     __tablename__ = 'Diagnosis'
     
     diagnosis_id = Column(Integer, primary_key=True, autoincrement=True)
-    # form_id = Column(Integer, ForeignKey('ReceptionForm.form_id'))
     form_id = Column(Integer)
+    order_id = Column(Integer, ForeignKey('Order.order_id'))
     problem = Column(Text(collation='utf8mb4_unicode_ci'))  # Unicode text support for detailed problem descriptions
     created_at = Column(DateTime, default=datetime.now)
     estimated_cost = Column(Integer)
     
     # Relationships
-    # form = relationship("ReceptionForm", back_populates="diagnoses")
-    orders = relationship("Order", back_populates="diagnosis")
+    order = relationship("Order", back_populates="diagnosis")
+    
 
 class Order(Base):
     __tablename__ = 'Order'
     
     order_id = Column(Integer, primary_key=True, autoincrement=True)
-    diagnosis_id = Column(Integer, ForeignKey('Diagnosis.diagnosis_id'))
     # motocycle_id = Column(Integer, ForeignKey('Motocycle.motocycle_id'))
     motocycle_id = Column(Integer)
     created_at = Column(DateTime, default=datetime.now)
@@ -32,7 +31,7 @@ class Order(Base):
     total_price = Column(Integer, default=0)
     
     # Relationships
-    diagnosis = relationship("Diagnosis", back_populates="orders")
+    diagnosis = relationship("Order", back_populates="order")
     staff = relationship("Staff", back_populates="orders")
     # motocycle_id = relationship("Motocycle", back_populates="orders")
     service_details = relationship("ServiceOrderDetail", back_populates="order")

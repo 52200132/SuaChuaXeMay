@@ -6,11 +6,7 @@ from db.session import get_db
 from schemas.order_status_history import OrderStatusHistoryCreate, OrderStatusHistoryUpdate, OrderStatusHistoryResponse
 from crud import order_status_history as crud
 
-router = APIRouter(
-    prefix="/order-status-history",
-    tags=["order status history"],
-    responses={404: {"description": "Not found"}},
-)
+router = APIRouter()
 
 @router.get("/", response_model=List[OrderStatusHistoryResponse])
 def read_order_status_histories(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
