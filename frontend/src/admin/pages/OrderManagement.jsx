@@ -4,7 +4,9 @@ import { Link } from 'react-router-dom';
 
 import StatusBadge from '../components/StatusBadge';
 import { useAppData } from '../contexts/AppDataContext';
+import { customerService, resourceService, repairService } from '../../services/api';
 import './OrderManagement.css';
+import { set } from 'date-fns';
 
 const OrderManagement = () => {
     // Lấy từ context
@@ -13,10 +15,13 @@ const OrderManagement = () => {
     const ordersIds = getIds('ordersIds');
     const customersById = getData('customers');
     const motorcyclesById = getData('motorcycles');
+    const diagnosisById = getData('diagnosis');
+    const staffsById = getData('staffs');
 
     // State quản lý danh sách đơn hàng
     const [orders, setOrders] = useState([]);
     const [filteredOrders, setFilteredOrders] = useState([]);
+    const [ordersDisplay, setOrdersDisplay] = useState({});
     
     // State cho filter và phân trang
     const [filters, setFilters] = useState({
@@ -176,11 +181,64 @@ const OrderManagement = () => {
 
         // TODO: Fetch dữ liệu từ API
         const fetchData = async () => { 
-            
+            setLoading(true);
+
+            await fetchAndStoreData('orders', repairService.order.getAllOrders, 'order_id')
+            .then( async response => {
+                const orderData = response.dataArray;
+                const entries = await Promise.all(orderData.map(async order => {
+                    const customerId = order.customer_id;
+                    const motorcycleId = order.motorcycle_id;
+                    const staffId = order.staff_id;
+
+                    const [ customer, motorcycle, staff, diagnosis ] = await Promise.all([
+                        customersById[customerId] || (await customerService.customer.getCustomerById(customerId)).data,
+                        motorcyclesById[motorcycleId] || (await customerService.motorcycle.getMotorcycleById(motorcycleId)).data,
+                        staffsById[staffId] || (await resourceService.staff.getStaffById(staffId)).data,
+                        diagnosisById[order.diagnosis_id] || (await repairService.diagnosis.getDiagnosisByOrderId(order.order_id)).data,
+                    ]);
+
+                    setData('customers', customer, customerId);
+                    setData('motorcycles', motorcycle, motorcycleId);
+                    setData('staffs', staff, staffId);
+                    setData('diagnosis', diagnosis, order.diagnosis_id);
+
+                    return [ order.order_id, formatOrder(order, customer, motorcycle, staff, diagnosis) ];
+                }));
+                const newOrderDisplay = Object.fromEntries(entries);
+                set
+            })
+            .catch(error => {
+                console.error('Lỗi khi lấy dữ liệu từ api', error);
+            });
+
+            setLoading(false);
         }
 
         fetchData();
     }, []);
+
+    const formatOrder = (order, customer, motorcycle, staff, diagnosis) => { 
+        const [ createdAtDate, createdAtTime ] = order.created_at.split('T');
+        return {
+            orderId: order.order_id,
+            // cutomer info
+            customerName: customer.fullname,
+            customerPhone: customer.phone_num,
+            // moto info
+            plateNumber: motorcycle.license_plate,
+            motorcycleModel: `${motorcycle.brand} ${motorcycle.model}`,
+            // staff info
+            technicianName: staff.fullname,
+
+            status: tableOrderStatus[order.status],
+            totalAmount: order.total_price,
+            createdDate: createdAtDate,
+            createdTime: createdAtTime,
+            // diagnosis
+            diagnosis: diagnosis.problem,
+        }
+    }
     
     // Xử lý filter
     const handleApplyFilter = () => {

@@ -1,5 +1,5 @@
 URLS = {
-    'ORDER':{
+    'ORDER': {
         'CREATE_ORDER':'/order/create',
         'GET_ALL_ORDERS':'/orders',
         'GET_ORDER_BY_ID':'/order/{order_id}',

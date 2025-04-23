@@ -48,6 +48,35 @@ const URLS = {
         'GET_RECEPTION_BY_ID': '/reception/{form_id}', // completed
         'GET_RECEPTION_BY_DATE_RANGE': '/receptions/date-range', // completed
     },
+
+    // repair service
+    'ORDER':{
+        'CREATE_ORDER':'/order/create',
+        'GET_ALL_ORDERS':'/orders',
+        'GET_ORDER_BY_ID':'/order/{order_id}',
+        'UPDATE_ORDER':'/order/update/{order_id}',
+    },
+    'DIAGNOSIS':{
+        'CREATE_DIAGNOSIS':'/diagnosis/create',
+        'GET_DIAGNOSIS_BY_ID':'/diagnosis/{diagnosis_id}',
+    },
+    'ORDER_STATUS_HISTORY':{
+        'CREATE_STATUS_HISTORY':'/order/status-history/create',
+        'GET_ALL_STATUS_HISTORY_BY_ORDER':'order/status-histories/{order_id}',
+        'GET_STATUS_HISTORY_BY_ID':'order/status-history/{history_id}',
+    },
+    'PART_ORDER_DETAIL':{
+        'CREATE_PART_ORDER_DETAIL':'/part-order-detail/create',
+        'GET_ALL_PART_ORDER_DETAILS':'/part-order-details',
+        'GET_PART_ORDER_DETAIL_BY_ID':'/part-order-detail/{part_order_detail_id}',
+        'UPDATE_PART_ORDER_DETAIL':'/part-order-detail/update/{part_order_detail_id}'
+    },
+    'SERVICE_ORDER_DETAIL':{
+        'CREATE_SERVICE_ORDER_DETAIL':'/service-order-detail/create',
+        'GET_ALL_SERVICE_ORDER_DETAILS':'/service-order-details',
+        'GET_SERVICE_ORDER_DETAIL_BY_ID':'/service-order-detail/{service_order_detail_id}',
+        'UPDATE_SERVICE_ORDER_DETAIL':'/service-order-detail/update/{service_order_detail_id}'
+    }
 }
 
 export default URLS;

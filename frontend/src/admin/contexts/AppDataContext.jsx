@@ -230,6 +230,7 @@ export const AppDataProvider = ({ children }) => {
         try {
             const response = await fetchFunction();
             const data = response.data || response || [];
+            const dataArray = Array.isArray(data) ? data : [data]; // Ensure data is an array
             const dataIdSet = new Set();
 
             // Convert to object with ID as key
@@ -242,6 +243,7 @@ export const AppDataProvider = ({ children }) => {
                 }, {})
                 : data;
 
+            // Lấy ID từ data nếu không có ID nào trong dataIdSet
             if (dataIdSet.size === 0 && typeof data === 'object' && Object.values(data)[0]?.[idProperty]) {
                 // If data is an object, use its keys as IDs
                 Object.keys(data).forEach(key => {
@@ -256,7 +258,7 @@ export const AppDataProvider = ({ children }) => {
             }));
             
             setLoadingState(category, false);
-            return { data, dataIdSet };
+            return { data, dataArray, dataIdSet, dataObject };
         } catch (error) {
             console.error(`Error fetching ${category}:`, error);
             setError(category, error.message || `Failed to fetch ${category}`);

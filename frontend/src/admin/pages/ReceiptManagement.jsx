@@ -15,15 +15,13 @@ const ReceiptManagement = () => {
     const receiptIds = getData('receiptsIds') || new Set();
     const customersById = getData('customers') || {};
     const motorcyclesById = getData('motorcycles') || {};
-    // const [receiptsById, setReceiptsById] = useState({});
-    // const [receiptIds, setReceiptIds] = useState([]);
     const [receptionsDisplay, setReceptionsDisplay] = useState({});
     const [filteredReceiptIds, setFilteredReceiptIds] = useState([]);
 
     //
     const [ currentCustomerWithMotorcycle, setCurrentCustomerWithMotorcycle ] = useState({});
     const [ customerNotFound, setCustomerNotFound ] = useState(false);
-    const [ motorcyclesNotFound, setMotorcyclesNotFound ] = useState(false);
+    // const [ motorcyclesNotFound, setMotorcyclesNotFound ] = useState(false);
     const [motoTypes, setMotoTypes] = useState([
         { id: 1, name: 'Xe tay ga' },
         { id: 2, name: 'Xe số' },
@@ -68,7 +66,6 @@ const ReceiptManagement = () => {
     });
     const [validated, setValidated] = useState(false);
 
-    // TODO: useEffect 1
     // Load mock data khi component được mount
     useEffect(() => {
         // Mock data
@@ -162,6 +159,7 @@ const ReceiptManagement = () => {
         // setData('receipts', newReceiptsById);
         // setReceptionsDisplay(newReceiptsById);
 
+        // TODO: Lấy dữ liệu từ API
         const fetchData = async () => {
             
             setLoading(true);

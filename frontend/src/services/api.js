@@ -15,8 +15,18 @@ const apiClient = axios.create({
     timeout: 10000 // Timeout 10 giây
 });
 
+
 const apiCustomerService = axios.create({
     baseURL: 'http://localhost:8001/api/v1',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    timeout: 10000 // Timeout 10 giây
+});
+
+// Tạo instance axios với cấu hình mặc định cho repair_service
+const apiRepairService = axios.create({
+    baseURL: 'http://localhost:8002/api/v1',
     headers: {
         'Content-Type': 'application/json'
     },
@@ -83,6 +93,16 @@ const resourceService = {
                 return response;
             } catch (error) {
                 console.error('Lỗi khi đăng nhập nhân viên:', error);
+                throw error;
+            }
+        },
+
+        getStaffById: async (id) => {
+            try {
+                const response = await apiClient.get(URLS.STAFF.GET_STAFF_BY_ID.replace('{staff_id}', id));
+                return response.data;
+            } catch (error) {
+                console.error(`Lỗi khi lấy thông tin nhân viên ID=${id}:`, error);
                 throw error;
             }
         }
@@ -293,7 +313,7 @@ const repairService = {
                 const orderData = {
                         motocycle_id: formData.motocycleId,
                     };
-                const response = await apiCustomerService.post(URLS.ORDER.CREATE, orderData);
+                const response = await apiRepairService.post(URLS.ORDER.CREATE_ORDER, orderData);
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi tạo đơn hàng:', error);
@@ -303,14 +323,26 @@ const repairService = {
 
         getAllOrders: async () => {
             try {
-                const response = await apiCustomerService.get(URLS.ORDER.GET_ALL);
+                const response = await apiRepairService.get(URLS.ORDER.GET_ALL_ORDERS);
                 return response;
             } catch (error) {
                 console.error('Lỗi khi lấy danh sách đơn hàng:', error);
                 throw error;
             }
         }
-    }
+    },
+
+    diagnosis: { 
+        getDiagnosisByOrderId: async (orderId) => {
+            try {
+                const response = await apiRepairService.get(URLS.DIAGNOSIS.GET_DIAGNOSIS_BY_ORDER_ID.replace('{order_id}', orderId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy thông tin chẩn đoán cho đơn hàng ID=${orderId}:`, error);
+                throw error;
+            }
+        }
+    },
 };
 
-export { customerService, resourceServic, repairService };
+export { customerService, resourceService, repairService };
