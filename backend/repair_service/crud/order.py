@@ -33,7 +33,7 @@ async def create_order(db: AsyncSession, order: OrderCreate) -> Order:
         logger.error(f"Lỗi không xác định khi tạo đơn hàng: {str(e)}")
         raise ValueError("Lỗi không xác định khi tạo đơn hàng")
     
-async def get_all_orders(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[Order]:
+async def get_all(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[Order]:
     """Lấy danh sách đơn hàng với phân trang"""
     result = await db.execute(select(Order).offset(skip).limit(limit))
     return result.scalars().all()
