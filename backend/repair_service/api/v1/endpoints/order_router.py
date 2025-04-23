@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 async def get_all_orders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Lấy danh sách đơn hàng"""
     db_order = await order_crud.get_all(db, skip=skip, limit=limit)
-    return OrderResponse.from_orm(db_order)
+    return [OrderResponse.from_orm(order) for order in db_order]
 
 @router.get(URLS['ORDER']['GET_ORDER_BY_ID'], response_model=OrderResponse)
 async def get_orders_by_id(order_id: int, db: Session = Depends(get_db)):

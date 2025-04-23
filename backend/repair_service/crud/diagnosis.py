@@ -16,7 +16,6 @@ async def create_diagnosis(db: AsyncSession, diagnosis: DiagnosisCreate) -> Diag
         db_diagnosis = Diagnosis(
             form_id=diagnosis.form_id,
             problem=diagnosis.problem,
-            created_at=diagnosis.created_at,
             estimated_cost=diagnosis.estimated_cost
         )
         db.add(db_diagnosis)

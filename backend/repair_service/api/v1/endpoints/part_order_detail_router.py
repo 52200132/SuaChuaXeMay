@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-
+from sqlalchemy.exc import IntegrityError
+from utils.logger import get_logger
 from db.session import get_db
 from schemas.part_order_detail import PartOrderDetailCreate, PartOrderDetailUpdate, PartOrderDetailResponse
 from crud import part_order_detail as crud
@@ -9,9 +10,12 @@ from .url import URLS
 
 router = APIRouter()
 
-@router.get("/", response_model=List[PartOrderDetailResponse])
-def read_part_order_details(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_part_order_details(db, skip=skip, limit=limit)
+logger = get_logger(__name__)
+
+@router.get(URLS['PART_ORDER_DETAIL']['GET_ALL_PART_ORDER_DETAILS'], response_model=List[PartOrderDetailResponse])
+async def read_part_order_details(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    db__part_order_details = await crud.get_part_order_details(db, skip=skip, limit=limit)
+    
 
 @router.get("/{part_detail_id}", response_model=PartOrderDetailResponse)
 def read_part_order_detail(part_detail_id: int, db: Session = Depends(get_db)):
