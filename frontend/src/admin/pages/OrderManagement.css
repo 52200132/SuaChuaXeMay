@@ -1,0 +1,60 @@
+/* Styling cho trang quản lý đơn hàng */
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Add hover effect for edit button */
+.btn-edit:hover {
+    background-color: #d30000 !important;
+    color: white !important;
+    border-color: #d30000 !important;
+}
+
+/* Status badge styling */
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-badge.processing {
+    background-color: #ffa000;
+    color: white;
+}
+
+.status-badge.pending-payment {
+    background-color: #2196f3;
+    color: white;
+}
+
+.status-badge.completed {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-badge.cancelled {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Modal styling */
+.modal-header .modal-title {
+    color: #d30000;
+}
+
+/* Print button styling */
+.btn-print {
+    color: #495057;
+    border-color: #ced4da;
+}
+
+.btn-print:hover {
+    background-color: #f8f9fa;
+}

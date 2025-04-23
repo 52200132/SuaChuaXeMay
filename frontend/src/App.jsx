@@ -31,6 +31,7 @@ import Settings from './admin/pages/Settings';
 import AdminProfile from './admin/pages/Profile';
 import StaffLogin from './admin/pages/Login';
 import ReceiptManagement from './admin/pages/ReceiptManagement';
+import OrderManagement from './admin/pages/OrderManagement';
 
 // Import the new components
 import ServiceDetail from './pages/ServiceDetail';
@@ -70,6 +71,9 @@ function App() {
                             <Route path="bookings/:id" element={<BookingManagement />} />
                             <Route path="bookings/create" element={<BookingManagement />} />
                             <Route path="receipts" element={<ReceiptManagement />} />
+                            <Route path="orders" element={<OrderManagement />} />
+                            <Route path="orders/:id/print" element={<OrderManagement />} />
+                            <Route path="orders/create" element={<OrderManagement />} />
                             <Route path="services" element={<ServiceManagement />} />
                             <Route path="users" element={<UserManagement />} />
                             <Route path="reports" element={<Reports />} />

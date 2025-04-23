@@ -6,6 +6,7 @@ import UserManagement from './pages/UserManagement';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
+import OrderManagement from './pages/OrderManagement';
 
 // Xác định các route có thể truy cập cho tất cả nhân viên (bao gồm cả nhân viên cơ bản)
 export const employeeRoutes = [
@@ -28,6 +29,13 @@ export const employeeRoutes = [
         component: ReceiptManagement,
         name: 'Quản lý đơn tiếp nhận',
         icon: 'bi bi-file-earmark-text',
+        exact: true,
+    },
+    {
+        path: '/admin/orders',
+        component: OrderManagement,
+        name: 'Quản lý đơn hàng',
+        icon: 'bi bi-cart3',
         exact: true,
     },
     {

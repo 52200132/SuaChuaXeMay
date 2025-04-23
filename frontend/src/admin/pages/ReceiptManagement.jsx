@@ -283,6 +283,8 @@ const ReceiptManagement = () => {
     const formatReciptData = (receipt, customer, motorcycle) => {
         const model = motorcycle.model;
         const brand = motorcycle.brand;
+        const [createdAtDate, createdAtTime] = receipt.created_at.split('T');
+        const [returnedAtDate, returnedAtTime] = receipt.returned_at ? receipt.returned_at.split('T') : [null, null];
         return {
             id: receipt.form_id,
             customerName: customer.fullname,
@@ -293,8 +295,9 @@ const ReceiptManagement = () => {
             initialCondition: receipt.initial_conditon,
             note: receipt.note,
             isReturned: receipt.is_returned,
-            createdAt: receipt.created_at,
-            returnedAt: receipt.returned_at || ''
+            createdAtDate: createdAtDate,
+            createdAtTime: createdAtTime,
+            returnedAt: returnedAtDate ? `${returnedAtDate} ${returnedAtTime}` : "Chưa trả",
         };
     };
 
@@ -736,7 +739,10 @@ const ReceiptManagement = () => {
                                             <div>{receipt.motorcycleModel}</div>
                                             <small className="text-muted">{receipt.plateNumber}</small>
                                         </td>
-                                        <td>{receipt.createdAt}</td>
+                                        <td>
+                                            <div className="text-muted">{receipt.createdAtDate}</div>
+                                            <small className="text-muted">{receipt.createdAtTime}</small>
+                                        </td>
                                         <td>
                                             <StatusBadge status={receipt.isReturned ? "Đã trả khách" : "Đang sửa chữa"} />
                                         </td>
@@ -795,7 +801,7 @@ const ReceiptManagement = () => {
                                 <Col md={6}>
                                     <h6 className="text-muted mb-3">Thông tin chung</h6>
                                     <p><strong>Mã đơn:</strong> {currentReceipt.id}</p>
-                                    <p><strong>Ngày tiếp nhận:</strong> {currentReceipt.createdAt}</p>
+                                    <p><strong>Ngày tiếp nhận:</strong> {`${currentReceipt.createdAtDate} ${currentReceipt.createdAtTime}`}</p>
                                     <p><strong>Cập nhật lần cuối:</strong> {currentReceipt.returnedAt}</p>
                                     <p>
                                         <strong>Trạng thái:</strong> <Badge bg={currentReceipt.isReturned ? "success" : "warning"}>
