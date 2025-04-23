@@ -18,8 +18,8 @@ async def get_all_service_order_details(skip: int = 0, limit: int = 100, db: Ses
     return db_service_detail
 
 @router.get(URLS['SERVICE_ORDER_DETAIL']['GET_SERVICE_ORDER_DETAIL_BY_ID'], response_model=ServiceOrderDetailResponse)
-async def get_service_order_detail_by_id(service_detail_id: int, db: Session = Depends(get_db)):
-    db_service_detail = await crud.get_service_order_detail_by_id(db, service_detail_id=service_detail_id)
+async def get_service_order_detail_by_id(service_detail_ID: int, db: Session = Depends(get_db)):
+    db_service_detail = await crud.get_service_order_detail_by_id(db, service_detail_ID=service_detail_ID)
     if db_service_detail is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy chi tiết dịch vụ đơn hàng")
     return db_service_detail
