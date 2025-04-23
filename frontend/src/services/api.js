@@ -239,6 +239,22 @@ const customerService = {
     },
 
     reception: {
+        createReception: async (formData) => {
+            try {
+                const receptionData = {
+                    customer_id: formData.customerId,
+                    note: formData.note,
+                    initial_conditon: formData.initialCondition,
+                    motocycle_id: formData.motocycleId,
+                    staff_id: formData.staffId
+                };
+                const response = await apiCustomerService.post(URLS.RECEPTION.CREATE, receptionData);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo lễ tân:', error);
+                throw error;
+            }
+        },
         getAllReceptionists: async () => {
             try {
                 const response = await apiCustomerService.get(URLS.RECEPTION.GET_ALL);

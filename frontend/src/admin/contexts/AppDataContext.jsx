@@ -116,7 +116,7 @@ export const AppDataProvider = ({ children }) => {
                 
                 // Add all IDs to the set
                 dataItems.forEach(item => {
-                    updatedIds.add(item.id.toString());
+                    updatedIds.add(item[idProperty]);
                 });
                 
                 return {
@@ -267,6 +267,8 @@ export const AppDataProvider = ({ children }) => {
 
     // Context value
     const value = {
+        currentCustomer,
+        setCurrentCustomer,
         dataStore,
         loading,
         errors,
