@@ -286,4 +286,31 @@ const customerService = {
     }
 };
 
-export { customerService, resourceService };
+const repairService = {
+    order: {
+        createOrder: async (formData) => {
+            try {
+                const orderData = {
+                        motocycle_id: formData.motocycleId,
+                    };
+                const response = await apiCustomerService.post(URLS.ORDER.CREATE, orderData);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo đơn hàng:', error);
+                throw error;
+            }
+        },
+
+        getAllOrders: async () => {
+            try {
+                const response = await apiCustomerService.get(URLS.ORDER.GET_ALL);
+                return response;
+            } catch (error) {
+                console.error('Lỗi khi lấy danh sách đơn hàng:', error);
+                throw error;
+            }
+        }
+    }
+};
+
+export { customerService, resourceServic, repairService };

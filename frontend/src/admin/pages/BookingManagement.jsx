@@ -48,9 +48,13 @@ const BookingManagement = () => {
 
     // const { serviceTypes } = useData();
     const appointmentStatuTable = {
-        'pending': 'Chờ xác nhận',
+        'pending': 'Chờ xử lý',
         'confirmed': 'Đã xác nhận',
-        'cancelled': 'Đã hủy'
+        'cancelled': 'Đã hủy',
+
+        'Chờ xử lý': 'pending',
+        'Đã xác nhận': 'confirmed',
+        'Đã hủy': 'cancelled',
     };
 
     const appointmentStatusReverseTable = Object.fromEntries(
