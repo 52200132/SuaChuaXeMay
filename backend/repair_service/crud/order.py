@@ -23,11 +23,7 @@ async def create_order(db: AsyncSession, order: OrderCreate) -> Order:
         db.add(db_order)
         await db.commit()
         await db.refresh(db_order)
-        return OrderResponse.from_orm(db_order)
-    except IntegrityError as e:
-        await db.rollback()
-        logger.error(f"Lỗi khi tạo đơn hàng: {str(e)}")
-        raise ValueError("Đơn hàng đã tồn tại")
+        return db_order
     except Exception as e:
         await db.rollback()
         logger.error(f"Lỗi không xác định khi tạo đơn hàng: {str(e)}")
@@ -46,42 +42,25 @@ async def get_order_by_id(db: AsyncSession, order_id: int) -> Order:
 
 async def update_order(db: AsyncSession, order_id: int, order: OrderUpdate) -> Order:
     """Cập nhật thông tin đơn hàng"""
-    try:
-        db_order = await get_order_by_id(db, order_id)
-        if not db_order:
-            return None
+    db_order = await get_order_by_id(db, order_id)
+    if not db_order:
+        raise ValueError(f"Không tìm thấy đơn hàng với ID: {order_id}")
 
-        update_data = order.dict(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(db_order, key, value)
+    update_data = order.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_order, key, value)
 
-        await db.commit()
-        await db.refresh(db_order)
-        return OrderResponse.from_orm(db_order)
-    except IntegrityError as e:
-        logger.error(f"IntegrityError: {e}")
-        await db.rollback()
-        raise e
-    except Exception as e:
-        logger.error(f"Error updating part order detail: {e}")
-        await db.rollback()
-        raise e
+    await db.commit()
+    await db.refresh(db_order)
+    return db_order
 
-async def delete_order(db: AsyncSession, order_id: int) -> bool:
+async def delete_order(db: AsyncSession, order_id: int) -> str:
     """Xóa đơn hàng khỏi cơ sở dữ liệu"""
-    try:
-        db_order = await get_order_by_id(db, order_id)
-        if not db_order:
-            return False
+    db_order = await get_order_by_id(db, order_id)
+    if not db_order:
+        raise ValueError(f"Không tìm thấy đơn hàng với ID: {order_id}")
 
-        await db.delete(db_order)
-        await db.commit()
-        return True
-    except IntegrityError as e:
-        logger.error(f"IntegrityError: {e}")
-        await db.rollback()
-        raise e
-    except Exception as e:
-        logger.error(f"Error updating part order detail: {e}")
-        await db.rollback()
-        raise e
+    await db.delete(db_order)
+    await db.commit()
+
+    return f"Đơn hàng với ID {order_id} đã được xóa thành công."

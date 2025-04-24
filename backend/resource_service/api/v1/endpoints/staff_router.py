@@ -85,12 +85,12 @@ async def get_filter_staffs(
 #     return db_staff
 
 
-# @router.put("/{staff_id}", response_model=StaffResponse)
+# @router.put(URLS['STAFF']['UPDATE_STAFF'], response_model=StaffResponse)
 # def update_staff(
 #     staff_id: int,
 #     staff_data: StaffUpdate,
 #     db: AsyncSession = Depends(get_db),
-#     current_staff: dict = Depends(get_current_staff)
+#     # current_staff: dict = Depends(get_current_staff)
 # ):
 #     """
 #     Update a staff member.

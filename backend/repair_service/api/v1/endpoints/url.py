@@ -16,14 +16,14 @@ URLS = {
         'GET_STATUS_HISTORY_BY_ID':'/order/status-history/{history_id}',
     },
     'PART_ORDER_DETAIL':{
-        'CREATE_PART_ORDER_DETAIL':'/part-order-detail/create',
+        'CREATE_PART_ORDER_DETAILS':'/part-order-detail/create',
         'GET_ALL_PART_ORDER_DETAILS':'/part-order-details',
         'GET_ALL_PART_ORDER_DETAILS_BY_ORDER':'/order/part-order-details/{order_id}',
         'GET_PART_ORDER_DETAIL_BY_ID':'/part-order-detail/{part_order_detail_id}',
         'UPDATE_PART_ORDER_DETAIL':'/part-order-detail/update/{part_order_detail_id}'
     },
     'SERVICE_ORDER_DETAIL':{
-        'CREATE_SERVICE_ORDER_DETAIL':'/service-order-detail/create',
+        'CREATE_SERVICE_ORDER_DETAILS':'/service-order-detail/create',
         'GET_ALL_SERVICE_ORDER_DETAILS':'/service-order-details',
         'GET_SERVICE_ORDER_DETAIL_BY_ID':'/service-order-detail/{service_order_detail_id}',
         'GET_SERVICE_ORDER_DETAILS_BY_ORDER':'/order/service-order-details/{order_id}',

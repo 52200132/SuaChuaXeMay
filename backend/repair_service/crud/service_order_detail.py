@@ -1,3 +1,4 @@
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update, delete
@@ -10,22 +11,59 @@ from schemas.service_order_detail import ServiceOrderDetailCreate, ServiceOrderD
 
 logger = get_logger(__name__)
 
-async def create_service_order_detail(db: AsyncSession, service_detail: ServiceOrderDetailCreate) -> ServiceOrderDetail:
+async def create_service_order_detail(db: AsyncSession, service_detail: List[ServiceOrderDetailCreate]) -> List[ServiceOrderDetail]:
     """Tạo mới ServiceOrderDetail"""
+    
     try:
-        db_service_order_detail = ServiceOrderDetail(**service_detail.dict())
-        db.add(db_service_order_detail)
+        db_service_order_details = []
+        for service in service_detail:
+            # Tạo đối tượng PartOrderDetail từ từng phần tử trong danh sách
+            db_service_order_detail = ServiceOrderDetail(**service.dict())
+            db.add(db_service_order_detail)
+            db_service_order_details.append(db_service_order_detail)
+
+        # Commit tất cả thay đổi
         await db.commit()
-        await db.refresh(db_service_order_detail)
-        return db_service_order_detail
+
+        # Làm mới tất cả các đối tượng đã thêm
+        for db_service_order_detail in db_service_order_details:
+            await db.refresh(db_service_order_detail)
+
+        return db_service_order_details
     except IntegrityError as e:
-        logger.error(f"IntegrityError: {e}")
+        logger.error(f"Lỗi toàn vẹn dữ liệu khi tạo chi tiết phụ tùng đơn hàng: {str(e)}")
         await db.rollback()
         raise e
     except Exception as e:
-        logger.error(f"Error creating service order detail: {e}")
+        logger.error(f"Lỗi không xác định khi tạo chi tiết phụ tùng đơn hàng: {str(e)} | Dữ liệu: {[part.dict() for part in part_detail]}")
         await db.rollback()
         raise e
+
+    
+    # try:
+    #     db_part_order_details = []
+    #     for part in part_detail:
+    #         # Tạo đối tượng PartOrderDetail từ từng phần tử trong danh sách
+    #         db_part_order_detail = PartOrderDetail(**part.dict())
+    #         db.add(db_part_order_detail)
+    #         db_part_order_details.append(db_part_order_detail)
+
+    #     # Commit tất cả thay đổi
+    #     await db.commit()
+
+    #     # Làm mới tất cả các đối tượng đã thêm
+    #     for db_part_order_detail in db_part_order_details:
+    #         await db.refresh(db_part_order_detail)
+
+    #     return db_part_order_details
+    # except IntegrityError as e:
+    #     logger.error(f"Lỗi toàn vẹn dữ liệu khi tạo chi tiết phụ tùng đơn hàng: {str(e)}")
+    #     await db.rollback()
+    #     raise e
+    # except Exception as e:
+    #     logger.error(f"Lỗi không xác định khi tạo chi tiết phụ tùng đơn hàng: {str(e)} | Dữ liệu: {[part.dict() for part in part_detail]}")
+    #     await db.rollback()
+    #     raise e
 
 async def get_all_service_order_details(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[ServiceOrderDetail]:
     """Lấy tất cả ServiceOrderDetail"""
@@ -47,25 +85,17 @@ async def get_all_service_details_by_order_id(db: AsyncSession, order_id: int) -
     return service_order_details
 
 async def update_service_order_detail(db: AsyncSession, service_detail_ID: int, service_detail: ServiceOrderDetailUpdate) -> ServiceOrderDetail:
-    """Cập nhật ServiceOrderDetail"""
-    try: 
-        db_service_order_detail = await get_service_order_detail_by_id(db, service_detail_ID)
-        if not db_service_order_detail:
-            return None
+    """Cập nhật ServiceOrderDetail""" 
+    db_service_order_detail = await get_service_order_detail_by_id(db, service_detail_ID)
+    if not db_service_order_detail:
+        raise ValueError(f"Không tìm dịch vụ với ID: {service_detail_ID}")
         
-        update_data = service_detail.dict(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(db_service_order_detail, key, value)
+    update_data = service_detail.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_service_order_detail, key, value)
         
-        await db.commit()
-        await db.refresh(db_service_order_detail)
-        return db_service_order_detail
-    except IntegrityError as e:
-        logger.error(f"IntegrityError: {e}")
-        await db.rollback()
-        raise e
-    except Exception as e:
-        logger.error(f"Error updating service order detail: {e}")
-        await db.rollback()
-        raise e
+    await db.commit()
+    await db.refresh(db_service_order_detail)
+    return db_service_order_detail
+
     

@@ -291,7 +291,7 @@ async def update_return_status(
     try:
         db_reception_form = await get_reception_form_by_id(db, form_id)
         if not db_reception_form:
-            return None
+            raise ValueError(f"Không tìm phiếu tiếp nhận với ID: {form_id}")
         
         stmt = update(ReceptionForm).where(
             ReceptionForm.form_id == form_id

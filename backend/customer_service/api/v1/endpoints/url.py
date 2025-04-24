@@ -36,5 +36,7 @@ URLS = {
         'GET_ALL_TODAY': '/receptions/today', # completed
         'GET_RECEPTION_BY_ID': '/reception/{form_id}', # completed
         'GET_RECEPTION_BY_DATE_RANGE': '/receptions/date-range', # completed
+        'UPDATE': '/reception/update/{form_id}', # completed
+        'UPDATE_RETURN': '/reception/{form_id}/return', # completed
     },
 }

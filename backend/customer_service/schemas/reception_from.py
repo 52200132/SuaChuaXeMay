@@ -99,6 +99,7 @@ class ReceptionFormCreate2(BaseModel):
         json_schema_extra = {
             "example": {
                 "customer_id": 1,
+                "moto_type_id": 1,
                 "brand": "Honda",
                 "model": "SH 2020",
                 "license_plate": "29B1-23456",

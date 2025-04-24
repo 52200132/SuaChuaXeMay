@@ -46,9 +46,9 @@ async def update_order(order_id: int, order: OrderUpdate, db: Session = Depends(
         return OrderResponse.from_orm(db_order)
     except IntegrityError as e:
         await db.rollback()
-        logger.error(f"Lỗi khi tạo đơn hàng: {str(e)}")
+        logger.error(f"Lỗi khi cập nhật đơn hàng: {str(e)}")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Thông tin không hợp lệ")
     except Exception as e:
-        logger.error(f"Lỗi khi tạo đơn hàng: {str(e)}")
+        logger.error(f"Lỗi khi cập nhật đơn hàng: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     

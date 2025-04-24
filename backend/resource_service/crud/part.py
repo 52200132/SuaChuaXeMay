@@ -10,14 +10,14 @@ from schemas.part import PartCreate, PartUpdate, PartResponse
 
 logger = get_logger(__name__)
 
-async def create_part(db: AsyncSession, part_create: PartCreate) -> PartResponse:
+async def create_part(db: AsyncSession, part: PartCreate) -> Part:
     """Tạo mới một phần"""
     try:
-        part = Part(**part_create.dict())
-        db.add(part)
+        db_part = Part(**part.dict())
+        db.add(db_part)
         await db.commit()
-        await db.refresh(part)
-        return PartResponse.from_orm(part)
+        await db.refresh(db_part)
+        return db_part
     except IntegrityError as e:
         logger.error(f"IntegrityError: {e}")
         await db.rollback()
@@ -27,8 +27,33 @@ async def create_part(db: AsyncSession, part_create: PartCreate) -> PartResponse
         await db.rollback()
         raise e
 
-async def get_all_parts(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[PartResponse]:
+async def get_all_parts(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[Part]:
     """Lấy danh sách tất cả các phần"""
     result = await db.execute(select(Part).order_by(Part.part_id.asc()).offset(skip).limit(limit))
     return result.scalars().all()
     
+async def get_part_by_id(db: AsyncSession, part_id: int) -> Part:
+    """Lấy thông tin chi tiết của một phần"""
+    result = await db.execute(select(Part).where(Part.part_id == part_id))
+    part = result.scalars().one_or_none()
+    return part
+
+async def update_part(db: AsyncSession, part_id: int, part: PartUpdate) -> Part:
+    db_part = await get_part_by_id(db, part_id)
+    if not db_part:
+        return None
+    update_data = part.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_part, key, value)
+    await db.commit()
+    await db.refresh(db_part)
+    return db_part
+    
+async def delete_part(db: AsyncSession, part_id: int) -> Part:
+    """Xóa một phần"""
+    db_part = await get_part_by_id(db, part_id)
+    if not db_part:
+        return None
+    await db.delete(db_part)
+    await db.commit()
+    return db_part

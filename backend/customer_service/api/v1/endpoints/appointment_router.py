@@ -32,10 +32,6 @@ async def create_appointment(appointment_data: AppointmentCreate, db: AsyncSessi
     try:
         new_appointment = await appointment_crud.create_appointment(db, appointment_data)
         return AppointmentResponse.from_orm(new_appointment)
-    except IntegrityError as e:
-        await db.rollback()
-        logger.error(f"Lỗi khi tạo lịch hẹn: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Thông tin không hợp lệ")
     except Exception as e:
         logger.error(f"Lỗi khi tạo lịch hẹn: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -87,7 +83,7 @@ async def get_all_appointments(db: AsyncSession = Depends(get_db)):
     return appointments
 
 @router.get(URLS['APPOINTMENT']['FILTER'], response_model=List[AppointmentResponse])
-async def read_appointments(
+async def get_appointments_(
     skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
     limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),
     customer_id: Optional[int] = Query(None, description="Lọc theo ID khách hàng"),

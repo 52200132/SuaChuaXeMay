@@ -35,3 +35,26 @@ async def get_all_parts(skip: int = 0, limit: int = 100, db: Session = Depends(g
     db_part = await part_crud.get_all_parts(db, skip=skip, limit=limit)
     return db_part
 
+@router.get(URLS['PART']['GET_PART_BY_ID'], response_model=PartResponse)
+async def get_part_by_id(part_id: int, db: Session = Depends(get_db)):
+    """Lấy thông tin chi tiết của một phần"""
+    db_part = await part_crud.get_part_by_id(db, part_id=part_id)
+    if not db_part:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy phụ tùng")
+    return db_part
+
+@router.put(URLS['PART']['UPDATE_PART'], response_model=PartResponse)
+async def update_part(part_id: int, part: PartUpdate, db: Session = Depends(get_db)):
+    """Cập nhật thông tin của một phần"""
+    db_part = await part_crud.update_part(db, part_id=part_id, part=part)
+    if not db_part:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy phụ tùng")
+    return db_part
+
+@router.delete(URLS['PART']['DELETE_PART'], response_model=PartResponse)
+async def delete_part(part_id: int, db: Session = Depends(get_db)):
+    """Xóa một phần"""
+    db_part = await part_crud.delete_part(db, part_id=part_id)
+    if not db_part:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy phụ tùng")
+    return db_part
