@@ -10,7 +10,7 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-async def get_all_service(db: AsyncSession) -> list[ServiceTypeResponse]:
+async def get_all_service_types(db: AsyncSession) -> list[ServiceTypeResponse]:
     """Lấy tất cả ServiceType từ cơ sở dữ liệu."""
     try:
         query = select(ServiceType)

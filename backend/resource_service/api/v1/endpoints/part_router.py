@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from sqlalchemy.exc import IntegrityError
 from utils.logger import get_logger
@@ -13,7 +13,7 @@ router = APIRouter()
 logger = get_logger(__name__)
 
 @router.post(URLS['PART']['CREATE_PART'], response_model=PartResponse)
-async def create_part(part: PartCreate, db: Session = Depends(get_db)):
+async def create_part(part: PartCreate, db:AsyncSession = Depends(get_db)):
     """
     Tạo một phần mới trong cơ sở dữ liệu.
     """
@@ -30,13 +30,13 @@ async def create_part(part: PartCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
 @router.get(URLS['PART']['GET_ALL_PARTS'], response_model=List[PartResponse])
-async def get_all_parts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+async def get_all_parts(skip: int = 0, limit: int = 100, db:AsyncSession = Depends(get_db)):
     """Lấy danh sách đơn hàng"""
     db_part = await part_crud.get_all_parts(db, skip=skip, limit=limit)
     return db_part
 
 @router.get(URLS['PART']['GET_PART_BY_ID'], response_model=PartResponse)
-async def get_part_by_id(part_id: int, db: Session = Depends(get_db)):
+async def get_part_by_id(part_id: int, db:AsyncSession = Depends(get_db)):
     """Lấy thông tin chi tiết của một phần"""
     db_part = await part_crud.get_part_by_id(db, part_id=part_id)
     if not db_part:
@@ -44,7 +44,7 @@ async def get_part_by_id(part_id: int, db: Session = Depends(get_db)):
     return db_part
 
 @router.put(URLS['PART']['UPDATE_PART'], response_model=PartResponse)
-async def update_part(part_id: int, part: PartUpdate, db: Session = Depends(get_db)):
+async def update_part(part_id: int, part: PartUpdate, db:AsyncSession = Depends(get_db)):
     """Cập nhật thông tin của một phần"""
     db_part = await part_crud.update_part(db, part_id=part_id, part=part)
     if not db_part:
@@ -52,7 +52,7 @@ async def update_part(part_id: int, part: PartUpdate, db: Session = Depends(get_
     return db_part
 
 @router.delete(URLS['PART']['DELETE_PART'], status_code=status.HTTP_200_OK)
-async def delete_part(part_id: int, db: Session = Depends(get_db)):
+async def delete_part(part_id: int, db:AsyncSession = Depends(get_db)):
     """Xóa một phần"""
     try:
         # Gọi hàm CRUD để xóa Part
