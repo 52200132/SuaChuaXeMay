@@ -12,7 +12,7 @@ from api.v1.endpoints import service_type_router as service_type
 app = FastAPI(title="Resource Service API", version="1.0.0")
 
 # app.include_router(service.router, prefix="/api/v1", tags=["Service Types"])
-# app.include_router(service.router, prefix="/api/v1", tags=["Service"])
+app.include_router(service.router, prefix="/api/v1", tags=["Service"])
 app.include_router(staff.router, prefix="/api/v1", tags=["Staff"])
 # app.include_router(part.router, prefix="/api/v1", tags=["Part"])
 

@@ -9,19 +9,20 @@ import StatusBadge from '../components/StatusBadge';
 import { useAppData } from '../contexts/AppDataContext';
 import { customerService, resourceService, repairService } from '../../services/api';
 import './OrderManagement.css';
+import { set } from 'date-fns';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const OrderManagement = () => {
-    // Lấy từ context
+    // TODO: Lấy từ context
     const { getData, getIds, setData, fetchAndStoreData, setMultipleData, errors, setError } = useAppData();
-    const ordersById = getData('orders') || {};
-    const ordersIds = getData('ordersIds') || new Set();
-    const customersById = getData('customers') || {};
-    const motorcyclesById = getData('motorcycles') || {};
-    const diagnosisById = getData('diagnosis') || {};
-    const staffsById = getData('staffs') || {};
+    const ordersById = getData('orders');
+    const ordersIds = getData('ordersIds');
+    const customersById = getData('customers');
+    const motorcyclesById = getData('motorcycles');
+    const diagnosisById = getData('diagnosis');
+    const staffsById = getData('staffs');
 
     // State quản lý danh sách đơn hàng
     const [orders, setOrders] = useState([]);
@@ -78,8 +79,10 @@ const OrderManagement = () => {
     // Additional states for technician assignment
     const [technicians, setTechnicians] = useState([]);
     const [technicianAvailability, setTechnicianAvailability] = useState({});
-    const [pendingOrders, setPendingOrders] = useState([]);
-    const [assignedOrders, setAssignedOrders] = useState([]);
+
+    const [pendingOrders, setPendingOrders] = useState([]); // Mảng lưu id đơn hàng chưa phân công
+    const [assignedOrders, setAssignedOrders] = useState([]); // Mảng lưu id đơn hàng đã phân công
+
     const [technicianPerformance, setTechnicianPerformance] = useState([]);
     const [dashboardStats, setDashboardStats] = useState({
         pending: 0,
@@ -98,7 +101,7 @@ const OrderManagement = () => {
     // State for showing technician workload details
     const [showWorkloadModal, setShowWorkloadModal] = useState(false);
     const [selectedTechnicianDetail, setSelectedTechnicianDetail] = useState(null);
-    
+
     // Load mock data
     useEffect(() => {
 
@@ -150,11 +153,14 @@ const OrderManagement = () => {
                             errors[key].push(res.status === 'rejected' ? `Lỗi khi lấy ${key} cho đơn ${order.order_id}: ${res.reason.response?.data?.detail}` : null);
                         })
 
-                        // Vẫn lưu dữ liệu (có thể là rỗng) vào context
-                        setData('customers', customer, customerId);
-                        setData('motorcycles', motorcycle, motorcycleId);
-                        setData('staffs', staff, staffId);
-                        setData('diagnosis', diagnosis, order.order_id);
+                        // Lưu dữ liệu vào context
+                        if (staffId) { // có staffId thì mới lưu staff, và đã phân công
+                            setData('staffs', staff, staffId); 
+                            // console.log('staff:', staff); 
+                        }
+                        if (customerId) { setData('customers', customer, customerId); }
+                        if (motorcycleId) { setData('motorcycles', motorcycle, motorcycleId); }
+                        if (order.order_id) { setData('diagnosis', diagnosis, order.order_id); }
 
                         // Luôn trả về để format, hàm formatOrder cần xử lý dữ liệu thiếu
                         return [order.order_id, formatOrder(order, customer, motorcycle, staff, diagnosis)];
@@ -174,9 +180,9 @@ const OrderManagement = () => {
                         }
                     });
 
-                    Object.entries(errors).forEach(([key, value]) => {
-                        console.log(`Errors for ${key}:`, value.filter(v => v !== null)); // Lọc ra các lỗi không null
-                    });
+                    // Object.entries(errors).forEach(([key, value]) => {
+                    //     console.log(`Errors for ${key}:`, value.filter(v => v !== null)); // Lọc ra các lỗi không null
+                    // });
 
                     console.log('useEffect - Đơn hàng:', orderData);
                     console.log('useEffect - Danh sách đơn hàng:', newOrderDisplay);
@@ -188,34 +194,6 @@ const OrderManagement = () => {
                     console.error('Lỗi nghiêm trọng khi lấy danh sách đơn hàng hoặc xử lý chung:', error);
                     setLoading(false);
                 });
-
-            // Also fetch technicians for the assignment tab
-            try {
-                const techniciansResponse = await resourceService.staff.getAllStaffs();
-                const allStaff = techniciansResponse.data || [];
-                // Lọc ra những nhân viên có vai trò là thợ sửa chữa
-                const techniciansList = allStaff.filter(staff => 
-                    staff.role === 'technician' || staff.role === 'mechanic'
-                );
-                
-                setTechnicians(techniciansList);
-                
-                // Initialize availability data
-                const availability = {};
-                techniciansList.forEach(tech => {
-                    availability[tech.staff_id] = {
-                        percentage: 100,
-                        currentOrders: 0,
-                        status: 'available'
-                    };
-                });
-                setTechnicianAvailability(availability);
-                
-                // Calculate technician performance metrics
-                calculateTechnicianPerformance(techniciansList, []);
-            } catch (error) {
-                console.error('Lỗi khi tải dữ liệu thợ sửa chữa:', error);
-            }
 
             setLoading(false);
         }
@@ -231,15 +209,29 @@ const OrderManagement = () => {
             console.log('useEffect - Dữ liệu display', ordersDisplay);
             setFilteredOrdersIds(getIds('orders'));
             setTotalPages(Math.ceil(getIds('orders').length / 10));
-            console.log('useEffect - fillteredOrdersIds và totalPages', fileredOrdersIds, totalPages)
+            // console.log('useEffect - fillteredOrdersIds và totalPages', fileredOrdersIds, totalPages)
+
+            // Phân loại đơn hàng thành đã phân công và chưa phân công
+            const assingedOrders = []
+            const pendingOrders = []
+            Object.values(ordersById).map(order => {
+                if (order.staff_id && order.status !== 'delivered') {
+                    assingedOrders.push(order.order_id);
+                } else {
+                    pendingOrders.push(order.order_id);
+                }
+            });
+            console.log(assignedOrders, pendingOrders);
+            setAssignedOrders(assingedOrders);
+            setPendingOrders(pendingOrders);
         }
     }, [loading, ordersById]);
 
     // Process orders for assignment view when orders data changes
     useEffect(() => {
         if (!loading && Object.keys(ordersDisplay).length > 0) {
-            processingOrdersForAssignment();
-            updateDashboardStats();
+            // processingOrdersForAssignment();
+            // updateDashboardStats();
         }
     }, [ordersDisplay, loading]);
 
@@ -548,57 +540,54 @@ const OrderManagement = () => {
     };
     
     // Handle technician assignment
-    const handleAssignOrder = async (orderId, technicianId, note, startTime, endTime) => {
+    const handleAssignOrder = async (order) => { // order: Thông tin đơn hàng mới
         try {
-            // In a real implementation, call API to update assignment
-            // await repairService.order.assignOrderToTechnician(
-            //     orderId, 
-            //     technicianId, 
-            //     note,
-            //     startTime,
-            //     endTime
-            // );
             
-            // Find the order to update
-            const order = [...pendingOrders, ...assignedOrders].find(o => o.orderId === orderId);
-            if (!order) return;
+            // Cập nhật ordersDisplay với thông tin mới
+            const motorcycle = motorcyclesById[order.motocycle_id];
+            const customer = customersById[motorcycle.customer_id];
+            const staff = staffsById[order.staff_id];
+            const diagnosis = diagnosisById[order.diagnosis_id];
+
+            ordersDisplay[order.order_id] = formatOrder(order, customer, motorcycle, staff, diagnosis);
+
+            // // Find the order to update
+            // const order = [...pendingOrders, ...assignedOrders].find(o => o.orderId === orderId);
+            // if (!order) return;
             
-            // Find the technician
-            const selectedTech = technicians.find(tech => tech.staff_id === technicianId);
+            // // Find the technician
+            // const selectedTech = technicians.find(tech => tech.staff_id === technicianId);
             
-            // Update orders in state
-            const updatedPendingOrders = pendingOrders.filter(o => o.orderId !== orderId);
+            // // Update orders in state
+            // const updatedPendingOrders = pendingOrders.filter(o => o.orderId !== orderId);
             
-            const assignedOrder = {
-                ...order,
-                technicianId: technicianId,
-                technicianName: selectedTech ? selectedTech.fullname : 'Không xác định',
-                status: 'Đang sửa chữa',
-                startTime: startTime,
-                estimatedEndTime: endTime
-            };
+            // const assignedOrder = {
+            //     ...order,
+            //     technicianId: technicianId,
+            //     technicianName: selectedTech ? selectedTech.fullname : 'Không xác định',
+            //     status: 'Đang sửa chữa',
+            // };
             
-            setPendingOrders(updatedPendingOrders);
-            setAssignedOrders([...assignedOrders.filter(o => o.orderId !== orderId), assignedOrder]);
+            // setPendingOrders(updatedPendingOrders);
+            // setAssignedOrders([...assignedOrders.filter(o => o.orderId !== orderId), assignedOrder]);
             
-            // Also update in ordersDisplay
-            setOrdersDisplay(prev => ({
-                ...prev,
-                [orderId]: {
-                    ...prev[orderId],
-                    technicianId: technicianId,
-                    technicianName: selectedTech ? selectedTech.fullname : 'Không xác định',
-                    status: 'Đang sửa chữa',
-                    startTime: startTime,
-                    estimatedEndTime: endTime
-                }
-            }));
+            // // Also update in ordersDisplay
+            // setOrdersDisplay(prev => ({
+            //     ...prev,
+            //     [orderId]: {
+            //         ...prev[orderId],
+            //         technicianId: technicianId,
+            //         technicianName: selectedTech ? selectedTech.fullname : 'Không xác định',
+            //         status: 'Đang sửa chữa',
+            //         startTime: startTime,
+            //     }
+            // }));
             
             // Update technician availability
-            updateTechnicianAvailability(technicianId);
+            // updateTechnicianAvailability(technicianId);
             
-            // Notification
-            alert(`Đã phân công đơn hàng ${orderId} cho ${selectedTech?.fullname}`);
+            // TODO: Toast thông báo
+            // alert(`Đã phân công đơn hàng ${orderId} cho ${selectedTech?.fullname}`);
             
             return true;
         } catch (error) {
@@ -976,15 +965,17 @@ const OrderManagement = () => {
                     {renderPagination()}
                 </>
             ) : (
-                <AssignmentManagement 
+                // TODO: checkpoint for AssignmentManagement component
+                <AssignmentManagement
+                    ordersDisplay={ordersDisplay} 
                     pendingOrders={pendingOrders}
                     assignedOrders={assignedOrders}
-                    technicians={technicians}
                     technicianAvailability={technicianAvailability}
                     dashboardStats={dashboardStats}
                     onAssignOrder={handleAssignOrder}
                     onUnassignOrder={handleUnassignOrder}
                     loading={loading}
+                    setLoading={setLoading}
                 />
             )}
 

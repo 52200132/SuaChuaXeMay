@@ -8,7 +8,12 @@ const URLS = {
     },
     'STAFF': {
         'LOGIN' : '/staff/login',
+        'GET_ALL_STAFF' : '/staffs',
+        'FILTER': '/staffs/filter',
         'GET_STAFF_BY_ID' : '/staff/{staff_id}',
+        'CREATE_STAFF' : '/staff/create',
+        'UPDATE_STAFF' : '/staff/update',
+        'DELETE_STAFF' : '/staff/delete/{staff_id}'
     },
 
     // customer service
@@ -53,6 +58,8 @@ const URLS = {
         'GET_ALL_ORDERS':'/orders',
         'GET_ORDER_BY_ID':'/order/{order_id}',
         'UPDATE_ORDER':'/order/update/{order_id}',
+        'ASSIGN_STAFF':'/order/{order_id}/assign-staff/{staff_id}',
+        'GET_ALL_ORDERS_BY_STAFF_ID_TODAY':'/orders/staff/{staff_id}/today',
     },
     'DIAGNOSIS':{
         'CREATE_DIAGNOSIS':'/diagnosis/create',

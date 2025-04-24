@@ -8,6 +8,7 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import OrderManagement from './pages/OrderManagement';
 import AssignmentManagement from './pages/AssignmentManagement';
+import TechnicianDashboard from './pages/TechnicianDashboard';
 
 // Xác định các route có thể truy cập cho tất cả nhân viên (bao gồm cả nhân viên cơ bản)
 export const employeeRoutes = [
@@ -37,6 +38,13 @@ export const employeeRoutes = [
         component: OrderManagement,
         name: 'Quản lý đơn hàng',
         icon: 'bi bi-cart3',
+        exact: true,
+    },
+    {
+        path: '/admin/technician-dashboard',
+        component: TechnicianDashboard,
+        name: 'Đơn hàng của tôi',
+        icon: 'bi bi-wrench',
         exact: true,
     },
     {

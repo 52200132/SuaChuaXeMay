@@ -100,13 +100,68 @@ const resourceService = {
         getStaffById: async (id) => {
             try {
                 const response = await apiClient.get(URLS.STAFF.GET_STAFF_BY_ID.replace('{staff_id}', id));
-                return response.data;
+                return response;
             } catch (error) {
                 console.error(`Lỗi khi lấy thông tin nhân viên ID=${id}:`, error);
                 throw error;
             }
+        },
+
+        getAllTechnicians: async () => {
+            try {
+                const response = await apiClient.get(URLS.STAFF.FILTER + '?role=technician');
+                return response;
+            }
+            catch (error) {
+                console.error('api - Lỗi khi lấy danh sách nhân viên:', error);
+                throw error;
+            }
+        },
+    },
+
+    sparepart: {
+        getAllSpareparts: async () => {
+            try {
+                const response = await apiClient.get('/spareparts');
+                return response;
+            } catch (error) {
+                console.error('Lỗi khi lấy danh sách phụ tùng:', error);
+                throw error;
+            }
+        },
+        
+        getSparepartById: async (id) => {
+            try {
+                const response = await apiClient.get(`/spareparts/${id}`);
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi lấy thông tin phụ tùng ID=${id}:`, error);
+                throw error;
+            }
         }
-    }
+    },
+
+    service: {
+        getAllServices: async () => {
+            try {
+                const response = await apiClient.get('/services');
+                return response;
+            } catch (error) {
+                console.error('Lỗi khi lấy danh sách dịch vụ:', error);
+                throw error;
+            }
+        },
+        
+        getServiceById: async (id) => {
+            try {
+                const response = await apiClient.get(`/services/${id}`);
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi lấy thông tin dịch vụ ID=${id}:`, error);
+                throw error;
+            }
+        }
+    },
 };
 
 const customerService = {
@@ -354,13 +409,60 @@ const repairService = {
                 const response = await apiRepairService.get(URLS.ORDER.GET_ALL_ORDERS);
                 return response;
             } catch (error) {
-                console.error('Lỗi khi lấy danh sách đơn hàng:', error);
+                console.error('api - Lỗi khi lấy danh sách đơn hàng:', error);
+                throw error;
+            }
+        },
+
+        getAllOrdersByStaffIdToday: async (staffId) => {
+            try {
+                const response = await apiRepairService.get(URLS.ORDER.GET_ALL_ORDERS_BY_STAFF_ID_TODAY.replace('{staff_id}', staffId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy danh sách đơn hàng của nhân viên ID=${staffId} hôm nay:`, error);
+                throw error;
+            }
+        },
+
+        asignStaffToOrder: async (orderId, staffId) => {
+            try {
+                const response = await apiRepairService.put(URLS.ORDER.ASSIGN_STAFF.replace('{order_id}', orderId).replace('{staff_id}', staffId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi phân công nhân viên cho đơn hàng ID=${orderId}:`, error);
+                throw error;
+            }
+        },
+
+        // Lấy đơn hàng của kỹ thuật viên
+        getOrdersByStaffId: async (staffId) => {
+            try {
+                const response = await apiRepairService.get(`/orders/staff/${staffId}`);
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi lấy đơn hàng của kỹ thuật viên ID=${staffId}:`, error);
+                throw error;
+            }
+        },
+        
+        // Cập nhật trạng thái đơn hàng
+        updateOrderStatus: async (orderId, data) => {
+            try {
+                const response = await apiRepairService.put(`/orders/${orderId}/status`, {
+                    status: data.status,
+                    notes: data.notes,
+                    spareparts: data.spareparts || [] // Thêm danh sách phụ tùng
+                });
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi cập nhật trạng thái đơn hàng ID=${orderId}:`, error);
                 throw error;
             }
         }
     },
-
+    
     diagnosis: { 
+        
         getDiagnosisByOrderId: async (orderId) => {
             try {
                 const response = await apiRepairService.get(URLS.DIAGNOSIS.GET_DIAGNOSIS_BY_ORDER_ID.replace('{order_id}', orderId));
@@ -369,7 +471,7 @@ const repairService = {
                 console.error(`api - Lỗi khi lấy thông tin chẩn đoán cho đơn hàng ID=${orderId}:`, error);
                 throw error;
             }
-        }
+        },
     },
 };
 

@@ -19,7 +19,7 @@ async def get_all_service_types(db: AsyncSession = Depends(get_db)) -> list[Serv
         Lấy tất cả ServiceType từ cơ sở dữ liệu.
     """
     try:
-        service_types = await service_type.get_all_service_type(db)
+        service_types = await service_type.get_all_service_types(db)
         return service_types
     except IntegrityError as e:
         logger.error(f"Integrity error while fetching all service types: {e}")

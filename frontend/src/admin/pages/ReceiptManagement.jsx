@@ -457,7 +457,12 @@ const ReceiptManagement = () => {
             .then(response => {
                 const order = response.data;
                 // TODO: thông báo toast
-                alert(`Đã tạo đơn hàng "${order.order_id} cho đơn tiếp nhận "${reception.form_id}"`);
+                if (order.order_id) { 
+                    return repairService.diagnosis.createDiagnosis({ orderId: order.order_id });
+                } else { 
+                    alert(`Tạo đơn hàng thất bại cho đơn tiếp nhận "${reception.form_id}"`);
+                }
+                return response;
             });
 
             // Tạo đơn mới
