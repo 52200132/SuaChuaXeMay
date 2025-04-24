@@ -95,16 +95,8 @@ async def get_all_reception_forms(
     """
         Lấy danh sách tất cả biểu mẫu tiếp nhận.
     """
-    try:
-        db_reception_forms = await reception_crud.get_all_reception_forms(db, skip, limit)
-        logger.info(f"Lất tất cả biểu mẫu tiếp nhận thành công")
-    except IntegrityError as e:
-        logger.error(f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Lỗi toàn vẹn dữ liệu: {str(e)}")
-    except Exception as e:
-        logger.error(f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
 
+    db_reception_forms = await reception_crud.get_all_reception_forms(db, skip, limit)
     return db_reception_forms
 
 @router.get(URLS['RECEPTION']['GET_ALL_TODAY'], response_model=List[ReceptionFormResponse])
@@ -114,16 +106,7 @@ async def get_all_reception_forms_today(
     """
         Lấy danh sách tất cả biểu mẫu tiếp nhận trong ngày hôm nay.
     """
-    try:
-        db_reception_forms = await reception_crud.get_reception_form_today(db)
-        logger.info(f"Lất tất cả biểu mẫu tiếp nhận thành công")
-    except IntegrityError as e:
-        logger.error(f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Lỗi toàn vẹn dữ liệu: {str(e)}")
-    except Exception as e:
-        logger.error(f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
-
+    db_reception_forms = await reception_crud.get_reception_form_today(db)
     return db_reception_forms
 
 @router.get(URLS['RECEPTION']['GET_RECEPTION_BY_ID'], response_model=ReceptionFormResponse)
@@ -149,8 +132,6 @@ async def get_reception_form_by_date_range(
     Lấy danh sách biểu mẫu tiếp nhận theo khoảng thời gian.
     """
     db_reception_forms = await reception_crud.get_reception_form_by_range_date(db, start_date, end_date)
-    if not db_reception_forms:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy biểu mẫu tiếp nhận trong khoảng thời gian này")
     return db_reception_forms
 
 
@@ -177,7 +158,7 @@ async def get_reception_form_by_date_range(
     
 #     return db_reception_forms
 
-@router.put("/{form_id}", response_model=ReceptionFormResponse)
+@router.put(URLS['RECEPTION']['UPDATE'], response_model=ReceptionFormResponse)
 async def update_reception_form(
     form_id: int,
     reception_form_update: ReceptionFormUpdate,
@@ -191,7 +172,7 @@ async def update_reception_form(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy biểu mẫu tiếp nhận")
     return db_reception_form
 
-@router.put("/{form_id}/return", response_model=ReceptionFormResponse)
+@router.put(URLS['RECEPTION']['UPDATE_RETURN'], response_model=ReceptionFormResponse)
 async def update_return_status(
     form_id: int,
     is_returned: bool,

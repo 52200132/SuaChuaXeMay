@@ -22,7 +22,7 @@ async def get_diagnosis_by_id(diagnosis_id: int, db: Session = Depends(get_db)):
     """Get a specific diagnosis by ID"""
     db_diagnosis = await crud.get_diagnosis_by_id(db, diagnosis_id=diagnosis_id)
     if db_diagnosis is None:
-        raise HTTPException(status_code=404, detail="Diagnosis not found")
+        raise HTTPException(status_code=404, detail="Không tìm thấy chẩn đoán")
     return DiagnosisResponse.from_orm(db_diagnosis)
 
 @router.get(URLS['DIAGNOSIS']['GET_DIAGNOSIS_BY_ORDER_ID'], response_model=DiagnosisResponse)
@@ -30,7 +30,7 @@ async def get_diagnosis_by_order_id(order_id: int, db: Session = Depends(get_db)
     """Get a specific diagnosis by order ID"""
     db_diagnosis = await crud.get_diagnosis_by_order_id(db, order_id=order_id)
     if db_diagnosis is None:
-        raise HTTPException(status_code=404, detail="Diagnosis not found")
+        raise HTTPException(status_code=404, detail="Không tìm thấy chẩn đoán")
     return DiagnosisResponse.from_orm(db_diagnosis)
 
 @router.post(URLS['DIAGNOSIS']['CREATE_DIAGNOSIS'], response_model=DiagnosisResponse, status_code=status.HTTP_201_CREATED)

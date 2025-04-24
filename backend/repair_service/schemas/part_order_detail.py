@@ -32,6 +32,16 @@ class PartOrderDetailUpdate(BaseModel):
     price: Optional[int] = None
     quantity: Optional[int] = None
     is_selected: Optional[bool] = None
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "part_id": 1,
+                "price": 100000,
+                "quantity": 2,
+                "is_selected": False
+            }
+        }
 
 class PartOrderDetailResponse(BaseModel):
     part_detail_ID: int

@@ -1,3 +1,5 @@
+from typing import List
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update, delete
@@ -10,20 +12,30 @@ from schemas.part_order_detail import PartOrderDetailCreate, PartOrderDetailUpda
 
 logger = get_logger(__name__)
 
-async def create_part_order_detail(db: AsyncSession, part_detail: PartOrderDetailCreate) -> PartOrderDetail:
-    """Tạo mới một chi tiết đơn hàng phụ tùng"""
+async def create_part_order_details(db: AsyncSession, part_detail: List[PartOrderDetailCreate]) -> list[PartOrderDetail]:
+    """Tạo mới một danh sách chi tiết đơn hàng phụ tùng"""
     try:
-        db_part_order_details = PartOrderDetail(**part_detail.dict())
-        db.add(db_part_order_details)
+        db_part_order_details = []
+        for part in part_detail:
+            # Tạo đối tượng PartOrderDetail từ từng phần tử trong danh sách
+            db_part_order_detail = PartOrderDetail(**part.dict())
+            db.add(db_part_order_detail)
+            db_part_order_details.append(db_part_order_detail)
+
+        # Commit tất cả thay đổi
         await db.commit()
-        await db.refresh(db_part_order_details)
+
+        # Làm mới tất cả các đối tượng đã thêm
+        for db_part_order_detail in db_part_order_details:
+            await db.refresh(db_part_order_detail)
+
         return db_part_order_details
     except IntegrityError as e:
-        logger.error(f"IntegrityError: {e}")
+        logger.error(f"Lỗi toàn vẹn dữ liệu khi tạo chi tiết phụ tùng đơn hàng: {str(e)}")
         await db.rollback()
         raise e
     except Exception as e:
-        logger.error(f"Error creating part order detail: {e}")
+        logger.error(f"Lỗi không xác định khi tạo chi tiết phụ tùng đơn hàng: {str(e)} | Dữ liệu: {[part.dict() for part in part_detail]}")
         await db.rollback()
         raise e
 
@@ -45,24 +57,16 @@ async def get_part_order_detail_by_id(db: AsyncSession, part_detail_ID: int) -> 
 
 async def update_part_order_detail(db: AsyncSession, part_detail_ID: int, part_detail: PartOrderDetailUpdate) -> PartOrderDetail:
     """Cập nhật thông tin chi tiết đơn hàng phụ tùng"""
-    try:
-        db_part_order_detail = await get_part_order_detail_by_id(db, part_detail_ID)
-        if not db_part_order_detail:
-            return None
+    db_part_order_detail = await get_part_order_detail_by_id(db, part_detail_ID)
+    if not db_part_order_detail:
+        raise  ValueError(f"Không tìm thấy chi tiết đơn hàng phụ tùng với ID: {part_detail_ID}")
+    
+    update_data = part_detail.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_part_order_detail, key, value)
+    
+    await db.commit()
+    await db.refresh(db_part_order_detail)
+    return db_part_order_detail
         
-        update_data = part_detail.dict(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(db_part_order_detail, key, value)
-        
-        await db.commit()
-        await db.refresh(db_part_order_detail)
-        return db_part_order_detail
-        
-    except IntegrityError as e:
-        logger.error(f"IntegrityError: {e}")
-        await db.rollback()
-        raise e
-    except Exception as e:
-        logger.error(f"Error updating part order detail: {e}")
-        await db.rollback()
-        raise e
+    

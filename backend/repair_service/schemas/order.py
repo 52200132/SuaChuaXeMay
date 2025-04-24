@@ -36,10 +36,18 @@ class OrderCreate(BaseModel):
         }
 
 class OrderUpdate(BaseModel):
-    motocycle_id: Optional[int] = None
     staff_id: Optional[int] = None
     status: Optional[OrderStatusEnum] = None
     total_price: Optional[int] = None
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "staff_id": 1,
+                "status": "wait_confirm",
+                "total_price": 300
+            }
+        }
 
 class OrderResponse(BaseModel):
     order_id: int

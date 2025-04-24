@@ -49,23 +49,11 @@ async def get_motorcycle_by_id(
     db: AsyncSession = Depends(get_db)
 ):
     """Lấy thông tin xe máy theo ID."""
-    try:
-        motorcycle_type = await motorcycle_crud.get_motorcycle_by_id(db, motorcycle_id)
-        if not motorcycle_type:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy xe máy")
-        return MotocycleResponse.from_orm(motorcycle_type)
-    except IntegrityError as e:
-        logger.error(f"Lỗi khi lấy thông tin xe máy: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(e)
-        )
-    except Exception as e:
-        logger.error(f"Lỗi khi lấy thông tin xe máy: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+    motorcycle_type = await motorcycle_crud.get_motorcycle_by_id(db, motorcycle_id)
+    if not motorcycle_type:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy xe máy")
+    return MotocycleResponse.from_orm(motorcycle_type)
+
 @router.post(URLS['MOTORCYCLE']['CREATE_MOTORCYCLE'], response_model=MotocycleResponse)
 async def create_motorcycle(
     motorcycle: MotocycleCreate,
@@ -73,19 +61,15 @@ async def create_motorcycle(
 ):
     """Tạo một xe máy mới."""
     try:
+        # Tạo xe máy mới
         new_motorcycle = await motorcycle_crud.create_motorcycle(db, motorcycle)
         return MotocycleResponse.from_orm(new_motorcycle)
-    except IntegrityError as e:
-        logger.error(f"Lỗi khi tạo xe máy: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(e)
-        )
     except Exception as e:
-        logger.error(f"Lỗi khi tạo xe máy: {str(e)}")
+        # Lỗi không xác định
+        logger.error(f"Lỗi không xác định khi tạo xe máy: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            detail="Lỗi hệ thống, vui lòng thử lại sau"
         )
 # @router.put(URLS['MOTORCYCLE']['UPDATE_MOTORCYCLE'], response_model=MotocycleResponse)
 # async def update_motorcycle(

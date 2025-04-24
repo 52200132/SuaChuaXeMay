@@ -15,6 +15,7 @@ async def create_diagnosis(db: AsyncSession, diagnosis: DiagnosisCreate) -> Diag
     try:
         db_diagnosis = Diagnosis(
             form_id=diagnosis.form_id,
+            order_id=diagnosis.order_id,
             problem=diagnosis.problem,
             estimated_cost=diagnosis.estimated_cost
         )
@@ -25,7 +26,7 @@ async def create_diagnosis(db: AsyncSession, diagnosis: DiagnosisCreate) -> Diag
     except IntegrityError as e:
         await db.rollback()
         logger.error(f"Lỗi khi tạo bảng chẩn đoán: {str(e)}")
-        raise ValueError("Chuỗi chẩn đoán đã tồn tại")
+        raise ValueError("Bảng chẩn đoán đã tồn tại")
     except Exception as e:
         await db.rollback()
         logger.error(f"Lỗi không xác định khi tạo bảng chẩn đoán: {str(e)}")

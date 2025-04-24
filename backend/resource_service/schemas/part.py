@@ -11,7 +11,6 @@ class PartCreate(BaseModel):
         from_attributes = True
         json_schema_extra = {
             "example": {
-                "part_id": "part_001",
                 "name": "Part Name",
                 "URL": "http://example.com/part",
                 "unit": "pcs",
@@ -39,7 +38,7 @@ class PartUpdate(BaseModel):
 class PartResponse(BaseModel):
     part_id: int = Field(..., description="Unique identifier for the part")
     name: str = Field(..., description="Name of the part")
-    URL: str = Field(..., description="URL of the part")
+    URL: Optional[str] = Field(..., description="URL of the part")
     unit: str = Field(..., description="Unit of the part")
     stock: int = Field(..., description="Stock quantity of the part")
 

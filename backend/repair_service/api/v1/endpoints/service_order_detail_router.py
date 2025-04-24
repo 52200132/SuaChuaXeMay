@@ -29,12 +29,12 @@ async def get_all_service_details_by_order(order_id: int, db: Session = Depends(
     db_service_detail = await crud.get_all_service_details_by_order_id(db, order_id=order_id)
     return db_service_detail
 
-@router.post(URLS['SERVICE_ORDER_DETAIL']['CREATE_SERVICE_ORDER_DETAIL'], response_model=ServiceOrderDetailResponse, status_code=status.HTTP_201_CREATED)
-async def create_service_order_detail(service_detail: ServiceOrderDetailCreate, db: Session = Depends(get_db)):
+@router.post(URLS['SERVICE_ORDER_DETAIL']['CREATE_SERVICE_ORDER_DETAILS'], response_model=List[ServiceOrderDetailResponse], status_code=status.HTTP_201_CREATED)
+async def create_service_order_details(service_detail: List[ServiceOrderDetailCreate], db: Session = Depends(get_db)):
     """Create a new service order detail"""
     try:
         db_service_detail = await crud.create_service_order_detail(db=db, service_detail=service_detail)
-        return db_service_detail
+        return [ServiceOrderDetailResponse.from_orm(service) for service in db_service_detail]
     except IntegrityError as e:
         await db.rollback()
         logger.error(f"Lỗi toàn vẹn dữ liệu khi tạo chi tiết phụ tùng đơn hàng: {str(e)} | Dữ liệu: {service_detail.dict()}")

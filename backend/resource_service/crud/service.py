@@ -9,6 +9,11 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+async def get_all_services(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[ServiceResponse]:
+    """Lấy tất cả Service từ cơ sở dữ liệu."""
+    result = await db.execute(select(Service).order_by(Service.service_id.asc()).offset(skip).limit(limit))
+    return result.scalars().all()
+
 async def get_services_by_service_type_id(db: AsyncSession, service_type_id) -> list[Service]:
     """Lấy tất cả Service theo loại từ cơ sở dữ liệu bằng id được cung cấp."""
     try:

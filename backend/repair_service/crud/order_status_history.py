@@ -31,10 +31,6 @@ async def create_order_status_history(db: AsyncSession, status_history: OrderSta
         await db.refresh(db_status_history)
         return db_status_history
 
-    except IntegrityError as e:
-        await db.rollback()
-        logger.error(f"Lỗi khi tạo trạng thái: {str(e)}")
-        raise ValueError("Trạng thái đã tồn tại")
     except Exception as e:
         await db.rollback()
         logger.error(f"Lỗi không xác định khi tạo trạng thái: {str(e)}")

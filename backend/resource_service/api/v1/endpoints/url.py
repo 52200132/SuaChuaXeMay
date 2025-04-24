@@ -1,13 +1,12 @@
 
 URLS = {
     'SERVICE_TYPE': {
-        'GET_ALL_SERVICE_TYPES' : '/service/service-type/get-all',
-        'GET_SERVICE_TYPE_BY_ID' : '/service/service-type/{service_type_id}', 
-        'GET_SERVICES_BY_SERVICE_TYPE_ID' : '/service/service-type/{service_type_id}/get-services',
+        'GET_ALL_SERVICE_TYPES' : '/service/service-types',
+        'GET_SERVICE_TYPE_BY_ID' : '/service/service-type/{service_type_id}'
     },
     
     'SERVICE': {
-        'GET_ALL_SERVICES' : '/service/get-all',
+        'GET_ALL_SERVICES' : '/services',
         'GET_SERVICE_BY_ID' : '/service/{service_id}',
         'GET_SERVICES_BY_SERVICE_TYPE_ID' : '/service/service-type/{service_type_id}/get-services',
         'CREATE_SERVICE' : '/service/create',
