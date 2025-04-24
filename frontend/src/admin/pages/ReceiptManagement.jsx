@@ -6,7 +6,7 @@ import { debounce, set } from 'lodash';
 import StatusBadge from '../components/StatusBadge';
 import { useAppData } from '../contexts/AppDataContext';
 import { useStaffAuth } from '../contexts/StaffAuthContext';
-import { customerService } from '../../services/api';
+import { customerService, repairService } from '../../services/api';
 
 const ReceiptManagement = () => {
     // State quản lý danh sách đơn tiếp nhận
@@ -68,96 +68,6 @@ const ReceiptManagement = () => {
 
     // Load mock data khi component được mount
     useEffect(() => {
-        // Mock data
-        const mockReceipts = [
-            {
-                form_id: 'RN-2023-001',
-                customer_name: 'Nguyễn Văn A',
-                phone: '0912345678',
-                plate_number: '59Y2-12345',
-                motorcycle_model: 'Honda Wave',
-                initial_condition: 'Xe không nổ máy, tình trạng bình thường',
-                note: 'Khách hẹn lấy xe vào cuối tuần',
-                is_returned: false,
-                created_at: '2023-06-15',
-                updated_at: '2023-06-15'
-            },
-            {
-                form_id: 'RN-2023-002',
-                customer_name: 'Trần Thị B',
-                phone: '0987654321',
-                plate_number: '59P9-54321',
-                motorcycle_model: 'Yamaha Exciter',
-                initial_condition: 'Xe chạy không êm, tiếng máy lớn',
-                note: 'Khách yêu cầu kiểm tra kỹ nhông sên dĩa',
-                is_returned: true,
-                created_at: '2023-06-16',
-                updated_at: '2023-06-18'
-            },
-            {
-                form_id: 'RN-2023-003',
-                customer_name: 'Lê Văn C',
-                phone: '0977123456',
-                plate_number: '59X3-67890',
-                motorcycle_model: 'Honda Air Blade',
-                initial_condition: 'Xe bị rò rỉ dầu, phanh không ăn',
-                note: '',
-                is_returned: false,
-                created_at: '2023-06-17',
-                updated_at: '2023-06-17'
-            },
-            {
-                form_id: 'RN-2023-004',
-                customer_name: 'Phạm Thị D',
-                phone: '0909123456',
-                plate_number: '59F5-13579',
-                motorcycle_model: 'Honda Vision',
-                initial_condition: 'Xe không tăng ga được, đèn xi nhan phải không sáng',
-                note: 'Khách cần sửa gấp trong ngày',
-                is_returned: true,
-                created_at: '2023-06-18',
-                updated_at: '2023-06-18'
-            },
-            {
-                form_id: 'RN-2023-005',
-                customer_name: 'Hoàng Văn E',
-                phone: '0918765432',
-                plate_number: '59D7-24680',
-                motorcycle_model: 'Yamaha Sirius',
-                initial_condition: 'Xe cần bảo dưỡng định kỳ 10.000km',
-                note: 'Khách dặn thay nhớt loại tốt',
-                is_returned: false,
-                created_at: '2023-06-19',
-                updated_at: '2023-06-19'
-            }
-        ];
-
-        // Tạo object và mảng ID từ dữ liệu
-        const newReceiptsById = {};
-        const newReceiptIds = [];
-
-        mockReceipts.forEach(receipt => {
-            newReceiptsById[receipt.form_id] = {
-                id: receipt.form_id,
-                customerName: receipt.customer_name,
-                phone: receipt.phone,
-                plateNumber: receipt.plate_number,
-                motorcycleModel: receipt.motorcycle_model,
-                initialCondition: receipt.initial_condition,
-                note: receipt.note,
-                isReturned: receipt.is_returned,
-                createdAt: receipt.created_at,
-                returnedAt: receipt.updated_at
-            };
-
-            newReceiptIds.push(receipt.form_id);
-        });
-
-        // Cập nhật state
-        // setReceiptsById(newReceiptsById);
-        // setReceiptIds(newReceiptIds);
-        // setData('receipts', newReceiptsById);
-        // setReceptionsDisplay(newReceiptsById);
 
         // TODO: Lấy dữ liệu từ API
         const fetchData = async () => {
@@ -206,6 +116,15 @@ const ReceiptManagement = () => {
         // setFilteredReceiptIds(newReceiptIds);
         // setTotalPages(Math.ceil(newReceiptIds.length / 10));
     }, []);
+
+    useEffect(() => {
+        if (customerNotFound) {
+            setFormData(prevForm => ({
+                ...prevForm,
+                customerId: ''
+            }));
+        }
+    }, [customerNotFound]);
 
     useEffect(() => {
         console.log('fromData - useEffect', formData);
@@ -498,9 +417,14 @@ const ReceiptManagement = () => {
 
     const createNewReceipt = async (formData) => {
         try {
-            if (formData.customerId && !formData.motocycleId) { // TODO: Tạo đơn tiếp nhận dựa - khi khách chưa có xe
+            if (!formData.customerId && !formData.motocycleId) {
+                console.log('Không ID khách và không ID xe');
+                return await customerService.reception.createReceptionWithoutMotorcycleIdAndCustomerId(formData);
+            }else if (formData.customerId && !formData.motocycleId) { // TODO: Tạo đơn tiếp nhận dựa - khi khách chưa có xe
+                console.log('không ID xe');
                 return await customerService.reception.createReceptionWithoutMotorcycleId(formData);
             } else if (formData.customerId && formData.motocycleId) { // TODO: Tạo đơn tiếp nhận dựa - khi khách có xe
+                console.log('Có ID xe và ID khách');
                 return await customerService.reception.createReception(formData);
             }
         } catch (error) {
@@ -527,6 +451,15 @@ const ReceiptManagement = () => {
 
             const response = await createNewReceipt(formData);
             const reception = response.data;
+
+            // Gọi api tạo đơn hàng
+            repairService.order.createOrder({ motocycleId: reception.motocycle_id })
+            .then(response => {
+                const order = response.data;
+                // TODO: thông báo toast
+                alert(`Đã tạo đơn hàng "${order.order_id} cho đơn tiếp nhận "${reception.form_id}"`);
+            });
+
             // Tạo đơn mới
             setData('receipts', reception, reception.form_id);
 
@@ -718,7 +651,7 @@ const ReceiptManagement = () => {
                             <thead className="table-light">
                                 <tr>
                                     <th>Mã đơn</th>
-                                    <th>Thông tin khách hàng</th>
+                                    <th>Khách hàng</th>
                                     <th>Thông tin xe</th>
                                     <th>Ngày tiếp nhận</th>
                                     <th>Trạng thái</th>

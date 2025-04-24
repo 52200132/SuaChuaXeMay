@@ -1,0 +1,410 @@
+/* Styling cho trang phân công đơn hàng */
+
+.btn-assign {
+    color: #d30000;
+    border-color: #d30000;
+    white-space: nowrap;
+}
+
+.btn-assign:hover, 
+.btn-assign:focus, 
+.btn-assign:active {
+    background-color: #d30000 !important;
+    color: white !important;
+    border-color: #d30000 !important;
+}
+
+.nav-tabs-custom .nav-item .nav-link {
+    color: #6c757d;
+    font-weight: 600;
+    border: none;
+    padding: 0.75rem 1rem;
+    position: relative;
+}
+
+.nav-tabs-custom .nav-item .nav-link.active {
+    color: #d30000;
+    background-color: transparent;
+}
+
+.nav-tabs-custom .nav-item .nav-link.active::after {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: #d30000;
+    border-radius: 2px 2px 0 0;
+}
+
+.nav-tabs-custom .nav-item .nav-link:hover {
+    color: #d30000;
+}
+
+/* Badge style cho trạng thái thợ */
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffa000 !important;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+/* Progress bar styling */
+.progress {
+    border-radius: 10px;
+    background-color: #e9ecef;
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+
+/* Dropdown styling */
+.dropdown-menu {
+    min-width: 10rem;
+    padding: 0.5rem 0;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: none;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    color: #212529;
+}
+
+.dropdown-item:hover, 
+.dropdown-item:focus {
+    background-color: #f8f9fa;
+    color: #d30000;
+}
+
+.dropdown-item:active {
+    background-color: #d30000;
+    color: white;
+}
+
+/* Dashboard cards styling */
+.dashboard-card {
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.stat-icon i {
+    font-size: 1.5rem;
+}
+
+.stat-details h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.stat-details p {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Technician timeline styling */
+.technician-schedule {
+    margin-top: 20px;
+}
+
+.timeline {
+    border-left: 2px solid #dee2e6;
+    padding-left: 20px;
+    margin-left: 10px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+    display: flex;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+}
+
+.time-block {
+    min-width: 100px;
+    margin-right: 15px;
+}
+
+.start-time, .end-time {
+    display: block;
+    font-weight: 500;
+}
+
+.end-time {
+    color: #6c757d;
+    font-weight: normal;
+}
+
+.order-info {
+    flex: 1;
+}
+
+.order-info h6 {
+    margin-bottom: 5px;
+}
+
+/* Tabs styling */
+.nav-tabs-custom .nav-link {
+    color: #495057;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.nav-tabs-custom .nav-link.active {
+    color: #d30000;
+    border-bottom: 2px solid #d30000;
+    background-color: transparent;
+}
+
+/* Hover effect for technician rows */
+tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Button active state */
+.btn.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Progress bar customization */
+.progress {
+    background-color: #e9ecef;
+    overflow: hidden;
+}
+
+/* Filter section */
+.filter-section .form-control:focus,
+.filter-section .form-select:focus {
+    border-color: #d30000;
+    box-shadow: 0 0 0 0.25rem rgba(211, 0, 0, 0.25);
+}
+
+/* Badge styles for technician status */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
+
+/* Enhanced table styles */
+.table-hover tbody tr:hover {
+    background-color: rgba(211, 0, 0, 0.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .dashboard-overview .row > div {
+        margin-bottom: 15px;
+    }
+}
+
+/* Technician card styling */
+.technician-card {
+    transition: all 0.2s ease-in-out;
+    border: 1px solid #eaeaea;
+}
+
+.technician-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    border-color: #d30000;
+}
+
+.technician-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+}
+
+/* Make cards equal height */
+.row-equal-height {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.row-equal-height .col {
+    display: flex;
+    flex-direction: column;
+}
+
+.row-equal-height .card {
+    flex: 1;
+}
+
+/* Adjust the orders list height */
+.orders-list {
+    max-height: calc(100vh - 400px);
+    overflow-y: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .col-lg-8, .col-lg-4 {
+        margin-bottom: 20px;
+    }
+}
+
+/* Search box in technician header */
+.technician-search {
+    max-width: 250px;
+}
+
+/* Make tabs full-width */
+.nav-tabs-custom {
+    width: 100%;
+}
+
+/* Fix heights for order lists and technician cards */
+.orders-list-container {
+    height: calc(100vh - 380px);  /* Tăng chiều cao từ 530px lên */
+    min-height: 400px;            /* Tăng giá trị tối thiểu */
+    overflow-y: auto;
+}
+
+.technician-cards-container {
+    height: calc(100vh - 380px);  /* Tăng chiều cao từ 530px lên */
+    min-height: 400px;            /* Tăng giá trị tối thiểu */
+    overflow-y: auto;
+}
+
+/* Make cards equal height */
+.technician-list-card {
+    height: calc(100vh - 320px);  /* Tăng chiều cao từ 470px lên */
+    min-height: 450px;            /* Tăng giá trị tối thiểu */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Style the header background */
+.technician-list-card .card-header {
+    background: linear-gradient(to right, #f8f9fa, #e9ecef);
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+.technician-list-card .card-header h6 {
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+}
+
+/* Search box styling */
+.technician-list-card .input-group {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+/* Tabs container so it works with fixed height cards */
+.orders-tabs-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 320px);  /* Tăng chiều cao từ 470px lên */
+    min-height: 450px;            /* Tăng giá trị tối thiểu */
+}
+
+.orders-tabs-container .tab-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.orders-tabs-container .tab-pane {
+    height: 100%;
+}
+
+.orders-list-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.orders-list-card .card-body {
+    flex: 1;
+    padding: 0;
+}
+
+/* Style technician card */
+.technician-card {
+    border-radius: 8px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+    border-left: 4px solid #dee2e6;
+}
+
+.technician-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-left-color: #d30000;
+}
+
+/* Thêm sticky header cho table */
+.orders-list-container table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Đảm bảo background màu đúng khi sticky */
+.table-light th {
+    background-color: #f8f9fa !important;
+}
+
+/* Thêm một khoảng cách giữa các phần */
+.dashboard-charts-section {
+    margin-top: 30px;
+}

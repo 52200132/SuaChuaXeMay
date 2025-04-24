@@ -58,3 +58,121 @@
 .btn-print:hover {
     background-color: #f8f9fa;
 }
+
+/* Add styles for the assignment management tab */
+
+/* Dashboard cards styling */
+.dashboard-card {
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.stat-icon i {
+    font-size: 1.5rem;
+}
+
+.stat-details h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.stat-details p {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Technician timeline styling */
+.technician-schedule {
+    margin-top: 20px;
+}
+
+.timeline {
+    border-left: 2px solid #dee2e6;
+    padding-left: 20px;
+    margin-left: 10px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+    display: flex;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+}
+
+.time-block {
+    min-width: 100px;
+    margin-right: 15px;
+}
+
+.start-time, .end-time {
+    display: block;
+    font-weight: 500;
+}
+
+.end-time {
+    color: #6c757d;
+    font-weight: normal;
+}
+
+.order-info {
+    flex: 1;
+}
+
+.order-info h6 {
+    margin-bottom: 5px;
+}
+
+/* Tab button active state */
+.btn.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Tabs styling */
+.nav-tabs-custom .nav-link {
+    color: #495057;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.nav-tabs-custom .nav-link.active {
+    color: #d30000;
+    border-bottom: 2px solid #d30000;
+    background-color: transparent;
+}
+
+.btn-assign {
+    white-space: nowrap;
+}
