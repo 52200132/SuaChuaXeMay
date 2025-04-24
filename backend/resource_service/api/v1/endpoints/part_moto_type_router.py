@@ -55,4 +55,4 @@ async def get_all_part_moto_types_by_mototype_id(moto_type_id: int, skip: int = 
     db_part_moto_type = await part_moto_type_crud.get_all_part_moto_types_by_mototype_id(db, moto_type_id=moto_type_id, skip=skip, limit=limit)
     return db_part_moto_type
 
-@router.post(URLS['PART_MOTO_TYPE']['CREATE_PART_MOTO_TYPE'], response_model=PartMotoTypeResponse)
+# @router.post(URLS['PART_MOTO_TYPE']['CREATE_PART_MOTO_TYPE'], response_model=PartMotoTypeResponse)

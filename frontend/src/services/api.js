@@ -162,6 +162,28 @@ const resourceService = {
             }
         }
     },
+
+    partMotoType: {
+        getAllPartMotoTypesByMotoTypeId: async (motoTypeId) => {
+            try {
+                const response = await apiClient.get(URLS.PART_MOTO_TYPE.GET_ALL_PART_MOTO_TYPES_BY_MOTOTYPE_ID.replace('{moto_type_id}', motoTypeId));
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách phụ tùng theo loại xe:', error);
+                throw error;
+            }
+        },
+
+        getPartMotoTypeByPartIdAndMototypeId: async (partId, motoTypeId) => {
+            try {
+                const response = await apiClient.get(URLS.PART_MOTO_TYPE.GET_PART_MOTO_TYPE_BY_PART_ID_AND_MOTOTYPE_ID.replace('{part_id}', partId).replace('{moto_type_id}', motoTypeId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy thông tin phụ tùng theo ID=${partId} và loại xe=${motoTypeId}:`, error);
+                throw error;
+            }
+        }
+    },
 };
 
 const customerService = {

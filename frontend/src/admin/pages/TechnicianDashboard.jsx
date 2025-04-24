@@ -76,6 +76,11 @@ const TechnicianDashboard = () => {
         'Đã giao xe': 'delivered'
     };
 
+    // Thêm state mới để lưu trữ thông tin về loại xe và phụ tùng tương ứng
+    const [motoTypeId, setMotoTypeId] = useState(null);
+    const [partsByMotoType, setPartsByMotoType] = useState([]);
+    const [partMotoTypesLoading, setPartMotoTypesLoading] = useState(false);
+
     // TODO: Lấy dữ liệu đơn hàng của kỹ thuật viên
     useEffect(() => {
         const fetchMyOrders = async () => {
@@ -93,7 +98,7 @@ const TechnicianDashboard = () => {
                 const response = await repairService.order.getAllOrdersByStaffIdToday(currentStaff.staff_id);
                 const ordersData = response.data || [];
 
-                // console.log('Đơn hàng của kỹ thuật viên:', ordersData);
+                console.log('Đơn hàng của kỹ thuật viên:', ordersData);
                 
                 // Tạo Set mới để lưu order IDs
                 const newOrdersIds = new Set();
@@ -244,6 +249,7 @@ const TechnicianDashboard = () => {
     const formatOrderData = (order, customer, motorcycle, diagnosis, receiption) => {
         const [createdAtDate, createdAtTime] = order.created_at?.split('T') || ['', ''];
         return {
+            motorcycleId: order.motocycle_id,
             orderId: order.order_id,
             originalData: order,
             customerName: customer?.fullname || 'Không có thông tin',
@@ -388,53 +394,122 @@ const TechnicianDashboard = () => {
         setActiveModalTab('status');
         setActiveCatalogTab('services'); // Mặc định hiển thị tab dịch vụ trước
         
+        // Lấy loại xe từ thông tin xe
+        if (order.originalData && order.originalData.motocycle_id) {
+            const motorcycle = motorcyclesById[order.originalData.motocycle_id];
+            if (motorcycle && motorcycle.moto_type_id) {
+                setMotoTypeId(motorcycle.moto_type_id);
+                fetchPartsByMotoType(motorcycle.moto_type_id);
+            } else {
+                // Trường hợp không có thông tin loại xe, reset parts
+                setPartsByMotoType([]);
+                setMotoTypeId(null);
+            }
+        }
+        
         setShowUpdateModal(true);
     };
 
-    // Xử lý thay đổi trạng thái
-    const handleStatusChange = (e) => {
-        const status = e.target.value;
-        setUpdateData({
-            ...updateData,
-            status,
-            progressPercentage: getProgressPercentage(status)
+    // Hàm lấy danh sách phụ tùng theo loại xe
+    const fetchPartsByMotoType = async (motoTypeId) => {
+        if (!motoTypeId) return;
+        
+        try {
+            setPartMotoTypesLoading(true);
+            const response = await resourceService.partMotoType.getAllPartMotoTypesByMotoTypeId(motoTypeId);
+            const partMotoTypeData = response.data || [];
+            
+            // Map dữ liệu phụ tùng theo loại xe với thông tin phụ tùng đầy đủ
+            const enhancedPartData = await Promise.all(partMotoTypeData.map(async (partMotoType) => {
+                // Tìm thông tin phụ tùng trong danh sách phụ tùng hiện có
+                const partInfo = parts.find(p => p.part_id === partMotoType.part_id);
+                
+                if (partInfo) {
+                    return {
+                        ...partMotoType,
+                        ...partInfo,
+                        // Đảm bảo part_id từ partMotoType không bị ghi đè
+                        part_id: partMotoType.part_id
+                    };
+                }
+                
+                // Nếu không tìm thấy trong cache, lấy thông tin từ API
+                try {
+                    const partResponse = await resourceService.part.getPartById(partMotoType.part_id);
+                    const partData = partResponse.data;
+                    return {
+                        ...partMotoType,
+                        ...partData
+                    };
+                } catch (error) {
+                    console.error(`Lỗi khi lấy thông tin phụ tùng id=${partMotoType.part_id}:`, error);
+                    return {
+                        ...partMotoType,
+                        name: `Phụ tùng ID ${partMotoType.part_id}`,
+                        code: 'Unknown',
+                        unit: 'Cái'
+                    };
+                }
+            }));
+            
+            setPartsByMotoType(enhancedPartData);
+            setPartMotoTypesLoading(false);
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách phụ tùng theo loại xe:', error);
+            setPartsByMotoType([]);
+            setPartMotoTypesLoading(false);
+        }
+    };
+
+    // Chỉnh sửa hàm getFilteredParts để hiển thị phụ tùng theo loại xe
+    const getFilteredParts = () => {
+        // Nếu có danh sách phụ tùng theo loại xe, ưu tiên hiển thị
+        const partsToFilter = partsByMotoType.length > 0 ? partsByMotoType : parts;
+        
+        // Nếu không có từ khóa tìm kiếm, trả về toàn bộ danh sách
+        if (!partSearchTerm) return partsToFilter;
+        
+        // Nếu có từ khóa tìm kiếm, lọc theo nhiều tiêu chí
+        const searchTerm = partSearchTerm.toLowerCase();
+        return partsToFilter.filter(part => {
+            // Tìm kiếm theo tên phụ tùng
+            if (part.name?.toLowerCase().includes(searchTerm)) {
+                return true;
+            }
+            
+            // Tìm kiếm theo mã phụ tùng
+            if (part.code?.toLowerCase().includes(searchTerm)) {
+                return true;
+            }
+            
+            // Có thể mở rộng tìm kiếm theo các tiêu chí khác
+            // Ví dụ: loại phụ tùng, nhà sản xuất, v.v.
+            
+            return false;
         });
     };
 
-    // Xử lý tìm kiếm phụ tùng
-    const handlePartSearch = (e) => {
-        setPartSearchTerm(e.target.value);
-    };
-
-    // Lọc danh sách phụ tùng theo từ khóa
-    const getFilteredParts = () => {
-        if (!partSearchTerm) return parts;
-        
-        const searchTerm = partSearchTerm.toLowerCase();
-        return parts.filter(part => 
-            part.name.toLowerCase().includes(searchTerm) || 
-            part.code.toLowerCase().includes(searchTerm)
-        );
-    };
-
     // Thêm/xóa phụ tùng khỏi danh sách đã chọn
-    const togglePartSelection = (partId) => {
-        if (selectedParts.includes(partId)) {
+    const togglePartSelection = (partId, partMotoTypeId = null) => {
+        // Sử dụng part_mototype_id nếu có, ngược lại sử dụng part_id
+        const selectionId = partMotoTypeId || partId;
+        
+        if (selectedParts.includes(selectionId)) {
             // Xóa phụ tùng khỏi danh sách đã chọn
-            setSelectedParts(prev => prev.filter(id => id !== partId));
+            setSelectedParts(prev => prev.filter(id => id !== selectionId));
             
             // Xóa số lượng của phụ tùng
             const newQuantities = {...partQuantities};
-            delete newQuantities[partId];
+            delete newQuantities[selectionId];
             setPartQuantities(newQuantities);
         } else {
             // Thêm phụ tùng vào danh sách đã chọn
-            setSelectedParts(prev => [...prev, partId]);
+            setSelectedParts(prev => [...prev, selectionId]);
             
             // Khởi tạo số lượng là 1
             setPartQuantities(prev => ({
                 ...prev,
-                [partId]: 1
+                [selectionId]: 1
             }));
         }
     };
@@ -462,11 +537,52 @@ const TechnicianDashboard = () => {
     // Tính tổng tiền phụ tùng đã chọn
     const calculateTotalAmount = () => {
         return selectedParts.reduce((total, partId) => {
-            const part = parts.find(p => p.id === partId);
-            const quantity = partQuantities[partId] || 0;
-            return total + (part ? part.price * quantity : 0);
+            // Tìm thông tin phụ tùng từ cả hai nguồn
+            const partFromMotoType = partsByMotoType.find(p => 
+                p.part_mototype_id === partId || p.part_id === partId
+            );
+            const part = partFromMotoType || parts.find(p => p.part_id === partId);
+            
+            if (!part) return total;
+            
+            const quantity = partQuantities[partId] || 1;
+            const price = part.price || 0;
+            
+            return total + (price * quantity);
         }, 0);
     };
+
+    const calculateTotalPrice = async (partsData, servicesData, motorcycleId, orderId) => {
+        let totalPrice = 0;
+        const partOrderDetails = await Promise.all(partsData.map(async (part) => {
+            try {
+                const partId = part.part_id;
+                const response = await resourceService.partMotoType.getPartMotoTypeByPartIdAndMototypeId(partId, motorcycleId);
+                const partMotoType = response.data;
+                if (partMotoType) {
+                    part.price = partMotoType.price;
+                } else {
+                    part.price = 0; // Hoặc giá mặc định nếu không tìm thấy
+                }
+                return {
+                    is_selected: false,
+                    order_id: orderId,
+                    part_id: partId,
+                    quantity: part.quantity,
+                    price: parseInt(part.price) * parseInt(part.quantity),
+                }
+            } catch (error) {
+                console.error('Lỗi khi lấy giá phụ tùng:', error);
+                return null;
+            }
+        }));
+        partOrderDetails.map(partOrderDetail => { 
+            if (partOrderDetail) {
+                totalPrice += partOrderDetail.price;
+            }
+        });
+        console.log('Tổng tiền và chi tiết phụ tùng đơn hàng', totalPrice, partOrderDetails);
+    }
 
     // Cập nhật trạng thái đơn hàng
     const handleUpdateOrder = async () => {
@@ -477,14 +593,23 @@ const TechnicianDashboard = () => {
             
             // Chuẩn bị dữ liệu phụ tùng
             const partsData = selectedParts.map(partId => {
-                const part = parts.find(p => p.id === partId);
+                // Tìm thông tin phụ tùng từ cả hai nguồn
+                const partFromMotoType = partsByMotoType.find(p => 
+                    p.part_mototype_id === partId || p.part_id === partId
+                );
+                const part = partFromMotoType || parts.find(p => p.part_id === partId);
+                
+                if (!part) return null;
+                
                 return {
-                    part_id: partId,
+                    part_id: part.part_id,
+                    part_mototype_id: part.part_mototype_id,
                     quantity: partQuantities[partId] || 1,
-                    name: part ? part.name : '',
-                    unit: part ? part.unit : ''
+                    name: part.name || '',
+                    unit: part.unit || '',
+                    price: part.price || 0
                 };
-            });
+            }).filter(Boolean);
             
             // Chuẩn bị dữ liệu dịch vụ
             const servicesData = selectedServices.map(serviceId => {
@@ -494,34 +619,36 @@ const TechnicianDashboard = () => {
                     name: service ? service.name : '',
                 };
             });
+
+            await calculateTotalPrice(partsData, servicesData, motorcyclesById[currentOrder.motorcycleId].moto_type_id, currentOrder.orderId);
             
             // TODO: Gọi API cập nhật
-            const response = await repairService.order.updateOrderStatus(currentOrder.orderId, {
-                status: updateData.status,
-                notes: updateData.notes,
-                parts: partsData,
-                services: servicesData
-            });
+            // const response = await repairService.order.updateOrderStatus(currentOrder.orderId, {
+            //     status: updateData.status,
+            //     notes: updateData.notes,
+            //     parts: partsData,
+            //     services: servicesData
+            // });
 
             // const responseDiaginosis = await repairService.diagnosis.updateDiagnosis();
             
             // Cập nhật state
-            const updatedOrder = response.data;
-            setData('orders', updatedOrder, updatedOrder.order_id);
+            // const updatedOrder = response.data;
+            // setData('orders', updatedOrder, updatedOrder.order_id);
             
             // Cập nhật object hiển thị
-            const updatedOrdersDisplay = {...myOrdersDisplay};
-            updatedOrdersDisplay[currentOrder.orderId] = {
-                ...myOrdersDisplay[currentOrder.orderId],
-                status: STATUS_MAPPING[updatedOrder.status],
-                rawStatus: updatedOrder.status,
-                progressPercentage: getProgressPercentage(updatedOrder.status)
-            };
+            // const updatedOrdersDisplay = {...myOrdersDisplay};
+            // updatedOrdersDisplay[currentOrder.orderId] = {
+            //     ...myOrdersDisplay[currentOrder.orderId],
+            //     status: STATUS_MAPPING[updatedOrder.status],
+            //     rawStatus: updatedOrder.status,
+            //     progressPercentage: getProgressPercentage(updatedOrder.status)
+            // };
             
-            setMyOrdersDisplay(updatedOrdersDisplay);
-            filterOrders(activeTab, searchTerm);
-            updateStats(myOrdersIds, updatedOrdersDisplay);
-            setShowUpdateModal(false);
+            // setMyOrdersDisplay(updatedOrdersDisplay);
+            // filterOrders(activeTab, searchTerm);
+            // updateStats(myOrdersIds, updatedOrdersDisplay);
+            // setShowUpdateModal(false);
             setLoading(false);
             
             alert('Cập nhật đơn hàng thành công!');
@@ -651,14 +778,51 @@ const TechnicianDashboard = () => {
                                             placeholder="Nhập tên hoặc mã phụ tùng..."
                                             value={partSearchTerm}
                                             onChange={handlePartSearch}
+                                            onKeyDown={(e) => {
+                                                // Bắt sự kiện nhấn Enter để tìm kiếm
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    if (partSearchTerm.length >= 2) {
+                                                        searchPartsFromAPI(partSearchTerm);
+                                                    }
+                                                }
+                                            }}
                                         />
-                                        <Button variant="outline-secondary">
+                                        <Button 
+                                            variant="outline-secondary"
+                                            onClick={() => {
+                                                if (partSearchTerm.length >= 2) {
+                                                    searchPartsFromAPI(partSearchTerm);
+                                                }
+                                            }}
+                                            disabled={partSearchTerm.length < 2}
+                                        >
                                             <i className="bi bi-search"></i>
                                         </Button>
+                                        {partSearchTerm && (
+                                            <Button 
+                                                variant="outline-secondary"
+                                                onClick={() => {
+                                                    setPartSearchTerm('');
+                                                    // Nếu đang hiển thị theo loại xe, quay lại danh sách ban đầu
+                                                    if (motoTypeId) {
+                                                        fetchPartsByMotoType(motoTypeId);
+                                                    } else {
+                                                        // Nếu không, tải lại danh sách phụ tùng
+                                                        fetchParts();
+                                                    }
+                                                }}
+                                            >
+                                                <i className="bi bi-x"></i>
+                                            </Button>
+                                        )}
                                     </InputGroup>
+                                    {partSearchTerm && partSearchTerm.length < 2 && (
+                                        <small className="text-muted">Nhập ít nhất 2 ký tự để tìm kiếm</small>
+                                    )}
                                 </Form.Group>
 
-                                {partLoading ? (
+                                {partMotoTypesLoading || partLoading ? (
                                     <div className="text-center py-3">
                                         <div className="spinner-border spinner-border-sm" role="status">
                                             <span className="visually-hidden">Đang tải...</span>
@@ -666,57 +830,102 @@ const TechnicianDashboard = () => {
                                         <p className="mt-2 text-muted">Đang tải danh sách phụ tùng...</p>
                                     </div>
                                 ) : (
-                                    filteredParts.length > 0 ? (
-                                        <div className="parts-container">
-                                            <ListGroup className="parts-list">
-                                                {filteredParts.map(part => (
-                                                    <ListGroup.Item 
-                                                        key={part.part_id}
-                                                        className={`d-flex justify-content-between align-items-center part-item ${selectedParts.includes(part.part_id) ? 'selected' : ''}`}
-                                                        action
-                                                        onClick={() => togglePartSelection(part.part_id)}
-                                                    >
-                                                        <div className="part-info">
-                                                            {part.name}
-                                                        </div>
-                                                        <div className="part-quantity">
-                                                            {selectedParts.includes(part.part_id) ? (
-                                                                <div className="quantity-input">
-                                                                    <button 
-                                                                        type="button"
-                                                                        className="quantity-btn"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleQuantityChange(part.part_id, (partQuantities[part.part_id] || 1) - 1);
-                                                                        }}
-                                                                    >
-                                                                        -
-                                                                    </button>
-                                                                    <span className="quantity-value">{partQuantities[part.part_id] || 1}</span>
-                                                                    <button 
-                                                                        type="button"
-                                                                        className="quantity-btn"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleQuantityChange(part.part_id, (partQuantities[part.part_id] || 1) + 1);
-                                                                        }}
-                                                                    >
-                                                                        +
-                                                                    </button>
-                                                                </div>
-                                                            ) : (
-                                                                <span></span>
-                                                            )}
-                                                        </div>
-                                                    </ListGroup.Item>
-                                                ))}
-                                            </ListGroup>
-                                        </div>
-                                    ) : (
-                                        <Alert variant="info">
-                                            Không tìm thấy phụ tùng phù hợp với từ khóa tìm kiếm.
-                                        </Alert>
-                                    )
+                                    <>
+                                        {motoTypeId && (
+                                            <Alert variant="info" className="py-2 mb-3">
+                                                <small>
+                                                    <i className="bi bi-info-circle me-1"></i>
+                                                    Hiển thị phụ tùng phù hợp với xe {currentOrder?.motorcycleModel}
+                                                </small>
+                                            </Alert>
+                                        )}
+                                        
+                                        {filteredParts.length > 0 ? (
+                                            <div className="parts-container">
+                                                <div className="d-flex justify-content-between align-items-center px-2 py-1 bg-light border-bottom">
+                                                    <small className="text-muted">
+                                                        {filteredParts.length} phụ tùng {partSearchTerm ? `cho "${partSearchTerm}"` : ''}
+                                                    </small>
+                                                    {partSearchTerm && (
+                                                        <Button 
+                                                            variant="link" 
+                                                            className="p-0 text-decoration-none" 
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                setPartSearchTerm('');
+                                                                // Nếu đang hiển thị theo loại xe, quay lại danh sách ban đầu
+                                                                if (motoTypeId) {
+                                                                    fetchPartsByMotoType(motoTypeId);
+                                                                } else {
+                                                                    // Nếu không, tải lại danh sách phụ tùng
+                                                                    fetchParts();
+                                                                }
+                                                            }}
+                                                        >
+                                                            <small>Xóa bộ lọc</small>
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                                <ListGroup className="parts-list">
+                                                    {filteredParts.map(part => (
+                                                        <ListGroup.Item 
+                                                            key={part.part_mototype_id || part.part_id}
+                                                            as="div" // Đảm bảo render thành div thay vì button
+                                                            className={`d-flex justify-content-between align-items-center part-item ${selectedParts.includes(part.part_mototype_id || part.part_id) ? 'selected' : ''}`}
+                                                            onClick={() => togglePartSelection(part.part_id, part.part_mototype_id)}
+                                                        >
+                                                            <div className="part-info">
+                                                                <div>{part.name}</div>
+                                                                {part.price && (
+                                                                    <small className="text-primary">
+                                                                        {formatCurrency(part.price)}
+                                                                    </small>
+                                                                )}
+                                                            </div>
+                                                            <div className="part-quantity">
+                                                                {selectedParts.includes(part.part_mototype_id || part.part_id) ? (
+                                                                    <div className="quantity-input">
+                                                                        <span
+                                                                            className="quantity-btn"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                const id = part.part_mototype_id || part.part_id;
+                                                                                handleQuantityChange(id, (partQuantities[id] || 1) - 1);
+                                                                            }}
+                                                                        >
+                                                                            -
+                                                                        </span>
+                                                                        <span className="quantity-value">
+                                                                            {partQuantities[part.part_mototype_id || part.part_id] || 1}
+                                                                        </span>
+                                                                        <span 
+                                                                            className="quantity-btn"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                const id = part.part_mototype_id || part.part_id;
+                                                                                handleQuantityChange(id, (partQuantities[id] || 1) + 1);
+                                                                            }}
+                                                                        >
+                                                                            +
+                                                                        </span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span></span>
+                                                                )}
+                                                            </div>
+                                                        </ListGroup.Item>
+                                                    ))}
+                                                </ListGroup>
+                                            </div>
+                                        ) : (
+                                            <Alert variant="info">
+                                                {partSearchTerm 
+                                                    ? `Không tìm thấy phụ tùng phù hợp với từ khóa "${partSearchTerm}".`
+                                                    : 'Không có phụ tùng nào khả dụng.'
+                                                }
+                                            </Alert>
+                                        )}
+                                    </>
                                 )}
                             </Tab>
                         </Tabs>
@@ -777,8 +986,16 @@ const TechnicianDashboard = () => {
                                             <h6 className="border-bottom pb-2">Phụ tùng đã chọn</h6>
                                             <ListGroup variant="flush">
                                                 {selectedParts.map(partId => {
-                                                    const part = parts.find(p => p.part_id === partId);
+                                                    // Tìm thông tin phụ tùng từ cả hai nguồn
+                                                    const partFromMotoType = partsByMotoType.find(p => 
+                                                        p.part_mototype_id === partId || p.part_id === partId
+                                                    );
+                                                    const part = partFromMotoType || parts.find(p => p.part_id === partId);
+                                                    
+                                                    if (!part) return null;
+                                                    
                                                     const quantity = partQuantities[partId] || 1;
+                                                    const price = part.price || 0;
                                                     
                                                     return (
                                                         <ListGroup.Item 
@@ -787,14 +1004,20 @@ const TechnicianDashboard = () => {
                                                             style={{backgroundColor: 'transparent'}}
                                                         >
                                                             <div>
-                                                                <span>{part?.name}</span>
-                                                                <span className="text-muted ms-2">x{quantity}</span>
-                                                                <span className="text-muted ms-2">{part.unit}</span>
+                                                                <div>{part.name}</div>
+                                                                <div className="d-flex align-items-center">
+                                                                    <small className="text-muted me-2">{part.unit} x{quantity}</small>
+                                                                    {price > 0 && (
+                                                                        <small className="text-primary">
+                                                                            {formatCurrency(price * quantity)}
+                                                                        </small>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                             <Button 
                                                                 variant="link" 
                                                                 className="text-danger p-0"
-                                                                onClick={() => togglePartSelection(partId)}
+                                                                onClick={() => togglePartSelection(part.part_id, part.part_mototype_id)}
                                                             >
                                                                 <i className="bi bi-x-circle"></i>
                                                             </Button>
@@ -802,6 +1025,12 @@ const TechnicianDashboard = () => {
                                                     );
                                                 })}
                                             </ListGroup>
+                                            
+                                            {/* Hiển thị tổng tiền */}
+                                            <div className="mt-3 pt-2 border-top d-flex justify-content-between">
+                                                <span className="fw-medium">Tổng cộng:</span>
+                                                <span className="fw-bold">{formatCurrency(calculateTotalAmount())}</span>
+                                            </div>
                                         </div>
                                     )}
                                 </>
@@ -817,6 +1046,62 @@ const TechnicianDashboard = () => {
                 </Row>
             </>
         );
+    };
+
+    // Cập nhật hàm handlePartSearch để xử lý tìm kiếm phụ tùng
+
+    // Xử lý tìm kiếm phụ tùng
+    const handlePartSearch = (e) => {
+        const term = e.target.value;
+        setPartSearchTerm(term);
+        
+        // Nếu từ khóa tìm kiếm không rỗng và độ dài >= 2 ký tự, thực hiện tìm kiếm
+        if (term.length >= 2) {
+            // Nếu đang hiển thị phụ tùng theo loại xe, thì tìm kiếm trong danh sách đó
+            if (partsByMotoType.length > 0) {
+                // Tìm kiếm local trong danh sách phụ tùng theo loại xe đã có
+                const filtered = partsByMotoType.filter(part => 
+                    part.name?.toLowerCase().includes(term.toLowerCase()) || 
+                    part.code?.toLowerCase().includes(term.toLowerCase())
+                );
+                // Hiển thị kết quả tìm kiếm ngay lập tức
+            } else {
+                // Nếu không có danh sách phụ tùng theo loại xe, thực hiện tìm kiếm API
+                searchPartsFromAPI(term);
+            }
+        }
+    };
+
+    // Hàm tìm kiếm phụ tùng từ API
+    const searchPartsFromAPI = async (searchTerm) => {
+        if (!searchTerm || searchTerm.length < 2) return;
+        
+        try {
+            setPartLoading(true);
+            // Gọi API tìm kiếm phụ tùng
+            const response = await resourceService.part.searchParts(searchTerm);
+            
+            if (response && response.data) {
+                // Cập nhật danh sách phụ tùng tạm thời với kết quả tìm kiếm
+                const searchResults = response.data;
+                // Nếu đang hiển thị theo loại xe, thì ghi đè tạm thời kết quả tìm kiếm
+                if (motoTypeId) {
+                    // Giữ nguyên danh sách phụ tùng theo loại xe, chỉ lọc theo từ khóa
+                } else {
+                    // Nếu không hiển thị theo loại xe, cập nhật toàn bộ danh sách
+                    setParts(searchResults);
+                }
+            }
+            setPartLoading(false);
+        } catch (error) {
+            console.error('Lỗi khi tìm kiếm phụ tùng:', error);
+            setPartLoading(false);
+            // Tìm kiếm local trong trường hợp API lỗi
+            const filtered = parts.filter(part => 
+                part.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                part.code?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
     };
 
     return (
@@ -1053,7 +1338,7 @@ const TechnicianDashboard = () => {
                                         <Form.Label>Trạng thái mới</Form.Label>
                                         <Form.Select
                                             value={updateData.status}
-                                            onChange={handleStatusChange}
+                                            onChange={(e) => setUpdateData({...updateData, status: e.target.value})}
                                         >
                                             <option value="received">Đã tiếp nhận</option>
                                             <option value="checking">Đang kiểm tra</option>
