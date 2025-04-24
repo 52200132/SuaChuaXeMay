@@ -49,9 +49,7 @@ class DiagnosisResponse(BaseModel):
                 "diagnosis_id": 1,
                 "form_id": 1,
                 "order_id": 1,
-                "problem": "Xe không khởi động được",
                 "created_at": datetime.now(),
-                "estimated_cost": 500000
             }
         }
 # class DiagnosisInDB(DiagnosisBase):

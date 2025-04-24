@@ -123,6 +123,7 @@ const OrderManagement = () => {
                         // const customerId = order.customer_id;
                         const motorcycleId = order.motocycle_id;
                         const staffId = order.staff_id;
+                        console.log(staffId);
 
                         // Sử dụng Promise.allSettled cho các fetch phụ để biết cái nào lỗi
                         const [ motorcycleResult, staffResult, diagnosisResult] = await Promise.allSettled([
