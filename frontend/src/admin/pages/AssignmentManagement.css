@@ -310,13 +310,14 @@ tbody tr:hover {
 /* Fix heights for order lists and technician cards */
 .orders-list-container {
     height: calc(100vh - 380px);  /* Tăng chiều cao từ 530px lên */
-    min-height: 400px;            /* Tăng giá trị tối thiểu */
+    /* Tăng giá trị tối thiểu */
+    /* min-height: 400px;             */
     overflow-y: auto;
 }
 
 .technician-cards-container {
     height: calc(100vh - 380px);  /* Tăng chiều cao từ 530px lên */
-    min-height: 400px;            /* Tăng giá trị tối thiểu */
+    
     overflow-y: auto;
 }
 
@@ -379,15 +380,57 @@ tbody tr:hover {
 /* Style technician card */
 .technician-card {
     border-radius: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 5px;            /* Giảm margin từ 8px xuống 5px */
     transition: all 0.3s ease;
     border-left: 4px solid #dee2e6;
+    padding: 0;                     /* Thêm padding 0 */
 }
 
-.technician-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    border-left-color: #d30000;
+.technician-card .card-body {
+    padding: 0.5rem;               /* Giảm padding từ 0.75rem xuống 0.5rem */
+}
+
+.technician-avatar {
+    width: 28px;                    /* Giảm từ 32px xuống 28px */
+    height: 28px;                   /* Giảm từ 32px xuống 28px */
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+}
+
+.technician-avatar i {
+    font-size: 0.9rem;                /* Giảm font size từ 1rem xuống 0.9rem */
+}
+
+.technician-card h6 {
+    font-size: 0.85rem;              /* Giảm font size từ 0.9rem xuống 0.85rem */
+    margin-bottom: 0;          /* Loại bỏ margin dưới */
+}
+
+.technician-card i.bi-telephone {
+    font-size: 0.7rem;             /* Giảm font size số điện thoại */
+}
+
+.technician-card .d-flex.align-items-center.mb-2 {
+    margin-bottom: 0.3rem !important; /* Giảm margin giữa thông tin và badge */
+}
+
+.technician-card .progress {
+    height: 3px;                    /* Giảm chiều cao thanh progress từ 6px xuống 4px */
+    margin-top: 0.3rem;             /* Giảm margin trên cho progress bar */
+    margin-bottom: 0.2rem;         /* Giảm margin dưới */
+}
+
+.technician-card .btn-sm {
+    padding: 0.15rem 0.4rem;         /* Giảm padding nút */
+    font-size: 0.7rem;             /* Giảm font size nút */
+}
+
+.technician-card small.text-muted {
+    font-size: 0.65rem;              /* Giảm font size text dưới thanh progress */
 }
 
 /* Thêm sticky header cho table */

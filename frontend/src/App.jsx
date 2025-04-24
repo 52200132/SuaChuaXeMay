@@ -32,6 +32,7 @@ import AdminProfile from './admin/pages/Profile';
 import StaffLogin from './admin/pages/Login';
 import ReceiptManagement from './admin/pages/ReceiptManagement';
 import OrderManagement from './admin/pages/OrderManagement';
+import TechnicianDashboard from './admin/pages/TechnicianDashboard';
 
 // Import the new components
 import ServiceDetail from './pages/ServiceDetail';
@@ -74,6 +75,7 @@ function App() {
                             <Route path="orders" element={<OrderManagement />} />
                             <Route path="orders/:id/print" element={<OrderManagement />} />
                             <Route path="orders/create" element={<OrderManagement />} />
+                            <Route path="technician-dashboard" element={<TechnicianDashboard />} />
                             <Route path="services" element={<ServiceManagement />} />
                             <Route path="users" element={<UserManagement />} />
                             <Route path="reports" element={<Reports />} />
