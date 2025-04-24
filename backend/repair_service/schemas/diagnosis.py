@@ -13,28 +13,34 @@ class DiagnosisBase(BaseModel):
 class DiagnosisCreate(BaseModel):
     form_id: int = Field(..., description='Mã phiếu sửa chữa')
     order_id: int = Field(..., description='Mã đơn hàng')
-    # problem: str = Field(..., description='Vấn đề phát hiện')
-    # estimated_cost: int = Field(..., description='Chi phí ước tính')
     class Config:
         from_attributes = True
         json_schema_extra = {
             "example": {
                 "form_id": 1,
-                "order_id": 1,
-                # "problem": "Xe không khởi động được",
-                # "estimated_cost": 500000
+                "order_id": 1
             }
         }
 
 class DiagnosisUpdate(BaseModel):
-    problem: Optional[str] = None
-    estimated_cost: Optional[int] = None
+    problem: Optional[str]
+    estimated_cost: Optional[int]
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "problem": "Xe không khởi động được",
+                "estimated_cost": 500000
+            }
+        }
 
 class DiagnosisResponse(BaseModel):
     diagnosis_id: int
     form_id: int
     order_id: int
+    problem: Optional[str]
     created_at: datetime
+    estimated_cost: Optional[int]
 
     class Config:
         from_attributes = True

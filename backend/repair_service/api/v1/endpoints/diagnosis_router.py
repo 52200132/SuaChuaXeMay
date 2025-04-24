@@ -48,13 +48,13 @@ async def create_diagnosis(diagnosis: DiagnosisCreate, db: Session = Depends(get
         logger.error(f"Lỗi khi tạo chẩn đoán: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-# @router.put("/{diagnosis_id}", response_model=DiagnosisResponse)
-# def update_diagnosis(diagnosis_id: int, diagnosis: DiagnosisUpdate, db: Session = Depends(get_db)):
-#     """Update an existing diagnosis"""
-#     db_diagnosis = crud.update_diagnosis(db, diagnosis_id=diagnosis_id, diagnosis=diagnosis)
-#     if db_diagnosis is None:
-#         raise HTTPException(status_code=404, detail="Diagnosis not found")
-#     return db_diagnosis
+@router.put(URLS['DIAGNOSIS']['UPDATE_DIAGNOSIS'], response_model=DiagnosisResponse)
+async def update_diagnosis(diagnosis_id: int, diagnosis: DiagnosisUpdate, db: Session = Depends(get_db)):
+    # """Update an existing diagnosis"""
+    db_diagnosis = await crud.update_diagnosis(db, diagnosis_id=diagnosis_id, diagnosis=diagnosis)
+    if db_diagnosis is None:
+        raise HTTPException(status_code=404, detail="Diagnosis not found")
+    return db_diagnosis
 
 # @router.delete("/{diagnosis_id}", status_code=status.HTTP_204_NO_CONTENT)
 # def delete_diagnosis(diagnosis_id: int, db: Session = Depends(get_db)):

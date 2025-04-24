@@ -16,6 +16,8 @@ async def create_diagnosis(db: AsyncSession, diagnosis: DiagnosisCreate) -> Diag
         db_diagnosis = Diagnosis(
             form_id=diagnosis.form_id,
             order_id=diagnosis.order_id,
+            # problem=diagnosis.problem,
+            # estimated_cost=diagnosis.estimated_cost
         )
         db.add(db_diagnosis)
         await db.commit()
@@ -40,28 +42,17 @@ async def get_diagnosis_by_order_id (db: AsyncSession, order_id: int) -> Diagnos
     db_diagnosis = result.scalar_one_or_none()
     return db_diagnosis
 
-# async def update_diagnosis(db: AsyncSession, diagnosis_id: int, diagnosis: DiagnosisUpdate) -> Diagnosis:
-#     """Cập nhật thông tin chẩn đoán"""
-#     try:
-#         db_diagnosis = await get_diagnosis_by_id(db, diagnosis_id)
-#         if not db_diagnosis:
-#             return None
-
-#         update_data = diagnosis.dict(exclude_unset=True)
-#         for key, value in update_data.items():
-#             setattr(db_diagnosis, key, value)
-
-#         await db.commit()
-#         await db.refresh(db_diagnosis)
-#         return DiagnosisResponse.from_orm(db_diagnosis)
-#     except IntegrityError as e:
-#         await db.rollback()
-#         logger.error(f"Lỗi khi cập nhật bảng chẩn đoán: {str(e)}")
-#         raise ValueError("Chuỗi chẩn đoán đã tồn tại")
-#     except Exception as e:
-#         await db.rollback()
-#         logger.error(f"Lỗi không xác định khi cập nhật bảng chẩn đoán: {str(e)}")
-#         raise ValueError("Lỗi không xác định khi cập nhật bảng chẩn đoán")
+async def update_diagnosis(db: AsyncSession, diagnosis_id: int, diagnosis: DiagnosisUpdate) -> Diagnosis:
+    """Cập nhật thông tin chẩn đoán"""
+    db_diagnosis = await get_diagnosis_by_id(db, diagnosis_id)
+    if not db_diagnosis:
+        return None
+    update_data = diagnosis.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_diagnosis, key, value)
+    await db.commit()
+    await db.refresh(db_diagnosis)
+    return db_diagnosis
 # async def delete_diagnosis(db: AsyncSession, diagnosis_id: int) -> bool:
 #     """Xóa một bản chẩn đoán"""
 #     try:

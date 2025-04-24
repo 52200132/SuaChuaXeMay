@@ -31,4 +31,13 @@ URLS = {
         'UPDATE_PART' : '/part/update',
         'DELETE_PART' : '/part/delete/{part_id}'
     },
+    #TODO
+    'PART_MOTO_TYPE': {
+        'GET_PART_MOTO_TYPE_BY_PART_ID_AND_MOTOTYPE_ID' : '/part-moto-type/{part_id}/{moto_type_id}',
+        'GET_ALL_PART_MOTO_TYPES' : '/part-moto-types',
+        'GET_ALL_PART_MOTO_TYPES_BY_MOTOTYPE_ID' : '/part-moto-types/moto-type/{moto_type_id}',
+        'CREATE_PART_MOTO_TYPE' : '/part-moto-type/create',
+        'UPDATE_PART_MOTO_TYPE' : '/part-moto-type/update',
+        'DELETE_PART_MOTO_TYPE' : '/part-moto-type/delete/{part_moto_type_id}'
+    },
 }
