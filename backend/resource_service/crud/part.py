@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update, delete
@@ -50,10 +51,16 @@ async def update_part(db: AsyncSession, part_id: int, part: PartUpdate) -> Part:
     return db_part
     
 async def delete_part(db: AsyncSession, part_id: int) -> Part:
-    """Xóa một phần"""
-    db_part = await get_part_by_id(db, part_id)
-    if not db_part:
-        return None
-    await db.delete(db_part)
+    """Xóa một phần phụ tùng"""
+
+    query = select(Part).where(Part.part_id == part_id)
+    result = await db.execute(query)
+    existing_part = result.scalar_one_or_none()
+    
+    if existing_part is None:
+        logger.error(f"Part with ID {part_id} not found.")
+        raise HTTPException(status_code=404, detail="Part not found")
+    
+    await db.delete(existing_part)
     await db.commit()
-    return db_part
+    logger.info(f"Deleted part with ID {part_id}.")

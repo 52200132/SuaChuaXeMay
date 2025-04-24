@@ -17,8 +17,8 @@ class PartMotoTypeCreate(BaseModel):
         }
 
 class PartMotoTypeUpdate(BaseModel):
-    moto_type_id: Optional[int] = Field(None, description="ID of the motorcycle type")
-    part_id: Optional[int] = Field(None, description="ID of the part")
+    # moto_type_id: Optional[int] = Field(None, description="ID of the motorcycle type")
+    # part_id: Optional[int] = Field(None, description="ID of the part")
     price: Optional[int] = Field(None, description="Price of the part for the motorcycle type")
     
     class Config:
@@ -30,7 +30,7 @@ class PartMotoTypeUpdate(BaseModel):
         }
         
 class PartMotoTypeResponse(BaseModel):
-    id: int = Field(..., description="ID of the part motorcycle type relationship")
+    part_mototype_id: int = Field(..., description="ID of the part motorcycle type relationship")
     moto_type_id: int = Field(..., description="ID of the motorcycle type")
     part_id: int = Field(..., description="ID of the part")
     price: int = Field(..., description="Price of the part for the motorcycle type")
@@ -39,7 +39,7 @@ class PartMotoTypeResponse(BaseModel):
         from_attributes = True
         json_schema_extra = {
             "example": {
-                "id": 1,
+                "part_mototype_id": 1,
                 "moto_type_id": 1,
                 "part_id": 1,
                 "price": 1000

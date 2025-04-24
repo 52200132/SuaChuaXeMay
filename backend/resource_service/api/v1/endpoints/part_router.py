@@ -51,10 +51,21 @@ async def update_part(part_id: int, part: PartUpdate, db: Session = Depends(get_
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy phụ tùng")
     return db_part
 
-@router.delete(URLS['PART']['DELETE_PART'], response_model=PartResponse)
+@router.delete(URLS['PART']['DELETE_PART'], status_code=status.HTTP_200_OK)
 async def delete_part(part_id: int, db: Session = Depends(get_db)):
     """Xóa một phần"""
-    db_part = await part_crud.delete_part(db, part_id=part_id)
-    if not db_part:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy phụ tùng")
-    return db_part
+    try:
+        # Gọi hàm CRUD để xóa Part
+        await part_crud.delete_part(db, part_id=part_id)
+        return {"detail": f"Part with ID {part_id} deleted successfully."}
+    except HTTPException as e:
+        # Nếu Part không tồn tại
+        logger.error(f"Error while deleting service: {e.detail}")
+        raise e
+    except Exception as e:
+        # Lỗi không xác định
+        logger.error(f"Error while deleting service: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not delete service due to an internal error."
+        )

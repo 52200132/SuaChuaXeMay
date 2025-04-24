@@ -9,6 +9,7 @@ URLS = {
         'CREATE_DIAGNOSIS':'/diagnosis/create',
         'GET_DIAGNOSIS_BY_ID':'/diagnosis/{diagnosis_id}',
         'GET_DIAGNOSIS_BY_ORDER_ID':'/diagnosis/order/{order_id}',
+        'UPDATE_DIAGNOSIS':'/diagnosis/update/{diagnosis_id}',
     },
     'ORDER_STATUS_HISTORY':{
         'CREATE_STATUS_HISTORY':'/order/status-history/create',
