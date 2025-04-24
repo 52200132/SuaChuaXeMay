@@ -65,3 +65,37 @@ async def delete_order(db: AsyncSession, order_id: int) -> str:
     await db.commit()
 
     return f"Đơn hàng với ID {order_id} đã được xóa thành công."
+
+async def get_orders_with_filters(db: AsyncSession, staff_id: int = None, status: str = None, start_date: datetime = None, end_date: datetime = None, date: datetime.date = None, skip: int = 0, limit: int = 100) -> list[Order]:
+    """Lấy danh sách đơn hàng với các bộ lọc"""
+    try:
+        query = select(Order).order_by(Order.order_id.asc()).offset(skip).limit(limit)
+
+        if staff_id:
+            query = query.where(Order.staff_id == staff_id)
+        if status:
+            query = query.where(Order.status == status)
+        if date:
+            # Tạo khoảng thời gian từ 00:00:00 đến 23:59:59 của ngày được chọn
+            start_datetime = datetime.combine(date, datetime.min.time())
+            end_datetime = datetime.combine(date, datetime.max.time())
+            # Áp dụng bộ lọc
+            query = query.where(Order.created_at.between(start_datetime, end_datetime))
+        elif start_date and end_date:
+            query = query.where(Order.created_at.between(start_date, end_date))
+        elif start_date:
+            query = query.where(Order.created_at >= start_date)
+        elif end_date:
+            query = query.where(Order.created_at <= end_date)
+
+        result = await db.execute(query)
+        logger.info("Lấy thành công các đơn hàng với bộ lọc")
+        return result.scalars().all()
+    except IntegrityError as e:
+        await db.rollback()
+        logger.error(f"IntegrityError: {e}")
+        raise e
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error getting orders with filters: {e}")
+        raise e

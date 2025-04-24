@@ -74,7 +74,7 @@ const ReceiptManagement = () => {
             
             setLoading(true);
 
-            console.log("receiptIds", receiptIds);
+            // console.log("receiptIds", receiptIds);
             if (receiptIds?.size && receiptIds?.size > 0) {
                 Array.from(receiptIds).forEach(id => { 
                     const receipt = receiptsById[id];
@@ -420,10 +420,10 @@ const ReceiptManagement = () => {
             if (!formData.customerId && !formData.motocycleId) {
                 console.log('Không ID khách và không ID xe');
                 return await customerService.reception.createReceptionWithoutMotorcycleIdAndCustomerId(formData);
-            }else if (formData.customerId && !formData.motocycleId) { // TODO: Tạo đơn tiếp nhận dựa - khi khách chưa có xe
+            }else if (formData.customerId && !formData.motocycleId) { // Tạo đơn tiếp nhận dựa - khi khách chưa có xe
                 console.log('không ID xe');
                 return await customerService.reception.createReceptionWithoutMotorcycleId(formData);
-            } else if (formData.customerId && formData.motocycleId) { // TODO: Tạo đơn tiếp nhận dựa - khi khách có xe
+            } else if (formData.customerId && formData.motocycleId) { // Tạo đơn tiếp nhận dựa - khi khách có xe
                 console.log('Có ID xe và ID khách');
                 return await customerService.reception.createReception(formData);
             }
@@ -458,11 +458,18 @@ const ReceiptManagement = () => {
                 const order = response.data;
                 // TODO: thông báo toast
                 if (order.order_id) { 
-                    return repairService.diagnosis.createDiagnosis({ orderId: order.order_id });
+                    return repairService.diagnosis.createDiagnosis(reception.form_id, order.order_id);
                 } else { 
                     alert(`Tạo đơn hàng thất bại cho đơn tiếp nhận "${reception.form_id}"`);
                 }
-                return response;
+            })
+            .then(response => {
+                const diagnosisData = response.data;
+                if (diagnosisData.diagnosis_id) {
+                    alert(`Tạo thàng công đơn hàng "${diagnosisData.order_id}" cho đơn tiếp nhận "${reception.form_id}"`);
+                } else {
+                    alert(`Tạo đơn hàng thất bại cho đơn tiếp nhận "${reception.form_id}"`);
+                }
             });
 
             // Tạo đơn mới

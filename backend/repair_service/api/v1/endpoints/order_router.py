@@ -82,4 +82,5 @@ async def get_all_orders_by_staff_id_today(staff_id: int, db: AsyncSession = Dep
     except IntegrityError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except Exception as e:
+        logger.error(f"Lỗi khi lấy danh sách đơn hàng của nhân viên trong ngày: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

@@ -119,23 +119,23 @@ const resourceService = {
         },
     },
 
-    sparepart: {
-        getAllSpareparts: async () => {
+    part: {
+        getAllParts: async () => {
             try {
-                const response = await apiClient.get('/spareparts');
+                const response = await apiClient.get(URLS.PART.GET_ALL_PARTS);
                 return response;
             } catch (error) {
-                console.error('Lỗi khi lấy danh sách phụ tùng:', error);
+                console.error('api - Lỗi khi lấy danh sách phụ tùng:', error);
                 throw error;
             }
         },
         
-        getSparepartById: async (id) => {
+        getPartById: async (id) => {
             try {
-                const response = await apiClient.get(`/spareparts/${id}`);
+                const response = await apiClient.get(URLS.PART.GET_PART_BY_ID.replace('{part_id}', id));
                 return response;
             } catch (error) {
-                console.error(`Lỗi khi lấy thông tin phụ tùng ID=${id}:`, error);
+                console.error(`api - Lỗi khi lấy thông tin phụ tùng ID=${id}:`, error);
                 throw error;
             }
         }
@@ -385,7 +385,17 @@ const customerService = {
                 console.error('api - Lỗi khi lấy danh sách lễ tân:', error);
                 throw error;
             }
-        }
+        },
+
+        getReceptionById: async (id) => {
+            try {
+                const response = await apiCustomerService.get(URLS.RECEPTION.GET_RECEPTION_BY_ID.replace('{form_id}', id));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy thông tin đơn tiếp nhận ID=${id}:`, error);
+                throw error;
+            }
+        }, 
     }
 };
 
@@ -462,7 +472,19 @@ const repairService = {
     },
     
     diagnosis: { 
-        
+        createDiagnosis: async (fromId, orderId) => {
+            try {
+                const diagnosisData = {
+                    order_id: orderId,
+                    form_id: fromId,
+                };
+                const response = await apiRepairService.post(URLS.DIAGNOSIS.CREATE_DIAGNOSIS, diagnosisData);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo chẩn đoán:', error);
+                throw error;
+            }
+        },
         getDiagnosisByOrderId: async (orderId) => {
             try {
                 const response = await apiRepairService.get(URLS.DIAGNOSIS.GET_DIAGNOSIS_BY_ORDER_ID.replace('{order_id}', orderId));

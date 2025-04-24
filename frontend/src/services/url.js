@@ -15,6 +15,13 @@ const URLS = {
         'UPDATE_STAFF' : '/staff/update',
         'DELETE_STAFF' : '/staff/delete/{staff_id}'
     },
+    'PART': {
+        'GET_ALL_PARTS' : '/parts',
+        'GET_PART_BY_ID' : '/part/{part_id}',
+        'CREATE_PART' : '/part/create',
+        'UPDATE_PART' : '/part/update',
+        'DELETE_PART' : '/part/delete/{part_id}'
+    },
 
     // customer service
     'CUSTOMER': {

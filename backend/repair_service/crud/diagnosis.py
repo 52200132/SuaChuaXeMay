@@ -16,8 +16,6 @@ async def create_diagnosis(db: AsyncSession, diagnosis: DiagnosisCreate) -> Diag
         db_diagnosis = Diagnosis(
             form_id=diagnosis.form_id,
             order_id=diagnosis.order_id,
-            problem=diagnosis.problem,
-            estimated_cost=diagnosis.estimated_cost
         )
         db.add(db_diagnosis)
         await db.commit()

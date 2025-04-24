@@ -14,7 +14,7 @@ router = APIRouter(tags=["Service"])
 # router = APIRouter()
 
 @router.get(URLS['SERVICE']['GET_ALL_SERVICES'], response_model=list[ServiceResponse])
-async def get_all_services(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[ServiceResponse]:
+async def get_all_services(db: AsyncSession = Depends(get_db), skip: int = 0, limit: int = 100):
     """Lấy tất cả Service từ cơ sở dữ liệu."""
 
     db_service = await service_crud.get_all_services(db, skip=skip, limit=limit)

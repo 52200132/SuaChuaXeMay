@@ -14,6 +14,7 @@ const TechnicianDashboard = () => {
     const customersById = getData('customers') || {};
     const motorcyclesById = getData('motorcycles') || {};
     const diagnosisById = getData('diagnosis') || {};
+    const receiptsById = getData('receiptions');
 
     // State quản lý
     const [loading, setLoading] = useState(true);
@@ -27,11 +28,11 @@ const TechnicianDashboard = () => {
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     
     // State cho phụ tùng
-    const [spareparts, setSpareparts] = useState([]);
-    const [selectedSpareparts, setSelectedSpareparts] = useState([]);
-    const [sparepartQuantities, setSparepartQuantities] = useState({});
-    const [sparepartSearchTerm, setSparepartSearchTerm] = useState('');
-    const [sparepartLoading, setSparepartLoading] = useState(false);
+    const [parts, setParts] = useState([]);
+    const [selectedParts, setSelectedParts] = useState([]);
+    const [partQuantities, setPartQuantities] = useState({});
+    const [partSearchTerm, setPartSearchTerm] = useState('');
+    const [partLoading, setPartLoading] = useState(false);
     
     // State cho dịch vụ
     const [services, setServices] = useState([]);
@@ -92,7 +93,7 @@ const TechnicianDashboard = () => {
                 const response = await repairService.order.getAllOrdersByStaffIdToday(currentStaff.staff_id);
                 const ordersData = response.data || [];
 
-                console.log('Đơn hàng của kỹ thuật viên:', ordersData);
+                // console.log('Đơn hàng của kỹ thuật viên:', ordersData);
                 
                 // Tạo Set mới để lưu order IDs
                 const newOrdersIds = new Set();
@@ -136,13 +137,25 @@ const TechnicianDashboard = () => {
                             setData('diagnosis', diagnosis, order.order_id);
                         } catch (error) {
                             console.error('Lỗi khi lấy thông tin chuẩn đoán:', error);
-                            diagnosis = { problem: 'Chưa có chuẩn đoán' };
+                            diagnosis = { problem: '' };
+                        }
+                    }
+
+                    let receiption = receiptsById[diagnosis?.form_id] || null;
+                    if (!receiption && diagnosis.form_id) { 
+                        try {
+                            const receiptResponse = await customerService.reception.getReceptionById(diagnosis.form_id);
+                            receiption = receiptResponse.data;
+                            setData('receiptions', receiption, diagnosis.form_id);
+                        } catch (error) {
+                            console.error('Lỗi khi lấy thông tin biên bản tiếp nhận:', error);
+                            receiption = { note: 'Không có ghi chú' };
                         }
                     }
 
                     // Format dữ liệu đơn hàng và lưu vào object hiển thị
                     newOrdersIds.add(order.order_id);
-                    newOrdersDisplay[order.order_id] = formatOrderData(order, customer, motorcycle, diagnosis);
+                    newOrdersDisplay[order.order_id] = formatOrderData(order, customer, motorcycle, diagnosis, receiption);
                 }));
 
                 // Cập nhật state
@@ -161,35 +174,35 @@ const TechnicianDashboard = () => {
         fetchMyOrders();
         
         // Lấy danh sách phụ tùng khi component được mount
-        fetchSpareparts();
+        fetchParts();
         // Lấy danh sách dịch vụ
         fetchServices();
     }, [currentStaff]);
 
     // Hàm lấy danh sách phụ tùng từ API
-    const fetchSpareparts = async () => {
+    const fetchParts = async () => {
         try {
-            setSparepartLoading(true);
-            const response = await resourceService.sparepart.getAllSpareparts();
-            const sparepartsData = response.data || [];
-            setSpareparts(sparepartsData);
-            setSparepartLoading(false);
+            setPartLoading(true);
+            const response = await resourceService.part.getAllParts();
+            const partsData = response.data || [];
+            setParts(partsData);
+            setPartLoading(false);
         } catch (error) {
             console.error('Lỗi khi lấy danh sách phụ tùng:', error);
-            setSparepartLoading(false);
+            setPartLoading(false);
             
             // Sử dụng dữ liệu mẫu nếu API lỗi
-            const mockSpareparts = [
-                { id: 1, name: 'Bugi NGK', code: 'BG001', unit: 'Cái' },
-                { id: 2, name: 'Dầu nhớt Motul 4T 10W40', code: 'DN001', unit: 'Chai' },
-                { id: 3, name: 'Lốc máy Honda Wave', code: 'LM001', unit: 'Bộ' },
-                { id: 4, name: 'Xích đĩa DID', code: 'XD001', unit: 'Bộ' },
-                { id: 5, name: 'Phanh đĩa Brembo', code: 'PD001', unit: 'Bộ' },
-                { id: 6, name: 'Lọc gió K&N', code: 'LG001', unit: 'Cái' },
-                { id: 7, name: 'Má phanh Nissin', code: 'MP001', unit: 'Bộ' },
-                { id: 8, name: 'Ắc quy GS', code: 'AQ001', unit: 'Cái' },
+            const mockParts = [
+                { part_id: 1, name: 'Bugi NGK', code: 'BG001', unit: 'Cái' },
+                { part_id: 2, name: 'Dầu nhớt Motul 4T 10W40', code: 'DN001', unit: 'Chai' },
+                { part_id: 3, name: 'Lốc máy Honda Wave', code: 'LM001', unit: 'Bộ' },
+                { part_id: 4, name: 'Xích đĩa DID', code: 'XD001', unit: 'Bộ' },
+                { part_id: 5, name: 'Phanh đĩa Brembo', code: 'PD001', unit: 'Bộ' },
+                { part_id: 6, name: 'Lọc gió K&N', code: 'LG001', unit: 'Cái' },
+                { part_id: 7, name: 'Má phanh Nissin', code: 'MP001', unit: 'Bộ' },
+                { part_id: 8, name: 'Ắc quy GS', code: 'AQ001', unit: 'Cái' },
             ];
-            setSpareparts(mockSpareparts);
+            setParts(mockParts);
         }
     };
 
@@ -207,14 +220,14 @@ const TechnicianDashboard = () => {
             
             // Sử dụng dữ liệu mẫu nếu API lỗi
             const mockServices = [
-                { id: 1, name: 'Thay dầu máy', description: 'Thay dầu nhớt cho xe' },
-                { id: 2, name: 'Thay bugi', description: 'Thay bugi mới' },
-                { id: 3, name: 'Bảo dưỡng định kỳ', description: 'Bảo dưỡng toàn bộ xe' },
-                { id: 4, name: 'Thay lốc máy', description: 'Thay lốc máy mới' },
-                { id: 5, name: 'Thay xích đĩa', description: 'Thay thế bộ xích và đĩa' },
-                { id: 6, name: 'Thay phanh', description: 'Thay phanh mới' },
-                { id: 7, name: 'Thay nhớt hộp số', description: 'Thay nhớt hộp số' },
-                { id: 8, name: 'Vệ sinh kim phun xăng', description: 'Vệ sinh hệ thống phun xăng' },
+                { service_id: 1, name: 'Thay dầu máy', description: 'Thay dầu nhớt cho xe' },
+                { service_id: 2, name: 'Thay bugi', description: 'Thay bugi mới' },
+                { service_id: 3, name: 'Bảo dưỡng định kỳ', description: 'Bảo dưỡng toàn bộ xe' },
+                { service_id: 4, name: 'Thay lốc máy', description: 'Thay lốc máy mới' },
+                { service_id: 5, name: 'Thay xích đĩa', description: 'Thay thế bộ xích và đĩa' },
+                { service_id: 6, name: 'Thay phanh', description: 'Thay phanh mới' },
+                { service_id: 7, name: 'Thay nhớt hộp số', description: 'Thay nhớt hộp số' },
+                { service_id: 8, name: 'Vệ sinh kim phun xăng', description: 'Vệ sinh hệ thống phun xăng' },
             ];
             setServices(mockServices);
         }
@@ -223,11 +236,12 @@ const TechnicianDashboard = () => {
     useEffect(() => {
         if (!loading) {
             console.log('Dashboard data loaded:', ordersById, customersById, motorcyclesById, diagnosisById, myOrdersDisplay, myOrdersIds);
+            console.log('Reception data:', receiptsById);
         }
     }, [loading]);
 
     // Format dữ liệu đơn hàng
-    const formatOrderData = (order, customer, motorcycle, diagnosis) => {
+    const formatOrderData = (order, customer, motorcycle, diagnosis, receiption) => {
         const [createdAtDate, createdAtTime] = order.created_at?.split('T') || ['', ''];
         return {
             orderId: order.order_id,
@@ -241,9 +255,11 @@ const TechnicianDashboard = () => {
             totalAmount: order.total_price || 0,
             createdDate: createdAtDate || '',
             createdTime: createdAtTime?.substring(0, 5) || '',
-            diagnosis: diagnosis?.problem || 'Chưa có chuẩn đoán',
+            diagnosis: diagnosis?.problem || '',
             priority: getPriorityFromDate(createdAtDate),
-            progressPercentage: getProgressPercentage(order.status)
+            progressPercentage: getProgressPercentage(order.status),
+
+            note: receiption?.note || 'Không có ghi chú',
         };
     };
 
@@ -366,8 +382,8 @@ const TechnicianDashboard = () => {
         });
         
         // Reset lại state phụ tùng và dịch vụ khi mở modal
-        setSelectedSpareparts([]);
-        setSparepartQuantities({});
+        setSelectedParts([]);
+        setPartQuantities({});
         setSelectedServices([]);
         setActiveModalTab('status');
         setActiveCatalogTab('services'); // Mặc định hiển thị tab dịch vụ trước
@@ -386,37 +402,37 @@ const TechnicianDashboard = () => {
     };
 
     // Xử lý tìm kiếm phụ tùng
-    const handleSparepartSearch = (e) => {
-        setSparepartSearchTerm(e.target.value);
+    const handlePartSearch = (e) => {
+        setPartSearchTerm(e.target.value);
     };
 
     // Lọc danh sách phụ tùng theo từ khóa
-    const getFilteredSpareparts = () => {
-        if (!sparepartSearchTerm) return spareparts;
+    const getFilteredParts = () => {
+        if (!partSearchTerm) return parts;
         
-        const searchTerm = sparepartSearchTerm.toLowerCase();
-        return spareparts.filter(part => 
+        const searchTerm = partSearchTerm.toLowerCase();
+        return parts.filter(part => 
             part.name.toLowerCase().includes(searchTerm) || 
             part.code.toLowerCase().includes(searchTerm)
         );
     };
 
     // Thêm/xóa phụ tùng khỏi danh sách đã chọn
-    const toggleSparepartSelection = (partId) => {
-        if (selectedSpareparts.includes(partId)) {
+    const togglePartSelection = (partId) => {
+        if (selectedParts.includes(partId)) {
             // Xóa phụ tùng khỏi danh sách đã chọn
-            setSelectedSpareparts(prev => prev.filter(id => id !== partId));
+            setSelectedParts(prev => prev.filter(id => id !== partId));
             
             // Xóa số lượng của phụ tùng
-            const newQuantities = {...sparepartQuantities};
+            const newQuantities = {...partQuantities};
             delete newQuantities[partId];
-            setSparepartQuantities(newQuantities);
+            setPartQuantities(newQuantities);
         } else {
             // Thêm phụ tùng vào danh sách đã chọn
-            setSelectedSpareparts(prev => [...prev, partId]);
+            setSelectedParts(prev => [...prev, partId]);
             
             // Khởi tạo số lượng là 1
-            setSparepartQuantities(prev => ({
+            setPartQuantities(prev => ({
                 ...prev,
                 [partId]: 1
             }));
@@ -437,7 +453,7 @@ const TechnicianDashboard = () => {
         const numericQuantity = parseInt(quantity, 10) || 0;
         const clampedQuantity = Math.max(1, Math.min(99, numericQuantity));
         
-        setSparepartQuantities(prev => ({
+        setPartQuantities(prev => ({
             ...prev,
             [partId]: clampedQuantity
         }));
@@ -445,9 +461,9 @@ const TechnicianDashboard = () => {
 
     // Tính tổng tiền phụ tùng đã chọn
     const calculateTotalAmount = () => {
-        return selectedSpareparts.reduce((total, partId) => {
-            const part = spareparts.find(p => p.id === partId);
-            const quantity = sparepartQuantities[partId] || 0;
+        return selectedParts.reduce((total, partId) => {
+            const part = parts.find(p => p.id === partId);
+            const quantity = partQuantities[partId] || 0;
             return total + (part ? part.price * quantity : 0);
         }, 0);
     };
@@ -460,11 +476,11 @@ const TechnicianDashboard = () => {
             setLoading(true);
             
             // Chuẩn bị dữ liệu phụ tùng
-            const sparepartsData = selectedSpareparts.map(partId => {
-                const part = spareparts.find(p => p.id === partId);
+            const partsData = selectedParts.map(partId => {
+                const part = parts.find(p => p.id === partId);
                 return {
-                    sparepart_id: partId,
-                    quantity: sparepartQuantities[partId] || 1,
+                    part_id: partId,
+                    quantity: partQuantities[partId] || 1,
                     name: part ? part.name : '',
                     unit: part ? part.unit : ''
                 };
@@ -479,13 +495,15 @@ const TechnicianDashboard = () => {
                 };
             });
             
-            // Gọi API cập nhật trạng thái
+            // TODO: Gọi API cập nhật
             const response = await repairService.order.updateOrderStatus(currentOrder.orderId, {
                 status: updateData.status,
                 notes: updateData.notes,
-                spareparts: sparepartsData,
+                parts: partsData,
                 services: servicesData
             });
+
+            // const responseDiaginosis = await repairService.diagnosis.updateDiagnosis();
             
             // Cập nhật state
             const updatedOrder = response.data;
@@ -588,8 +606,8 @@ const TechnicianDashboard = () => {
     };
 
     // Hiển thị component chọn phụ tùng và dịch vụ trong modal
-    const renderSparepartsSelection = () => {
-        const filteredParts = getFilteredSpareparts();
+    const renderPartsSelection = () => {
+        const filteredParts = getFilteredParts();
         
         return (
             <>
@@ -612,12 +630,12 @@ const TechnicianDashboard = () => {
                                     <div className="service-list-container p-2 border rounded" style={{height: "400px", overflowY: "auto"}}>
                                         {services.map(service => (
                                             <Form.Check
-                                                key={service.id}
+                                                key={service.service_id}
                                                 type="checkbox"
-                                                id={`service-${service.id}`}
+                                                id={`service-${service.service_id}`}
                                                 label={service.name}
-                                                checked={selectedServices.includes(service.id)}
-                                                onChange={() => toggleServiceSelection(service.id)}
+                                                checked={selectedServices.includes(service.service_id)}
+                                                onChange={() => toggleServiceSelection(service.service_id)}
                                                 className="mb-2"
                                             />
                                         ))}
@@ -625,14 +643,14 @@ const TechnicianDashboard = () => {
                                 )}
                             </Tab>
                             
-                            <Tab eventKey="spareparts" title={<span><i className="bi bi-box-seam me-1"></i>Phụ tùng</span>}>
+                            <Tab eventKey="parts" title={<span><i className="bi bi-box-seam me-1"></i>Phụ tùng</span>}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Tìm kiếm phụ tùng</Form.Label>
                                     <InputGroup>
                                         <Form.Control
                                             placeholder="Nhập tên hoặc mã phụ tùng..."
-                                            value={sparepartSearchTerm}
-                                            onChange={handleSparepartSearch}
+                                            value={partSearchTerm}
+                                            onChange={handlePartSearch}
                                         />
                                         <Button variant="outline-secondary">
                                             <i className="bi bi-search"></i>
@@ -640,7 +658,7 @@ const TechnicianDashboard = () => {
                                     </InputGroup>
                                 </Form.Group>
 
-                                {sparepartLoading ? (
+                                {partLoading ? (
                                     <div className="text-center py-3">
                                         <div className="spinner-border spinner-border-sm" role="status">
                                             <span className="visually-hidden">Đang tải...</span>
@@ -649,46 +667,45 @@ const TechnicianDashboard = () => {
                                     </div>
                                 ) : (
                                     filteredParts.length > 0 ? (
-                                        <div className="spareparts-container" style={{height: "405px"}}>
-                                            <ListGroup className="spareparts-list">
+                                        <div className="parts-container">
+                                            <ListGroup className="parts-list">
                                                 {filteredParts.map(part => (
                                                     <ListGroup.Item 
-                                                        key={part.id}
-                                                        className={`d-flex justify-content-between align-items-center sparepart-item ${selectedSpareparts.includes(part.id) ? 'selected' : ''}`}
+                                                        key={part.part_id}
+                                                        className={`d-flex justify-content-between align-items-center part-item ${selectedParts.includes(part.part_id) ? 'selected' : ''}`}
                                                         action
-                                                        onClick={() => toggleSparepartSelection(part.id)}
+                                                        onClick={() => togglePartSelection(part.part_id)}
                                                     >
-                                                        <div className="sparepart-info">
-                                                            <div className="fw-semibold small">{part.name}</div>
-                                                            <small className="text-muted">Mã: {part.code}</small>
+                                                        <div className="part-info">
+                                                            {part.name}
                                                         </div>
-                                                        <div className="sparepart-quantity" onClick={(e) => e.stopPropagation()}>
-                                                            {selectedSpareparts.includes(part.id) && (
-                                                                <InputGroup size="sm">
-                                                                    <Button 
-                                                                        variant="outline-secondary"
+                                                        <div className="part-quantity">
+                                                            {selectedParts.includes(part.part_id) ? (
+                                                                <div className="quantity-input">
+                                                                    <button 
+                                                                        type="button"
+                                                                        className="quantity-btn"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            handleQuantityChange(part.id, (sparepartQuantities[part.id] || 1) - 1);
+                                                                            handleQuantityChange(part.part_id, (partQuantities[part.part_id] || 1) - 1);
                                                                         }}
-                                                                    >-</Button>
-                                                                    <Form.Control
-                                                                        value={sparepartQuantities[part.id] || 1}
-                                                                        onChange={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleQuantityChange(part.id, e.target.value);
-                                                                        }}
-                                                                        min="1"
-                                                                        max="99"
-                                                                    />
-                                                                    <Button 
-                                                                        variant="outline-secondary"
+                                                                    >
+                                                                        -
+                                                                    </button>
+                                                                    <span className="quantity-value">{partQuantities[part.part_id] || 1}</span>
+                                                                    <button 
+                                                                        type="button"
+                                                                        className="quantity-btn"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            handleQuantityChange(part.id, (sparepartQuantities[part.id] || 1) + 1);
+                                                                            handleQuantityChange(part.part_id, (partQuantities[part.part_id] || 1) + 1);
                                                                         }}
-                                                                    >+</Button>
-                                                                </InputGroup>
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <span></span>
                                                             )}
                                                         </div>
                                                     </ListGroup.Item>
@@ -715,8 +732,8 @@ const TechnicianDashboard = () => {
                                         variant="outline-danger" 
                                         size="sm"
                                         onClick={() => {
-                                            setSelectedSpareparts([]);
-                                            setSparepartQuantities({});
+                                            setSelectedParts([]);
+                                            setPartQuantities({});
                                             setSelectedServices([]);
                                         }}
                                     >
@@ -726,14 +743,14 @@ const TechnicianDashboard = () => {
                                 </div>
                             </div>
 
-                            {(selectedServices.length > 0 || selectedSpareparts.length > 0) ? (
+                            {(selectedServices.length > 0 || selectedParts.length > 0) ? (
                                 <>
                                     {selectedServices.length > 0 && (
                                         <div className="mb-3">
                                             <h6 className="border-bottom pb-2">Dịch vụ đã chọn</h6>
                                             <ListGroup variant="flush">
                                                 {selectedServices.map(serviceId => {
-                                                    const service = services.find(s => s.id === serviceId);
+                                                    const service = services.find(s => s.service_id === serviceId);
                                                     return (
                                                         <ListGroup.Item 
                                                             key={serviceId}
@@ -755,13 +772,13 @@ const TechnicianDashboard = () => {
                                         </div>
                                     )}
 
-                                    {selectedSpareparts.length > 0 && (
+                                    {selectedParts.length > 0 && (
                                         <div>
                                             <h6 className="border-bottom pb-2">Phụ tùng đã chọn</h6>
                                             <ListGroup variant="flush">
-                                                {selectedSpareparts.map(partId => {
-                                                    const part = spareparts.find(p => p.id === partId);
-                                                    const quantity = sparepartQuantities[partId] || 1;
+                                                {selectedParts.map(partId => {
+                                                    const part = parts.find(p => p.part_id === partId);
+                                                    const quantity = partQuantities[partId] || 1;
                                                     
                                                     return (
                                                         <ListGroup.Item 
@@ -772,11 +789,12 @@ const TechnicianDashboard = () => {
                                                             <div>
                                                                 <span>{part?.name}</span>
                                                                 <span className="text-muted ms-2">x{quantity}</span>
+                                                                <span className="text-muted ms-2">{part.unit}</span>
                                                             </div>
                                                             <Button 
                                                                 variant="link" 
                                                                 className="text-danger p-0"
-                                                                onClick={() => toggleSparepartSelection(partId)}
+                                                                onClick={() => togglePartSelection(partId)}
                                                             >
                                                                 <i className="bi bi-x-circle"></i>
                                                             </Button>
@@ -976,8 +994,8 @@ const TechnicianDashboard = () => {
                             </Row>
 
                             <div className="p-3 bg-light rounded mb-3">
-                                <h6>Chuẩn đoán kỹ thuật:</h6>
-                                <p className="mb-0">{currentOrder.diagnosis}</p>
+                                <h6>Ghi chú tiếp nhận:</h6>
+                                <p className="mb-0">{currentOrder.note}</p>
                             </div>
 
                             {currentOrder.totalAmount > 0 && (
@@ -1006,7 +1024,7 @@ const TechnicianDashboard = () => {
                 </Modal.Footer>
             </Modal>
 
-            {/* Modal cập nhật trạng thái */}
+            {/* Modal cập nhật đơn hàng */}
             <Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)} size="xl">
                 <Modal.Header closeButton>
                     <Modal.Title>Cập nhật đơn hàng #{currentOrder?.orderId}</Modal.Title>
@@ -1061,18 +1079,18 @@ const TechnicianDashboard = () => {
                                     </Form.Group>
 
                                     <Form.Group className="mb-3">
-                                        <Form.Label>Ghi chú (không bắt buộc)</Form.Label>
+                                        <Form.Label>Chuẩn đoán (không bắt buộc)</Form.Label>
                                         <Form.Control
                                             as="textarea"
                                             rows={5}
-                                            value={updateData.notes}
-                                            onChange={(e) => setUpdateData({...updateData, notes: e.target.value})}
-                                            placeholder="Nhập ghi chú về tiến độ sửa chữa, vấn đề phát sinh, v.v."
+                                            value={updateData.diagnosis}
+                                            onChange={(e) => setUpdateData({...updateData, diagnosis: e.target.value})}
+                                            placeholder="Nhập chuẩn đoán, vấn đề phát sinh, v.v."
                                         />
                                     </Form.Group>
                                 </Tab>
-                                <Tab eventKey="spareparts" title={<span><i className="bi bi-box-seam me-1"></i>Dịch vụ & Phụ tùng</span>}>
-                                    {renderSparepartsSelection()}
+                                <Tab eventKey="parts" title={<span><i className="bi bi-box-seam me-1"></i>Dịch vụ & Phụ tùng</span>}>
+                                    {renderPartsSelection()}
                                 </Tab>
                             </Tabs>
                         </>
