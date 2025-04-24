@@ -467,19 +467,12 @@ tr.priority-medium td:first-child {
     font-size: 14px !important;
     cursor: pointer !important;
     padding: 0 !important;
+    user-select: none !important;  /* Ngăn người dùng chọn văn bản */
 }
 
-.quantity-value {
-    flex: 1 !important;
-    text-align: center !important;
-    font-size: 14px !important;
-    font-weight: normal !important;
+.quantity-btn:hover {
+    background-color: #e9ecef !important;
     color: #333 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    line-height: 32px !important;
-    border-left: 1px solid #ddd !important;
-    border-right: 1px solid #ddd !important;
 }
 
 .parts-container {
@@ -552,4 +545,78 @@ tr.priority-medium td:first-child {
 .service-list-container::-webkit-scrollbar-thumb:hover,
 .selected-items-summary::-webkit-scrollbar-thumb:hover {
     background: #a1a1a1;
+}
+
+/* Thêm style cho phần hiển thị giá */
+.part-info small.text-primary {
+    display: block;
+    font-size: 0.8rem;
+    margin-top: 2px;
+}
+
+.selected-items-summary small.text-primary {
+    font-weight: 500;
+}
+
+.parts-list .list-group-item {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Thêm styles cho phần tìm kiếm phụ tùng */
+
+/* Highlight từ khóa tìm kiếm trong kết quả */
+.highlight-search {
+    background-color: #ffff00;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+/* Đổi màu nút xóa tìm kiếm */
+.btn-outline-secondary i.bi-x {
+    color: #dc3545;
+}
+
+/* Style cho header kết quả tìm kiếm */
+.search-result-header {
+    background-color: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Thêm transition mượt mà cho kết quả tìm kiếm */
+.parts-list .list-group-item {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Style cho phần không có kết quả tìm kiếm */
+.no-results {
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+.no-results i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Style cho kết quả tìm kiếm gợi ý */
+.search-suggestion {
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    font-size: 0.875rem;
+}
+
+.search-suggestion strong {
+    color: #0d6efd;
+    cursor: pointer;
+}
+
+.search-suggestion strong:hover {
+    text-decoration: underline;
 }
