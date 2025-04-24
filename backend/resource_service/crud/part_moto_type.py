@@ -27,7 +27,23 @@ async def create_part_moto_type(db: AsyncSession, part_moto_type: PartMotoTypeCr
         logger.error(f"Error creating part moto type: {e}")
         await db.rollback()
         raise e
-    
+
+async def get_part_moto_type_by_id(db: AsyncSession, part_mototype_id: int) -> PartMotoType:
+    """Lấy thông tin chi tiết của một loại phụ tùng"""
+    try:
+        result = await db.execute(
+            select(PartMotoType).where(PartMotoType.part_mototype_id == part_mototype_id)
+        )
+        part_moto_type = result.scalars().one_or_none()
+        if not part_moto_type:
+            raise HTTPException(status_code=404, detail="Part Moto Type not found")
+        return part_moto_type
+    except MultipleResultsFound:
+        raise HTTPException(status_code=500, detail="Multiple results found")
+    except Exception as e:
+        logger.error(f"Error fetching part moto type by ID: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
 async def get_part_moto_type_by_part_id_and_mototype_id(db: AsyncSession, part_id: int, moto_type_id: int) -> PartMotoType:
     """Lấy thông tin loại phụ tùng theo ID phụ tùng và ID loại xe máy"""
     result = await db.execute(
@@ -52,3 +68,40 @@ async def get_all_part_moto_types_by_mototype_id(db: AsyncSession, moto_type_id:
         select(PartMotoType).where(PartMotoType.moto_type_id == moto_type_id).order_by(PartMotoType.part_mototype_id.asc()).offset(skip).limit(limit)
     )
     return result.scalars().all()
+
+async def update_part_moto_type(db: AsyncSession, part_mototype_id: int, part_moto_type: PartMotoTypeUpdate) -> PartMotoType:
+    """Cập nhật thông tin của một loại phụ tùng"""
+    db_part_moto_type = await get_part_moto_type_by_id(db, part_mototype_id)
+    if not db_part_moto_type:
+        return None
+    update_data = part_moto_type.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_part_moto_type, key, value)
+    await db.commit()
+    await db.refresh(db_part_moto_type)
+    return db_part_moto_type
+
+async def update_part_moto_type_by_part_id_and_mototype_id(db: AsyncSession, part_id: int, moto_type_id: int, part_moto_type: PartMotoTypeUpdate) -> PartMotoType:
+    """Cập nhật thông tin của một loại phụ tùng"""
+    db_part_moto_type = await get_part_moto_type_by_part_id_and_mototype_id(db, part_id, moto_type_id)
+    if not db_part_moto_type:
+        return None
+    update_data = part_moto_type.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_part_moto_type, key, value)
+    await db.commit()
+    await db.refresh(db_part_moto_type)
+    return db_part_moto_type
+
+async def delete_part_moto_type(db: AsyncSession, part_mototype_id: int) -> None:
+    """Xóa một loại phụ tùng"""
+    try:
+        db_part_moto_type = await get_part_moto_type_by_id(db, part_mototype_id)
+        if not db_part_moto_type:
+            raise HTTPException(status_code=404, detail="Part Moto Type not found")
+        await db.delete(db_part_moto_type)
+        await db.commit()
+    except Exception as e:
+        logger.error(f"Error deleting part moto type: {e}")
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Internal Server Error")

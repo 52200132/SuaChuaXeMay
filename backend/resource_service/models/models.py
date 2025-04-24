@@ -99,9 +99,10 @@ class Invoice(Base):
     # order_id = Column(Integer, ForeignKey('Order.order_id'))
     order_id = Column(Integer)
     staff_id = Column(Integer, ForeignKey('Staff.staff_id'))
-    create_at = Column(DateTime, default=datetime.now)
+    create_at = Column(DateTime, default=None)
     total_price = Column(Integer, default=0)
-    payment_method = Column(Unicode(50))
+    payment_method = Column(Unicode(50), default="cash")
+    is_paid = Column(Boolean, default=False)
     
     # Relationships
     # order = relationship("Order", back_populates="invoices")
