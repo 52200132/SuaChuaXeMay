@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 
 from crud import reception as reception_crud
-from schemas.reception_from import ReceptionFormCreate, ReceptionFormResponse, ReceptionFormUpdate, ReceptionFormCreate2, ReceptionFormCreateNoCustomerIdNoMotoCycleId
+from schemas.reception_from import ReceptionFormCreate, ReceptionFormCreate2, ReceptionFormResponse, ReceptionFormUpdate, ReceptionFormCreate2, ReceptionFormCreateNoCustomerIdNoMotoCycleId
 from schemas.reception_image import ReceptionImageCreate, ReceptionImageResponse
 from db.session import get_db
 from utils.logger import get_logger
@@ -121,6 +121,17 @@ async def get_reception_form(
     if db_reception_form is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy biểu mẫu tiếp nhận")
     return db_reception_form
+
+@router.get(URLS['RECEPTION']['GET_RECEPTION_BY_MOTORCYCLE_ID'], response_model=List[ReceptionFormResponse])
+async def get_reception_form_by_motorcycle_id(
+    motocycle_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lấy danh sách biểu mẫu tiếp nhận theo ID xe máy.
+    """
+    db_reception_forms = await reception_crud.get_reception_form_by_motorcycle_id(db, motocycle_id)
+    return db_reception_forms
 
 @router.get(URLS['RECEPTION']['GET_RECEPTION_BY_DATE_RANGE'], response_model=List[ReceptionFormResponse])
 async def get_reception_form_by_date_range(
