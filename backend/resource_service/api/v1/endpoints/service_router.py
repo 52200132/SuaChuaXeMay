@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 from db.session import get_db
 from crud import service as service_crud
-from schemas.service import ServiceResponse, ServiceCreate, ServiceResponse
+from schemas.service import ServiceResponse, ServiceCreate, ServiceUpdate
 from utils.logger import get_logger
 from .url import URLS
 
@@ -51,7 +51,7 @@ async def create_service(service: ServiceCreate, db: AsyncSession = Depends(get_
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not create service type.")
 
 @router.put(URLS['SERVICE']['UPDATE_SERVICE'], response_model=ServiceResponse)
-async def update_service(service_id: int, service: ServiceCreate, db: AsyncSession = Depends(get_db)):
+async def update_service(service_id: int, service: ServiceUpdate, db: AsyncSession = Depends(get_db)):
     """
     Cập nhật một Service theo ID.
     """

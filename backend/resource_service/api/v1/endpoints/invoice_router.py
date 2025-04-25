@@ -20,9 +20,7 @@ async def create_invoice(invoice_data: InvoiceCreate, db: AsyncSession = Depends
     Tạo hóa đơn mới.
     
     - **order_id**: ID của đơn hàng
-    - **staff_id**: ID của nhân viên tạo hóa đơn
     - **total_price**: Tổng tiền của hóa đơn
-    - **payment_method**: Phương thức thanh toán
     """
     try:
         new_invoice = await invoice_crud.create_invoice(db, invoice_data)

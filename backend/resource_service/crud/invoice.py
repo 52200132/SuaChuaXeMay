@@ -23,9 +23,8 @@ async def create_invoice(db: AsyncSession, invoice: InvoiceCreate) -> Invoice:
         # Tạo đối tượng hóa đơn
         db_invoice = Invoice(
             order_id=invoice.order_id,
-            staff_id=invoice.staff_id,
             total_price=invoice.total_price,
-            payment_method=invoice.payment_method,
+            is_paid=invoice.is_paid,
             # create_at sẽ tự động lấy thời gian hiện tại
         )
         

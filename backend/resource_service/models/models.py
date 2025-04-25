@@ -101,7 +101,7 @@ class Invoice(Base):
     staff_id = Column(Integer, ForeignKey('Staff.staff_id'))
     create_at = Column(DateTime, default=None)
     total_price = Column(Integer, default=0)
-    payment_method = Column(Unicode(50), default="cash")
+    payment_method = Column(Unicode(50))
     is_paid = Column(Boolean, default=False)
     
     # Relationships
