@@ -205,3 +205,20 @@ async def update_invoice(
 #         raise HTTPException(status_code=400, detail=str(e))
     
 #     return None
+
+@router.get(URLS['INVOICE']['GET_INVOICE_BY_ORDER_ID'], response_model=InvoiceResponse)
+async def get_invoice_by_order_id(
+    order_id: int = Path(..., ge=1, description="ID của đơn hàng"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lấy thông tin hóa đơn theo ID đơn hàng.
+    
+    - **order_id**: ID của đơn hàng
+    """
+    invoice = await invoice_crud.get_invoice_by_order_id(db, order_id)
+    
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hóa đơn")
+    
+    return InvoiceResponse.from_orm(invoice)

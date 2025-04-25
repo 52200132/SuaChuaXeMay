@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Nav, Button, Navbar, NavDropdown } from 'react-bootstrap';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 
-
 import { useStaffAuth } from '../contexts/StaffAuthContext';    
-import { employeeRoutes, ownerRoutes } from '../routes';
+import { receptionistRoutes, technicianRoutes, cashierRoutes, managerRoutes } from '../routes';
 import './AdminLayout.css';
 
 const AdminLayout = () => {
@@ -13,12 +12,43 @@ const AdminLayout = () => {
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
 
-    // Xác định xem người dùng có phải là quản lý hay không hay chỉ là nhân viên
-    // This would typically come from your user's role in the auth context
-    const isOwner = currentStaff?.role === 'admin' || currentStaff?.role === 'owner';
+    // Chọn routes dựa trên vai trò của nhân viên
+    const getRoutesForRole = () => {
+        switch(currentStaff?.role) {
+            case 'manager':
+            case 'admin':
+            case 'owner':
+                return managerRoutes;
+            case 'receptionist':
+                return receptionistRoutes;
+            case 'technician':
+                return technicianRoutes;
+            case 'cashier':
+                return cashierRoutes;
+            default:
+                return []; // Fallback nếu vai trò không hợp lệ
+        }
+    };
     
-    // Chọn các route dựa trên vai trò của người dùng (fix inverted logic)
-    const routes = !isOwner ? ownerRoutes : employeeRoutes;
+    const routes = getRoutesForRole();
+
+    // Hiển thị vai trò người dùng bằng tiếng Việt
+    const getRoleDisplay = () => {
+        switch(currentStaff?.role) {
+            case 'manager':
+            case 'admin':
+            case 'owner':
+                return 'Quản lý';
+            case 'receptionist':
+                return 'Tiếp nhận viên';
+            case 'technician':
+                return 'Kỹ thuật viên';
+            case 'cashier':
+                return 'Thu ngân';
+            default:
+                return 'Nhân viên';
+        }
+    };
 
     const handleLogout = async () => {
         try {
@@ -58,7 +88,7 @@ const AdminLayout = () => {
                     {!collapsed && (
                         <div className="user-info">
                             <p className="user-name">{currentStaff?.displayName || 'User'}</p>
-                            <span className="user-role">{isOwner ? 'Quản lý' : 'Nhân viên'}</span>
+                            <span className="user-role">{getRoleDisplay()}</span>
                         </div>
                     )}
                 </div>

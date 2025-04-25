@@ -47,8 +47,8 @@ async def create_service_order_details(service_detail: List[ServiceOrderDetailCr
 
 
 @router.put(URLS['SERVICE_ORDER_DETAIL']['UPDATE_SERVICE_ORDER_DETAIL'], response_model=ServiceOrderDetailResponse)
-async def update_service_order_detail(service_order_detail_id: int, service_detail: ServiceOrderDetailUpdate, db: Session = Depends(get_db)):
-    db_service_detail = await crud.update_service_order_detail(db, service_detail_ID=service_order_detail_id, service_detail=service_detail)
+async def update_service_order_detail(service_detail_ID: int, service_detail: ServiceOrderDetailUpdate, db: Session = Depends(get_db)):
+    db_service_detail = await crud.update_service_order_detail(db, service_detail_ID=service_detail_ID, service_detail=service_detail)
     if db_service_detail is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy chi tiết dịch vụ đơn hàng")
     return db_service_detail

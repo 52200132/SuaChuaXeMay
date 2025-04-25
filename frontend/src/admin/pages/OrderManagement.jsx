@@ -5,6 +5,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearSca
 import AssignmentManagement from './AssignmentManagement';
 
 import StatusBadge from '../components/StatusBadge';
+import CustomModal from '../components/CustomModal';
 import { useAppData } from '../contexts/AppDataContext';
 import { customerService, resourceService, repairService } from '../../services/api';
 import './OrderManagement.css';
@@ -100,6 +101,10 @@ const OrderManagement = () => {
     const [showWorkloadModal, setShowWorkloadModal] = useState(false);
     const [selectedTechnicianDetail, setSelectedTechnicianDetail] = useState(null);
 
+    // State for delivery confirmation modal
+    const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+    const [orderToDeliver, setOrderToDeliver] = useState(null);
+
     // Load mock data
     useEffect(() => {
 
@@ -193,7 +198,10 @@ const OrderManagement = () => {
                     console.error('Lỗi nghiêm trọng khi lấy danh sách đơn hàng hoặc xử lý chung:', error);
                     setLoading(false);
                 });
-
+                
+            setCurrentPage(1);
+            setFilteredOrdersIds(getIds('orders'));
+            setTotalPages(Math.ceil(getIds('orders').length / 10));
             setLoading(false);
         }
 
@@ -206,7 +214,7 @@ const OrderManagement = () => {
         console.log('Các dữ liệu lấy được', ordersById, ordersIds, getIds('orders'));
         if (!loading) {
             console.log('useEffect - Dữ liệu display', ordersDisplay);
-            setFilteredOrdersIds(getIds('orders'));
+            // setFilteredOrdersIds(getIds('orders'));
             setTotalPages(Math.ceil(getIds('orders').length / 10));
             // console.log('useEffect - fillteredOrdersIds và totalPages', fileredOrdersIds, totalPages)
 
@@ -759,6 +767,48 @@ const OrderManagement = () => {
         );
     };
 
+    // Handle showing the delivery confirmation modal
+    const handleShowDeliveryModal = (order) => {
+        setOrderToDeliver(order);
+        setShowDeliveryModal(true);
+    };
+    
+    // Handle the delivery action
+    const handleDeliverOrder = async () => {
+        if (!orderToDeliver) return;
+        
+        try {
+            setLoading(true);
+            
+            // Call API to update order status to "delivered"
+            await repairService.order.updateOrderStatus(orderToDeliver.orderId, 'delivered');
+            
+            // Update local state
+            const updatedOrdersById = { ...ordersById };
+            if (updatedOrdersById[orderToDeliver.orderId]) {
+                updatedOrdersById[orderToDeliver.orderId].status = 'delivered';
+                setData('orders', updatedOrdersById[orderToDeliver.orderId], orderToDeliver.orderId);
+            }
+            
+            // Update ordersDisplay
+            setOrdersDisplay(prev => ({
+                ...prev,
+                [orderToDeliver.orderId]: {
+                    ...prev[orderToDeliver.orderId],
+                    status: 'Đã giao xe'
+                }
+            }));
+            
+            setShowDeliveryModal(false);
+            alert('Giao xe thành công!');
+        } catch (error) {
+            console.error('Lỗi khi cập nhật trạng thái giao xe:', error);
+            alert('Có lỗi xảy ra khi giao xe. Vui lòng thử lại!');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <>
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -939,6 +989,18 @@ const OrderManagement = () => {
                                                             >
                                                                 <i className="bi bi-pencil"></i>
                                                             </Button>
+                                                            
+                                                            {/* Add "Giao xe" button for orders with status "Chờ giao xe" */}
+                                                            {order.status === 'Chờ giao xe' && (
+                                                                <Button
+                                                                    variant="outline-success"
+                                                                    size="sm"
+                                                                    onClick={() => handleShowDeliveryModal(order)}
+                                                                    title="Giao xe"
+                                                                >
+                                                                    <i className="bi bi-check-circle"></i>
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -1096,6 +1158,29 @@ const OrderManagement = () => {
                     </Modal.Footer>
                 </Form>
             </Modal>
+
+            {/* Delivery Confirmation Modal */}
+            <CustomModal
+                show={showDeliveryModal}
+                onHide={() => setShowDeliveryModal(false)}
+                title="Xác nhận giao xe"
+                message={
+                    <>
+                        <p>Bạn có chắc chắn muốn xác nhận giao xe cho đơn hàng này?</p>
+                        {orderToDeliver && (
+                            <div className="mt-3 p-3 bg-light rounded">
+                                <p className="mb-1"><strong>Mã đơn:</strong> {orderToDeliver.orderId}</p>
+                                <p className="mb-1"><strong>Khách hàng:</strong> {orderToDeliver.customerName}</p>
+                                <p className="mb-0"><strong>Biển số xe:</strong> {orderToDeliver.plateNumber}</p>
+                            </div>
+                        )}
+                    </>
+                }
+                confirmButtonText="Xác nhận giao xe"
+                confirmButtonVariant="success"
+                onConfirm={handleDeliverOrder}
+                cancelButtonText="Hủy"
+            />
         </>
     );
 };

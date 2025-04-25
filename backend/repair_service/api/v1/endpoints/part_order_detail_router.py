@@ -45,9 +45,9 @@ async def create_part_order_detail(part_detail: List[PartOrderDetailCreate], db:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Lỗi không xác định")
 
 @router.put(URLS['PART_ORDER_DETAIL']['UPDATE_PART_ORDER_DETAIL'], response_model=PartOrderDetailResponse)
-async def update_part_order_detail(part_order_detail_id: int, part_detail: PartOrderDetailUpdate, db: AsyncSession = Depends(get_db)):
+async def update_part_order_detail(part_detail_ID: int, part_detail: PartOrderDetailUpdate, db: AsyncSession = Depends(get_db)):
     try:
-        db_part_detail = await crud.update_part_order_detail(db, part_detail_ID=part_order_detail_id, part_detail=part_detail)
+        db_part_detail = await crud.update_part_order_detail(db, part_detail_ID=part_detail_ID, part_detail=part_detail)
         return db_part_detail
     except IntegrityError as e:
         await db.rollback()

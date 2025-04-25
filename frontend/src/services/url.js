@@ -1,4 +1,3 @@
-
 const URLS = {
     // resource service
     'SERVICE_TYPE': {
@@ -63,6 +62,7 @@ const URLS = {
         'GET_INVOICE_BY_ID': '/invoice/{invoice_id}',
         'GET_INVOICES_BY_DATE_RANGE': '/invoice/date-range',
         'UPDATE_INVOICE': '/invoice/{invoice_id}',
+        'GET_INVOICE_BY_ORDER_ID': '/invoice/order/{invoice_id}',
         // 'DELETE_INVOICE': '/invoice/{invoice_id}',
     },
 
@@ -110,6 +110,7 @@ const URLS = {
         'UPDATE_ORDER':'/order/update/{order_id}',
         'ASSIGN_STAFF':'/order/{order_id}/assign-staff/{staff_id}',
         'GET_ALL_ORDERS_BY_STAFF_ID_TODAY':'/orders/staff/{staff_id}/today',
+        'GET_CUSTOMER_ORDERS':'/orders/customer/{customer_id}',
     },
     'DIAGNOSIS':{
         'CREATE_DIAGNOSIS':'/diagnosis/create',
@@ -126,16 +127,16 @@ const URLS = {
         'CREATE_PART_ORDER_DETAILS':'/part-order-detail/create',
         'GET_ALL_PART_ORDER_DETAILS':'/part-order-details',
         'GET_ALL_PART_ORDER_DETAILS_BY_ORDER':'/order/part-order-details/{order_id}',
-        'GET_PART_ORDER_DETAIL_BY_ID':'/part-order-detail/{part_order_detail_id}',
-        'UPDATE_PART_ORDER_DETAIL':'/part-order-detail/update/{part_order_detail_id}'
+        'GET_PART_ORDER_DETAIL_BY_ID':'/part-order-detail/{part_detail_ID}',
+        'UPDATE_PART_ORDER_DETAIL':'/part-order-detail/update/{part_detail_ID}'
     },
     'SERVICE_ORDER_DETAIL':{
         'CREATE_SERVICE_ORDER_DETAILS':'/service-order-detail/create',
         'GET_ALL_SERVICE_ORDER_DETAILS':'/service-order-details',
-        'GET_SERVICE_ORDER_DETAIL_BY_ID':'/service-order-detail/{service_order_detail_id}',
+        'GET_SERVICE_ORDER_DETAIL_BY_ID':'/service-order-detail/{service_detail_ID}',
         'GET_SERVICE_ORDER_DETAILS_BY_ORDER':'/order/service-order-details/{order_id}',
-        'UPDATE_SERVICE_ORDER_DETAIL':'/service-order-detail/update/{service_order_detail_id}'
-    }
+        'UPDATE_SERVICE_ORDER_DETAIL':'/service-order-detail/update/{service_detail_ID}'
+    },
 }
 
 export default URLS;

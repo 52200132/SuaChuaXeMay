@@ -227,6 +227,16 @@ const resourceService = {
                 throw error;
             }
         },
+
+        updateInvoice: async (invoiceId, data) => {
+            try {
+                const response = await apiClient.put(URLS.INVOICE.UPDATE_INVOICE.replace('{invoice_id}', invoiceId), data);
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi cập nhật hóa đơn ID=${invoiceId}:`, error);
+                throw error;
+            }
+        },
     }
 };
 
@@ -374,6 +384,17 @@ const customerService = {
                 return response;
             } catch (error) {
                 console.error('Lỗi khi lấy danh sách lịch hẹn:', error);
+                throw error;
+            }
+        },
+        
+        // Lấy lịch hẹn của khách hàng
+        getCustomerAppointments: async (customerId) => {
+            try {
+                const response = await apiCustomerService.get(`/appointment/customer/${customerId}`);
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi lấy lịch hẹn của khách hàng ID=${customerId}:`, error);
                 throw error;
             }
         },
@@ -604,7 +625,7 @@ const repairService = {
         },
         updatePartOrderDetail: async (partOrderDetailId, data) => {
             try {
-                const response = await apiRepairService.put(URLS.PART_ORDER_DETAIL.UPDATE_PART_ORDER_DETAIL.replace('{part_order_detail_id}', partOrderDetailId), data);
+                const response = await apiRepairService.put(URLS.PART_ORDER_DETAIL.UPDATE_PART_ORDER_DETAIL.replace('{part_detail_ID}', partOrderDetailId), data);
                 return response;
             } catch (error) {
                 console.error(`api - Lỗi khi cập nhật chi tiết phụ tùng ID=${partOrderDetailId}:`, error);
@@ -635,7 +656,8 @@ const repairService = {
 
         updateServiceOrderDetail: async (serviceOrderDetailId, data) => {
             try {
-                const response = await apiRepairService.put(URLS.SERVICE_ORDER_DETAIL.UPDATE_SERVICE_ORDER_DETAIL.replace('{service_order_detail_id}', serviceOrderDetailId), data);
+                console.log(serviceOrderDetailId, URLS.SERVICE_ORDER_DETAIL.UPDATE_SERVICE_ORDER_DETAIL.replace('{service_detail_ID}', serviceOrderDetailId));
+                const response = await apiRepairService.put(URLS.SERVICE_ORDER_DETAIL.UPDATE_SERVICE_ORDER_DETAIL.replace('{service_detail_ID}', serviceOrderDetailId), data);
                 return response;
             } catch (error) {
                 console.error(`api - Lỗi khi cập nhật chi tiết dịch vụ ID=${serviceOrderDetailId}:`, error);

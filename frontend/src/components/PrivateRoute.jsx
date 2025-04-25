@@ -14,9 +14,47 @@ const PrivateRoute = ({ children }) => {
     const hasRequiredRole = () => {
         if (!currentStaff) return false;
         
-        // For admin routes, user must have admin, owner or employee role
+        // For admin routes, user must have a valid staff role
         if (isAdminRoute) {
-            return !['customer', ''].includes(currentStaff.role);
+            const validRoles = ['receptionist', 'technician', 'cashier', 'manager', 'admin', 'owner'];
+            
+            // Kiểm tra vai trò hợp lệ
+            if (!validRoles.includes(currentStaff.role)) {
+                return false;
+            }
+            
+            // Kiểm tra truy cập vào các trang chỉ dành cho manager
+            const managerOnlyPaths = [
+                '/admin/users', 
+                '/admin/reports', 
+                '/admin/settings',
+                '/admin/services'
+            ];
+            
+            if (managerOnlyPaths.some(path => location.pathname.startsWith(path)) && 
+                !['manager', 'admin', 'owner'].includes(currentStaff.role)) {
+                return false;
+            }
+            
+            // Kiểm tra truy cập trang technician
+            if (location.pathname.includes('/technician-dashboard') && 
+                !['technician', 'manager', 'admin', 'owner'].includes(currentStaff.role)) {
+                return false;
+            }
+            
+            // Kiểm tra truy cập trang cashier (hóa đơn)
+            if (location.pathname.includes('/invoices') && 
+                !['cashier', 'manager', 'admin', 'owner'].includes(currentStaff.role)) {
+                return false;
+            }
+            
+            // Kiểm tra truy cập trang receptionist
+            if ((location.pathname.includes('/bookings') || location.pathname.includes('/receipts')) && 
+                !['receptionist', 'manager', 'admin', 'owner'].includes(currentStaff.role)) {
+                return false;
+            }
+            
+            return true;
         }
         
         // For customer routes, any authenticated user can access

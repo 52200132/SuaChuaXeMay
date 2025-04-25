@@ -98,7 +98,7 @@ const OrderDetailView = ({
                     fetchPartOrderDetails(currentOrder.orderId),
                     fetchServiceOrderDetails(currentOrder.orderId)
                 ]);
-                console.log('Check data', partDetails, serviceDetails);
+                // console.log('Check data', partDetails, serviceDetails);
                 
                 setPartOrderDetails(partDetails);
                 setServiceOrderDetails(serviceDetails);
