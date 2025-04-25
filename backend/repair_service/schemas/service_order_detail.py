@@ -28,6 +28,15 @@ class ServiceOrderDetailUpdate(BaseModel):
     service_id: Optional[int] = None
     price: Optional[int] = None
     is_selected: Optional[bool] = None
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "service_id": 1,
+                "price": 100000,
+                "is_selected": False
+            }
+        }
 
 class ServiceOrderDetailResponse(ServiceOrderDetailBase):
     service_detail_ID: int
