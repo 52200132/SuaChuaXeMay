@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Pagination, Modal, Form, Row, Col, InputGroup, Badge, Tabs, Tab, Dropdown } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import AssignmentManagement from './AssignmentManagement';
 
@@ -10,10 +9,9 @@ import { useAppData } from '../contexts/AppDataContext';
 import { customerService, resourceService, repairService } from '../../services/api';
 import './OrderManagement.css';
 import { set } from 'date-fns';
+import OrderDetailView from '../components/OrderDetailView';
 
 // Register Chart.js components
-ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-
 const OrderManagement = () => {
     // TODO: Lấy từ context
     const { getData, getIds, setData, fetchAndStoreData, setMultipleData, errors, setError } = useAppData();
@@ -321,7 +319,7 @@ const OrderManagement = () => {
         return fileredOrdersIds.slice(indexOfFirstItem, indexOfLastItem).map(id => ordersDisplay[id]);
     };
     
-    // Xử lý modal xem chi tiết
+    // Xử lý modal xem chi tiết - using OrderDetailView component
     const handleShowDetailModal = (order) => {
         setCurrentOrder(order);
         setShowDetailModal(true);
@@ -980,14 +978,14 @@ const OrderManagement = () => {
                 />
             )}
 
-            {/* Modal xem chi tiết */}
+            {/* Modal xem chi tiết - using OrderDetailView component */}
             <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg">
                 <Modal.Header closeButton>
-                    <Modal.Title>Chi tiết đơn hàng</Modal.Title>
+                    <Modal.Title>Chi tiết đơn hàng #{currentOrder?.orderId}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {currentOrder && (
-                        <div>
+                        <>
                             <Row className="mb-4">
                                 <Col md={6}>
                                     <h6 className="text-muted mb-3">Thông tin chung</h6>
@@ -1005,41 +1003,25 @@ const OrderManagement = () => {
                                 </Col>
                             </Row>
 
-                            {/* <h6 className="text-muted mb-3">Chi tiết dịch vụ/sản phẩm</h6>
-                            <div className="table-responsive mb-4">
-                                <Table bordered hover>
-                                    <thead className="table-light">
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Tên dịch vụ/sản phẩm</th>
-                                            <th className="text-center">Số lượng</th>
-                                            <th className="text-end">Đơn giá</th>
-                                            <th className="text-end">Thành tiền</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {currentOrder.items.map((item, index) => (
-                                            <tr key={index}>
-                                                <td>{index + 1}</td>
-                                                <td>{item.name}</td>
-                                                <td className="text-center">{item.quantity}</td>
-                                                <td className="text-end">{formatCurrency(item.price)}</td>
-                                                <td className="text-end">{formatCurrency(item.price * item.quantity)}</td>
-                                            </tr>
-                                        ))}
-                                        <tr className="table-light">
-                                            <td colSpan="4" className="text-end fw-bold">Tổng cộng:</td>
-                                            <td className="text-end fw-bold">{formatCurrency(currentOrder.totalAmount)}</td>
-                                        </tr>
-                                    </tbody>
-                                </Table>
-                            </div> */}
+                            <Row className="mb-4">
+                                <Col md={12}>
+                                    <h6 className="text-muted mb-3">Thông tin xe</h6>
+                                    <p><strong>Loại xe:</strong> {currentOrder.motorcycleModel}</p>
+                                    <p><strong>Biển số:</strong> {currentOrder.plateNumber}</p>
+                                </Col>
+                            </Row>
 
-                            <div className="p-3 bg-light rounded">
+                            <div className="p-3 bg-light rounded mb-3">
                                 <h6>Chuẩn đoán:</h6>
                                 <p className="mb-0">{currentOrder.diagnosis || "Chuẩn đoán chưa được thêm"}</p>
                             </div>
-                        </div>
+
+                            {/* Use OrderDetailView component from context data */}
+                            <OrderDetailView
+                                currentOrder={currentOrder}
+                                formatCurrency={formatCurrency}
+                            />
+                        </>
                     )}
                 </Modal.Body>
                 <Modal.Footer>
@@ -1071,7 +1053,6 @@ const OrderManagement = () => {
                                 <div className="mb-3">
                                     <p className="mb-1"><strong>Mã đơn:</strong> {currentOrder.orderId}</p>
                                     <p className="mb-1"><strong>Khách hàng:</strong> {currentOrder.customerName}</p>
-                                    <p className="mb-0"><strong>Tổng tiền:</strong> {formatCurrency(currentOrder.totalAmount)}</p>
                                 </div>
 
                                 <Form.Group className="mb-3">
@@ -1115,122 +1096,6 @@ const OrderManagement = () => {
                     </Modal.Footer>
                 </Form>
             </Modal>
-
-            {/* Assignment Modal */}
-            {/* <Modal show={showAssignModal} onHide={() => setShowAssignModal(false)}>
-                <Form noValidate validated={validated} onSubmit={handleAssignOrder}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Phân công đơn hàng</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        {currentOrder && (
-                            <>
-                                <div className="mb-3">
-                                    <h6>Thông tin đơn hàng:</h6>
-                                    <p className="mb-1"><strong>Mã đơn:</strong> {currentOrder.orderId}</p>
-                                    <p className="mb-1"><strong>Xe:</strong> {currentOrder.motorcycleInfo?.model || ''} - {currentOrder.motorcycleInfo?.plate || ''}</p>
-                                    <p className="mb-1"><strong>Ngày tạo:</strong> {currentOrder.createdDate} {currentOrder.createdTime}</p>
-                                    <p className="mb-0"><strong>Mô tả:</strong> {currentOrder.description || 'Không có mô tả'}</p>
-                                </div>
-                                
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Chọn thợ phụ trách*</Form.Label>
-                                    <Form.Select
-                                        required
-                                        value={selectedTechnician}
-                                        onChange={(e) => setSelectedTechnician(e.target.value)}
-                                    >
-                                        <option value="">-- Chọn thợ sửa chữa --</option>
-                                        {renderTechnicianOptions()}
-                                    </Form.Select>
-                                    <Form.Control.Feedback type="invalid">
-                                        Vui lòng chọn thợ phụ trách
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-                                
-                                <Row className="mb-3">
-                                    <Col md={6}>
-                                        <Form.Group>
-                                            <Form.Label>Thời gian bắt đầu*</Form.Label>
-                                            <Form.Control
-                                                type="time"
-                                                required
-                                                value={startTime}
-                                                onChange={(e) => setStartTime(e.target.value)}
-                                            />
-                                            <Form.Control.Feedback type="invalid">
-                                                Vui lòng chọn thời gian bắt đầu
-                                            </Form.Control.Feedback>
-                                        </Form.Group>
-                                    </Col>
-                                    <Col md={6}>
-                                        <Form.Group>
-                                            <Form.Label>Dự kiến hoàn thành*</Form.Label>
-                                            <Form.Control
-                                                type="time"
-                                                required
-                                                value={estimatedEndTime}
-                                                onChange={(e) => setEstimatedEndTime(e.target.value)}
-                                            />
-                                            <Form.Control.Feedback type="invalid">
-                                                Vui lòng chọn thời gian dự kiến hoàn thành
-                                            </Form.Control.Feedback>
-                                        </Form.Group>
-                                    </Col>
-                                </Row>
-                                
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Ghi chú phân công</Form.Label>
-                                    <Form.Control
-                                        as="textarea"
-                                        rows={3}
-                                        value={assignmentNote}
-                                        onChange={(e) => setAssignmentNote(e.target.value)}
-                                        placeholder="Nhập các yêu cầu hoặc lưu ý khi phân công (nếu có)"
-                                    />
-                                </Form.Group>
-                            </>
-                        )}
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowAssignModal(false)}>
-                            Hủy
-                        </Button>
-                        <Button type="submit" style={{ backgroundColor: '#d30000', borderColor: '#d30000' }}>
-                            Xác nhận phân công
-                        </Button>
-                    </Modal.Footer>
-                </Form>
-            </Modal> */}
-            
-            {/* Technician Workload Detail Modal */}
-            {/* <Modal show={showWorkloadModal} onHide={() => setShowWorkloadModal(false)} size="lg">
-                <Modal.Header closeButton>
-                    <Modal.Title>Lịch làm việc của thợ</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {selectedTechnicianDetail && (
-                        <>
-                            <div className="mb-4">
-                                <h5>{selectedTechnicianDetail.fullname}</h5>
-                                <p className="mb-1"><strong>Mã nhân viên:</strong> {selectedTechnicianDetail.staff_id}</p>
-                                <p className="mb-1"><strong>Chuyên môn:</strong> {selectedTechnicianDetail.expertise || 'Tổng hợp'}</p>
-                                <p className="mb-0">
-                                    <strong>Trạng thái:</strong> {' '}
-                                    {renderAvailabilityBadge(selectedTechnicianDetail.staff_id)}
-                                </p>
-                            </div>
-                            
-                            {renderTechnicianSchedule()}
-                        </>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowWorkloadModal(false)}>
-                        Đóng
-                    </Button>
-                </Modal.Footer>
-            </Modal> */}
         </>
     );
 };

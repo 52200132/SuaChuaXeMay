@@ -36,7 +36,7 @@ class DiagnosisUpdate(BaseModel):
 
 class DiagnosisResponse(BaseModel):
     diagnosis_id: int
-    form_id: int
+    form_id: Optional[int]
     order_id: int
     problem: Optional[str]
     created_at: datetime
