@@ -48,10 +48,18 @@ async def create_service_order_details(service_detail: List[ServiceOrderDetailCr
 
 @router.put(URLS['SERVICE_ORDER_DETAIL']['UPDATE_SERVICE_ORDER_DETAIL'], response_model=ServiceOrderDetailResponse)
 async def update_service_order_detail(service_detail_ID: int, service_detail: ServiceOrderDetailUpdate, db: Session = Depends(get_db)):
-    db_service_detail = await crud.update_service_order_detail(db, service_detail_ID=service_detail_ID, service_detail=service_detail)
-    if db_service_detail is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy chi tiết dịch vụ đơn hàng")
-    return db_service_detail
+    try:
+        db_service_detail = await crud.update_service_order_detail(db, service_detail_ID=service_detail_ID, service_detail=service_detail)
+        if db_service_detail is None:
+            raise HTTPException(status_code=404, detail="Không tìm thấy chi tiết dịch vụ đơn hàng")
+        return db_service_detail
+    except IntegrityError as e:
+        await db.rollback()
+        logger.error(f"Lỗi khi cập nhật phụ tùng đơn hàng: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Thông tin không hợp lệ")
+    except Exception as e:
+        logger.error(f"Lỗi khi cập nhật phụ tùng đơn hàng: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))   
 
 # @router.delete("/{service_detail_id}", status_code=status.HTTP_204_NO_CONTENT)
 # def delete_service_order_detail(service_detail_id: int, db: Session = Depends(get_db)):

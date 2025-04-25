@@ -35,7 +35,7 @@ async def create_service_order_detail(db: AsyncSession, service_detail: List[Ser
         await db.rollback()
         raise e
     except Exception as e:
-        logger.error(f"Lỗi không xác định khi tạo chi tiết phụ tùng đơn hàng: {str(e)} | Dữ liệu: {[part.dict() for part in part_detail]}")
+        logger.error(f"Lỗi không xác định khi tạo chi tiết phụ tùng đơn hàng: {str(e)} | Dữ liệu: {[service.dict() for service in service_detail]}")
         await db.rollback()
         raise e
 

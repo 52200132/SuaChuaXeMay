@@ -15,6 +15,15 @@ logger = get_logger(__name__)
 
 router = APIRouter()
 
+
+@router.get(URLS['MOTORCYCLE']['GET_ALL_MOTORCYCLE_BY_CUSTOMER_ID'], response_model=List[MotocycleResponse])
+async def get_all_motorcycle_by_customer_id(
+    customer_id : int,
+    db: AsyncSession = Depends(get_db)):
+    """Lấy danh sách tất cả xe máy theo mã khách hàng."""
+    db_motorcycles = await motorcycle_crud.get_all_motorcycle_by_customer_id(db, customer_id)
+    return db_motorcycles
+
 @router.get(URLS['MOTORCYCLE']['GET_ALL_MOTORCYCLE_TYPES'], response_model=List[MotocycleTypeResponse])
 async def get_all_motorcycle_types(db: AsyncSession = Depends(get_db)):
     """Lấy danh sách tất cả loại xe máy."""

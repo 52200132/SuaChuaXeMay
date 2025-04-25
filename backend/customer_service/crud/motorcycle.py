@@ -86,3 +86,14 @@ async def delete_motorcycle(db: AsyncSession, motorcycle_id: int) -> bool:
     except Exception as e:
         logger.error(f"Lỗi không xác định: {str(e)}")
         raise e
+    
+async def get_all_motorcycle_by_customer_id(db: AsyncSession, customer_id: int) -> list[Motocycle]:
+    """Lấy danh sách tất cả xe máy của một khách hàng."""
+    try:
+        result = await db.execute(select(Motocycle).where(Motocycle.customer_id == customer_id))
+        motorcycles = result.scalars().all()
+        logger.info(f"Lấy danh sách xe máy của khách hàng với ID {customer_id} thành công")
+        return motorcycles
+    except Exception as e:
+        logger.error(f"Lỗi không xác định: {str(e)}")
+        raise e
