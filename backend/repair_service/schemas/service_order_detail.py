@@ -34,7 +34,7 @@ class ServiceOrderDetailResponse(ServiceOrderDetailBase):
     order_id: int
     service_id: int
     price: int
-    is_selected: Optional[bool] = False
+    is_selected: Optional[bool]
 
     class Config:
         from_attributes = True

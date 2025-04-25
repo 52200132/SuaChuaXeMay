@@ -184,6 +184,50 @@ const resourceService = {
             }
         }
     },
+
+    serviceMotoType: {
+        getAllServiceMotoTypesByMotoTypeId: async (motoTypeId) => {
+            try {
+                const response = await apiClient.get(URLS.SERVICE_MOTO_TYPE.GET_ALL_SERVICE_MOTO_TYPES_BY_MOTOTYPE_ID.replace('{moto_type_id}', motoTypeId));
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách dịch vụ theo loại xe:', error);
+                throw error;
+            }
+        },
+
+        getServiceMotoTypeByServiceIdAndMototypeId: async (serviceId, motoTypeId) => {
+            try {
+                const response = await apiClient.get(URLS.SERVICE_MOTO_TYPE.GET_SERVICE_MOTO_TYPE_BY_SERVICE_ID_AND_MOTOTYPE_ID.replace('{service_id}', serviceId).replace('{moto_type_id}', motoTypeId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy thông tin dịch vụ theo ID=${serviceId} và loại xe=${motoTypeId}:`, error);
+                throw error;
+            }
+        }
+    },
+
+    invoice: {
+        createInvoice: async (data) => {
+            try {
+                const response = await apiClient.post(URLS.INVOICE.CREATE, data);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo hóa đơn:', error);
+                throw error;
+            }
+        },
+
+        getAllInvoices: async () => {
+            try {
+                const response = await apiClient.get(URLS.INVOICE.GET_ALL_TODAY);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách hóa đơn hôm nay:', error);
+                throw error;
+            }
+        },
+    }
 };
 
 const customerService = {
@@ -478,19 +522,27 @@ const repairService = {
         },
         
         // Cập nhật trạng thái đơn hàng
-        updateOrderStatus: async (orderId, data) => {
+        updateOrderStatus: async (orderId, status) => {
             try {
-                const response = await apiRepairService.put(`/orders/${orderId}/status`, {
-                    status: data.status,
-                    notes: data.notes,
-                    spareparts: data.spareparts || [] // Thêm danh sách phụ tùng
+                const response = await apiRepairService.put(URLS.ORDER.UPDATE_ORDER.replace('{order_id}', orderId), {
+                    status: status
                 });
                 return response;
             } catch (error) {
-                console.error(`Lỗi khi cập nhật trạng thái đơn hàng ID=${orderId}:`, error);
+                console.error(`api - Lỗi khi cập nhật trạng thái đơn hàng ID=${orderId}:`, error);
                 throw error;
             }
-        }
+        },
+
+        updateOrder: async (orderId, data) => {
+            try {
+                const response = await apiRepairService.put(URLS.ORDER.UPDATE_ORDER.replace('{order_id}', orderId), data);
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi cập nhật đơn hàng ID=${orderId}:`, error);
+                throw error;
+            }
+        },
     },
     
     diagnosis: { 
@@ -516,6 +568,80 @@ const repairService = {
                 throw error;
             }
         },
+        updateDiagnosis: async (diagnosisId, problem, estimatedCost) => {
+            try {
+                // console.log('diagnosisId:', problem); // Log để kiểm tra
+                const response = await apiRepairService.put(URLS.DIAGNOSIS.UPDATE_DIAGNOSIS.replace('{diagnosis_id}', diagnosisId), {
+                    problem: problem,
+                    estimated_cost: estimatedCost
+                });
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi cập nhật chẩn đoán ID=${diagnosisId}:`, error);
+                throw error;
+            }
+        }
+    },
+
+    partOrderDetail: {
+        createPartOrderDetail: async (listPartOrderDetail) => {
+            try {
+                const response = await apiRepairService.post(URLS.PART_ORDER_DETAIL.CREATE_PART_ORDER_DETAILS, listPartOrderDetail);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo chi tiết phụ tùng cho đơn hàng:', error);
+                throw error;
+            }
+        },
+        getAllPartOrderDetailsByOrderId: async (orderId) => {
+            try {
+                const response = await apiRepairService.get(URLS.PART_ORDER_DETAIL.GET_ALL_PART_ORDER_DETAILS_BY_ORDER.replace('{order_id}', orderId));             
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách chi tiết phụ tùng:', error);
+                throw error;
+            }
+        },
+        updatePartOrderDetail: async (partOrderDetailId, data) => {
+            try {
+                const response = await apiRepairService.put(URLS.PART_ORDER_DETAIL.UPDATE_PART_ORDER_DETAIL.replace('{part_order_detail_id}', partOrderDetailId), data);
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi cập nhật chi tiết phụ tùng ID=${partOrderDetailId}:`, error);
+                throw error;
+            }
+        }
+    },
+
+    serviceOrderDetail: {
+        createServiceOrderDetail: async (listServiceOrderDetail) => {
+            try {
+                const response = await apiRepairService.post(URLS.SERVICE_ORDER_DETAIL.CREATE_SERVICE_ORDER_DETAILS, listServiceOrderDetail);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo chi tiết dịch vụ cho đơn hàng:', error);
+                throw error;
+            }
+        },
+        getAllServiceOrderDetailsByOrderId: async (orderId) => {
+            try {
+                const response = await apiRepairService.get(URLS.SERVICE_ORDER_DETAIL.GET_SERVICE_ORDER_DETAILS_BY_ORDER.replace('{order_id}', orderId));             
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách chi tiết dịch vụ:', error);
+                throw error;
+            }
+        },
+
+        updateServiceOrderDetail: async (serviceOrderDetailId, data) => {
+            try {
+                const response = await apiRepairService.put(URLS.SERVICE_ORDER_DETAIL.UPDATE_SERVICE_ORDER_DETAIL.replace('{service_order_detail_id}', serviceOrderDetailId), data);
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi cập nhật chi tiết dịch vụ ID=${serviceOrderDetailId}:`, error);
+                throw error;
+            }
+        }
     },
 };
 
