@@ -2,6 +2,7 @@ URLS = {
     'ORDER': {
         'CREATE_ORDER':'/order/create',
         'GET_ALL_ORDERS':'/orders',
+        'GET_ALL_ORDERS_BY_MOTO_ID':'/orders/motorcycle/{motocycle_id}',
         'GET_ORDER_BY_ID':'/order/{order_id}',
         'UPDATE_ORDER':'/order/update/{order_id}',
         'ASSIGN_STAFF':'/order/{order_id}/assign-staff/{staff_id}',

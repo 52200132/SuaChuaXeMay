@@ -27,6 +27,11 @@ async def get_orders_by_id(order_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
     return OrderResponse.from_orm(db_order)
 
+@router.get(URLS['ORDER']['GET_ALL_ORDERS_BY_MOTO_ID'], response_model=List[OrderResponse])
+async def get_orders_by_moto_id(motocycle_id: int, db: AsyncSession = Depends(get_db)):
+    db_orders = await order_crud.get_orders_by_motorcycle_id(db, motocycle_id=motocycle_id)
+    return db_orders
+
 @router.post(URLS['ORDER']['CREATE_ORDER'], response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
 async def create_new_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
     try:

@@ -41,6 +41,11 @@ async def get_order_by_id(db: AsyncSession, order_id: int) -> Order:
     db_order = result.scalar_one_or_none()
     return db_order
 
+async def get_orders_by_motorcycle_id(db: AsyncSession, motocycle_id: int) -> list[Order]:
+    result = await db.execute(select(Order).where(Order.motocycle_id == motocycle_id))
+    db_order = result.scalars().all()
+    return db_order
+
 async def update_order(db: AsyncSession, order_id: int, order: OrderUpdate) -> Order:
     """Cập nhật thông tin đơn hàng"""
     db_order = await get_order_by_id(db, order_id)
