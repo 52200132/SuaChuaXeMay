@@ -20,9 +20,7 @@ async def create_invoice(invoice_data: InvoiceCreate, db: AsyncSession = Depends
     Tạo hóa đơn mới.
     
     - **order_id**: ID của đơn hàng
-    - **staff_id**: ID của nhân viên tạo hóa đơn
     - **total_price**: Tổng tiền của hóa đơn
-    - **payment_method**: Phương thức thanh toán
     """
     try:
         new_invoice = await invoice_crud.create_invoice(db, invoice_data)
@@ -79,7 +77,7 @@ async def get_invoices_today(
     """
     Lấy danh sách hóa đơn được tạo trong ngày hôm nay.
     """
-    today = datetime.utcnow().date()
+    today = datetime.now().date()
     tomorrow = today + timedelta(days=1)
     today_start = datetime.combine(today, datetime.min.time())
     today_end = datetime.combine(tomorrow, datetime.min.time())
@@ -94,7 +92,6 @@ async def filter_invoices(
     skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
     limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),
     staff_id: Optional[int] = Query(None, description="Lọc theo ID nhân viên"),
-    order_id: Optional[int] = Query(None, description="Lọc theo ID đơn hàng"),
     start_date: Optional[datetime] = Query(None, description="Ngày bắt đầu"),
     end_date: Optional[datetime] = Query(None, description="Ngày kết thúc"),
     db: AsyncSession = Depends(get_db)
@@ -108,7 +105,6 @@ async def filter_invoices(
     invoices = await invoice_crud.get_invoice_with_filter(
         db, 
         staff_id=staff_id, 
-        order_id=order_id, 
         start_date=start_date, 
         end_date=end_date,
         skip=skip,

@@ -10,7 +10,7 @@ URLS = {
         'GET_SERVICE_BY_ID' : '/service/{service_id}',
         'GET_SERVICES_BY_SERVICE_TYPE_ID' : '/service/service-type/{service_type_id}/get-services',
         'CREATE_SERVICE' : '/service/create',
-        'UPDATE_SERVICE' : '/service/update',
+        'UPDATE_SERVICE' : '/service/update/{service_id}',
         'DELETE_SERVICE' : '/service/delete/{service_id}'
     },
         
@@ -20,7 +20,7 @@ URLS = {
         'FILTER': '/staffs/filter',
         'GET_STAFF_BY_ID' : '/staff/{staff_id}',
         'CREATE_STAFF' : '/staff/create',
-        'UPDATE_STAFF' : '/staff/update',
+        'UPDATE_STAFF' : '/staff/update/{staff_id}',
         'DELETE_STAFF' : '/staff/delete/{staff_id}'
     },
     
@@ -28,7 +28,7 @@ URLS = {
         'GET_ALL_PARTS' : '/parts',
         'GET_PART_BY_ID' : '/part/{part_id}',
         'CREATE_PART' : '/part/create',
-        'UPDATE_PART' : '/part/update',
+        'UPDATE_PART' : '/part/update/{part_id}',
         'DELETE_PART' : '/part/delete/{part_id}'
     },
     
@@ -38,9 +38,9 @@ URLS = {
         'GET_ALL_PART_MOTO_TYPES' : '/part-moto-types',
         'GET_ALL_PART_MOTO_TYPES_BY_MOTOTYPE_ID' : '/part-moto-types/moto-type/{moto_type_id}',
         'CREATE_PART_MOTO_TYPE' : '/part-moto-type/create',
-        'UPDATE_PART_MOTO_TYPE' : '/part-moto-type/update',
-        'UPDATE_PART_MOTO_TYPE_BY_PART_ID_AND_MOTOTYPE_ID' : '/part-moto-type/update2',
-        'DELETE_PART_MOTO_TYPE' : '/part-moto-type/delete/{part_moto_type_id}'
+        'UPDATE_PART_MOTO_TYPE' : '/part-moto-type/update/{part_mototype_id}',
+        'UPDATE_PART_MOTO_TYPE_BY_PART_ID_AND_MOTOTYPE_ID' : '/part-moto-type/update2/{part_id}/{moto_type_id}',
+        'DELETE_PART_MOTO_TYPE' : '/part-moto-type/delete/{part_mototype_id}'
     },
     
     'SERVICE_MOTO_TYPE': {
@@ -49,9 +49,9 @@ URLS = {
         'GET_ALL_SERVICE_MOTO_TYPES' : '/service-moto-types',
         'GET_ALL_SERVICE_MOTO_TYPES_BY_MOTOTYPE_ID' : '/service-moto-types/moto-type/{moto_type_id}',
         'CREATE_SERVICE_MOTO_TYPE' : '/service-moto-type/create',
-        'UPDATE_SERVICE_MOTO_TYPE' : '/service-moto-type/update',
-        'UPDATE_SERVICE_MOTO_TYPE_BY_SERVICE_ID_AND_MOTOTYPE_ID' : '/service-moto-type/update2',
-        'DELETE_SERVICE_MOTO_TYPE' : '/service-moto-type/delete/{service_moto_type_id}'
+        'UPDATE_SERVICE_MOTO_TYPE' : '/service-moto-type/update/{service_mototype_id}',
+        'UPDATE_SERVICE_MOTO_TYPE_BY_SERVICE_ID_AND_MOTOTYPE_ID' : '/service-moto-type/update2/{service_id}/{moto_type_id}',
+        'DELETE_SERVICE_MOTO_TYPE' : '/service-moto-type/delete/{service_mototype_id}'
     },
     
     'INVOICE': {

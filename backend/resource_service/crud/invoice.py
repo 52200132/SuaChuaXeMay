@@ -23,9 +23,8 @@ async def create_invoice(db: AsyncSession, invoice: InvoiceCreate) -> Invoice:
         # Tạo đối tượng hóa đơn
         db_invoice = Invoice(
             order_id=invoice.order_id,
-            staff_id=invoice.staff_id,
             total_price=invoice.total_price,
-            payment_method=invoice.payment_method,
+            is_paid=invoice.is_paid,
             # create_at sẽ tự động lấy thời gian hiện tại
         )
         
@@ -170,7 +169,6 @@ async def delete_invoice(
 async def get_invoice_with_filter(
     db: AsyncSession,
     staff_id: Optional[int] = None,
-    order_id: Optional[int] = None,
     invoice_id: Optional[int] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
@@ -183,9 +181,6 @@ async def get_invoice_with_filter(
         
         if staff_id:
             query = query.where(Invoice.staff_id == staff_id)
-        
-        if order_id:
-            query = query.where(Invoice.order_id == order_id)
         
         if invoice_id:
             query = query.where(Invoice.invoice_id == invoice_id)
