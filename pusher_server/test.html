@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pusher Test</title>
+  <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #messagesList {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    .message {
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #f9f9f9;
+      border-left: 3px solid #4CAF50;
+    }
+    .status {
+      padding: 10px;
+      background-color: #f0f0f0;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Pusher Test</h1>
+    
+    <div class="card">
+      <h2>Trạng thái</h2>
+      <div id="status" class="status">Đang kết nối...</div>
+    </div>
+    
+    <div class="card">
+      <h2>Gửi thông báo</h2>
+      <form id="messageForm">
+        <div class="form-group">
+          <label for="channel">Kênh</label>
+          <select id="channel" required>
+            <option value="broadcast">broadcast (tất cả)</option>
+            <option value="staff-1">staff-1 (nhân viên ID: 1)</option>
+            <option value="customer-1">customer-1 (khách hàng ID: 1)</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="eventName">Tên sự kiện</label>
+          <input type="text" id="eventName" value="notification" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="title">Tiêu đề</label>
+          <input type="text" id="title" value="Thông báo thử nghiệm" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="message">Nội dung</label>
+          <textarea id="message" rows="3" required>Đây là nội dung thông báo thử nghiệm</textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="type">Loại thông báo</label>
+          <select id="type">
+            <option value="info">info (thông tin)</option>
+            <option value="success">success (thành công)</option>
+            <option value="warning">warning (cảnh báo)</option>
+            <option value="error">error (lỗi)</option>
+          </select>
+        </div>
+        
+        <button type="submit">Gửi thông báo</button>
+      </form>
+    </div>
+    
+    <div class="card">
+      <h2>Thông báo đã nhận</h2>
+      <ul id="messagesList"></ul>
+    </div>
+  </div>
+
+  <script>
+    // Khởi tạo Pusher
+    const pusher = new Pusher('app-key', {
+      wsHost: 'localhost',
+      wsPort: 4000,
+      enabledTransports: ['ws'],
+      disableStats: true,
+      forceTLS: false,
+      encrypted: false,
+      cluster: 'mt1'
+    });
+    
+    // Cập nhật trạng thái kết nối
+    const statusDiv = document.getElementById('status');
+    pusher.connection.bind('connected', () => {
+      statusDiv.textContent = 'Đã kết nối thành công!';
+      statusDiv.style.backgroundColor = '#dff0d8';
+    });
+    
+    pusher.connection.bind('error', (err) => {
+      statusDiv.textContent = `Lỗi kết nối: ${err.message}`;
+      statusDiv.style.backgroundColor = '#f2dede';
+    });
+    
+    // Đăng ký kênh broadcast
+    const broadcastChannel = pusher.subscribe('broadcast');
+    const staff1Channel = pusher.subscribe('staff-1');
+    const customer1Channel = pusher.subscribe('customer-1');
+    
+    // Lắng nghe sự kiện notification trên tất cả các kênh
+    [broadcastChannel, staff1Channel, customer1Channel].forEach(channel => {
+      channel.bind('notification', function(data) {
+        displayMessage(channel.name, 'notification', data);
+      });
+      
+      // Lắng nghe tất cả các sự kiện
+      channel.bind_global(function(eventName, data) {
+        if (eventName.indexOf('pusher:') === 0) return; // Bỏ qua các sự kiện nội bộ của Pusher
+        displayMessage(channel.name, eventName, data);
+      });
+    });
+    
+    // Hiển thị tin nhắn nhận được
+    function displayMessage(channelName, eventName, data) {
+      const messagesList = document.getElementById('messagesList');
+      const li = document.createElement('li');
+      li.className = 'message';
+      
+      // Format thời gian
+      const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+      
+      li.innerHTML = `
+        <div><strong>Kênh:</strong> ${channelName}</div>
+        <div><strong>Sự kiện:</strong> ${eventName}</div>
+        <div><strong>Thời gian:</strong> ${timestamp}</div>
+        <div><strong>Tiêu đề:</strong> ${data.title || 'N/A'}</div>
+        <div><strong>Nội dung:</strong> ${data.message || JSON.stringify(data)}</div>
+      `;
+      
+      messagesList.prepend(li);
+    }
+    
+    // Xử lý form gửi tin nhắn
+    document.getElementById('messageForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const channelName = document.getElementById('channel').value;
+      const eventName = document.getElementById('eventName').value;
+      const title = document.getElementById('title').value;
+      const message = document.getElementById('message').value;
+      const type = document.getElementById('type').value;
+      
+      const payload = {
+        channel: channelName,
+        event: eventName,
+        data: {
+          title,
+          message,
+          type,
+          id: Date.now().toString(),
+          timestamp: new Date().toISOString()
+        }
+      };
+      
+      try {
+        const response = await fetch('http://localhost:4000/pusher/trigger', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        console.log('Kết quả:', result);
+        
+        if (result.success) {
+          alert('Đã gửi thông báo thành công!');
+        } else {
+          alert('Lỗi: ' + (result.error || 'Không xác định'));
+        }
+      } catch (error) {
+        console.error('Lỗi khi gửi thông báo:', error);
+        alert('Không thể kết nối đến server: ' + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
