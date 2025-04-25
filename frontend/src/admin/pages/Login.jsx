@@ -33,9 +33,9 @@ const StaffLogin = () => {
         console.log("Current staff:", currentStaff);
         if (currentStaff) {
             // return;
-            navigate('/admin/bookings', { replace: true });
+            navigate('/admin', { replace: true });
         }       
-    }, [currentStaff, navigate]);
+    }, [currentStaff]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;

@@ -9,9 +9,10 @@ import Profile from './pages/Profile';
 import OrderManagement from './pages/OrderManagement';
 import AssignmentManagement from './pages/AssignmentManagement';
 import TechnicianDashboard from './pages/TechnicianDashboard';
+import InvoiceManagement from './pages/InvoiceManagement';
 
-// Xác định các route có thể truy cập cho tất cả nhân viên (bao gồm cả nhân viên cơ bản)
-export const employeeRoutes = [
+// Routes cho vai trò receptionist (tiếp tân)
+export const receptionistRoutes = [
     {
         path: '/admin/dashboard',
         component: Dashboard,
@@ -41,6 +42,24 @@ export const employeeRoutes = [
         exact: true,
     },
     {
+        path: '/admin/profile',
+        component: Profile,
+        name: 'Thông tin cá nhân',
+        icon: 'bi bi-person',
+        exact: true,
+    },
+];
+
+// Routes cho vai trò technician (kỹ thuật viên)
+export const technicianRoutes = [
+    {
+        path: '/admin/dashboard',
+        component: Dashboard,
+        name: 'Dashboard',
+        icon: 'bi bi-speedometer2',
+        exact: true,
+    },
+    {
         path: '/admin/technician-dashboard',
         component: TechnicianDashboard,
         name: 'Đơn hàng của tôi',
@@ -56,9 +75,75 @@ export const employeeRoutes = [
     },
 ];
 
-// Xác định các route chỉ có thể truy cập bởi quản lý hoặc admin
-export const ownerRoutes = [
-    ...employeeRoutes,
+// Routes cho vai trò cashier (thu ngân)
+export const cashierRoutes = [
+    {
+        path: '/admin/dashboard',
+        component: Dashboard,
+        name: 'Dashboard',
+        icon: 'bi bi-speedometer2',
+        exact: true,
+    },
+    // {
+    //     path: '/admin/orders',
+    //     component: OrderManagement,
+    //     name: 'Quản lý đơn hàng',
+    //     icon: 'bi bi-cart3',
+    //     exact: true,
+    // },
+    {
+        path: '/admin/invoices',
+        component: InvoiceManagement,
+        name: 'Quản lý hóa đơn',
+        icon: 'bi bi-receipt',
+        exact: true,
+    },
+    {
+        path: '/admin/profile',
+        component: Profile,
+        name: 'Thông tin cá nhân',
+        icon: 'bi bi-person',
+        exact: true,
+    },
+];
+
+// Routes cho vai trò manager (quản lý)
+export const managerRoutes = [
+    {
+        path: '/admin/dashboard',
+        component: Dashboard,
+        name: 'Dashboard',
+        icon: 'bi bi-speedometer2',
+        exact: true,
+    },
+    {
+        path: '/admin/bookings',
+        component: BookingManagement,
+        name: 'Quản lý đặt lịch',
+        icon: 'bi bi-calendar-check',
+        exact: true,
+    },
+    {
+        path: '/admin/receipts',
+        component: ReceiptManagement,
+        name: 'Quản lý đơn tiếp nhận',
+        icon: 'bi bi-file-earmark-text',
+        exact: true,
+    },
+    {
+        path: '/admin/orders',
+        component: OrderManagement,
+        name: 'Quản lý đơn hàng',
+        icon: 'bi bi-cart3',
+        exact: true,
+    },
+    {
+        path: '/admin/invoices',
+        component: InvoiceManagement,
+        name: 'Quản lý hóa đơn',
+        icon: 'bi bi-receipt',
+        exact: true,
+    },
     {
         path: '/admin/services',
         component: ServiceManagement,
@@ -87,4 +172,15 @@ export const ownerRoutes = [
         icon: 'bi bi-gear',
         exact: true,
     },
+    {
+        path: '/admin/profile',
+        component: Profile,
+        name: 'Thông tin cá nhân',
+        icon: 'bi bi-person',
+        exact: true,
+    },
 ];
+
+// Giữ lại các routes cũ để khả năng tương thích ngược
+export const employeeRoutes = [...receptionistRoutes, ...technicianRoutes, ...cashierRoutes];
+export const ownerRoutes = managerRoutes;

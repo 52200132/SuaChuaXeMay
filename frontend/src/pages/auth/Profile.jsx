@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { Container, Row, Col, Form, Button, Alert, Card, Tab, Nav } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Form, Button, Alert, Card, Tab, Nav, Spinner, Badge } from 'react-bootstrap';
 import { useAuth } from '../../contexts/AuthContext';
+import { customerService, resourceService, repairService } from '../../services/api';
+import { formatDate, formatCurrency } from '../../utils/formatters';
 
 const Profile = () => {
     const { currentUser, updateProfile } = useAuth();
@@ -12,6 +14,9 @@ const Profile = () => {
         address: currentUser.address || ''
     });
 
+    // Thêm state để hiển thị vai trò nếu người dùng là nhân viên
+    const [userRole, setUserRole] = useState('');
+
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -21,6 +26,75 @@ const Profile = () => {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [activeTab, setActiveTab] = useState('profile');
+    
+    // State for orders and invoices
+    const [orders, setOrders] = useState([]);
+    const [invoices, setInvoices] = useState([]);
+    const [loadingOrders, setLoadingOrders] = useState(false);
+    const [loadingInvoices, setLoadingInvoices] = useState(false);
+    const [orderError, setOrderError] = useState('');
+    const [invoiceError, setInvoiceError] = useState('');
+
+    useEffect(() => {
+        // Kiểm tra xem người dùng có phải là nhân viên không
+        if (currentUser && currentUser.role) {
+            // Chuyển đổi vai trò sang tiếng Việt
+            switch(currentUser.role) {
+                case 'manager':
+                case 'admin':
+                case 'owner':
+                    setUserRole('Quản lý');
+                    break;
+                case 'receptionist':
+                    setUserRole('Tiếp tân');
+                    break;
+                case 'technician':
+                    setUserRole('Kỹ thuật viên');
+                    break;
+                case 'cashier':
+                    setUserRole('Thu ngân');
+                    break;
+                default:
+                    setUserRole('Khách hàng');
+            }
+        } else {
+            setUserRole('Khách hàng');
+        }
+        
+        // Fetch orders and invoices when user navigates to the orders tab
+        if (activeTab === 'orders' && currentUser) {
+            fetchCustomerOrders();
+            fetchCustomerInvoices();
+        }
+    }, [activeTab, currentUser]);
+
+    const fetchCustomerOrders = async () => {
+        try {
+            setLoadingOrders(true);
+            setOrderError('');
+            const response = await repairService.order.getCustomerOrders(currentUser.uid);
+            setOrders(response.data || []);
+        } catch (error) {
+            console.error('Error fetching customer orders:', error);
+            setOrderError('Không thể lấy dữ liệu đơn hàng. Vui lòng thử lại sau.');
+        } finally {
+            setLoadingOrders(false);
+        }
+    };
+
+    const fetchCustomerInvoices = async () => {
+        try {
+            setLoadingInvoices(true);
+            setInvoiceError('');
+            const response = await resourceService.invoice.getCustomerInvoices(currentUser.uid);
+            setInvoices(response.data || []);
+        } catch (error) {
+            console.error('Error fetching customer invoices:', error);
+            setInvoiceError('Không thể lấy dữ liệu hóa đơn. Vui lòng thử lại sau.');
+        } finally {
+            setLoadingInvoices(false);
+        }
+    };
 
     const handleProfileChange = (e) => {
         const { name, value } = e.target;
@@ -98,6 +172,26 @@ const Profile = () => {
         }
     };
 
+    // Get status badge color
+    const getStatusBadgeColor = (status) => {
+        switch (status.toLowerCase()) {
+            case 'đang chờ':
+            case 'pending':
+                return 'warning';
+            case 'đang xử lý':
+            case 'processing':
+                return 'info';
+            case 'hoàn thành':
+            case 'completed':
+                return 'success';
+            case 'đã hủy':
+            case 'cancelled':
+                return 'danger';
+            default:
+                return 'secondary';
+        }
+    };
+
     // Mock data cho lịch sử đặt lịch
     const bookingHistory = [
         {
@@ -151,6 +245,7 @@ const Profile = () => {
                                 </div>
                                 <h5>{currentUser.displayName || 'Người dùng'}</h5>
                                 <p className="text-muted mb-0">{currentUser.email}</p>
+                                {userRole && <p className="text-muted mb-0">{userRole}</p>}
                             </div>
 
                             <hr />
@@ -164,6 +259,11 @@ const Profile = () => {
                                 <Nav.Item>
                                     <Nav.Link eventKey="bookings" className="d-flex align-items-center">
                                         <i className="bi bi-calendar-check me-2"></i> Lịch sử đặt lịch
+                                    </Nav.Link>
+                                </Nav.Item>
+                                <Nav.Item>
+                                    <Nav.Link eventKey="orders" className="d-flex align-items-center">
+                                        <i className="bi bi-cart-check me-2"></i> Đơn hàng & Hóa đơn
                                     </Nav.Link>
                                 </Nav.Item>
                                 <Nav.Item>
@@ -306,6 +406,114 @@ const Profile = () => {
                                         <Alert variant="info">
                                             Bạn chưa có lịch đặt nào. <Button variant="link" className="p-0">Đặt lịch ngay</Button>
                                         </Alert>
+                                    )}
+                                </Tab.Pane>
+
+                                <Tab.Pane eventKey="orders" active={activeTab === 'orders'}>
+                                    <h4 className="mb-4">Đơn hàng và hóa đơn</h4>
+                                    
+                                    {/* Orders Section */}
+                                    <h5 className="mt-4 mb-3">Đơn hàng của tôi</h5>
+                                    
+                                    {loadingOrders ? (
+                                        <div className="text-center p-4">
+                                            <Spinner animation="border" variant="primary" />
+                                            <p className="mt-2">Đang tải dữ liệu đơn hàng...</p>
+                                        </div>
+                                    ) : orderError ? (
+                                        <Alert variant="danger">{orderError}</Alert>
+                                    ) : orders.length === 0 ? (
+                                        <Alert variant="info">
+                                            Bạn chưa có đơn hàng nào.
+                                        </Alert>
+                                    ) : (
+                                        <div className="table-responsive">
+                                            <table className="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Mã đơn</th>
+                                                        <th>Ngày tạo</th>
+                                                        <th>Dịch vụ</th>
+                                                        <th>Trạng thái</th>
+                                                        <th>Tổng tiền</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {orders.map((order) => (
+                                                        <tr key={order.order_id}>
+                                                            <td>#{order.order_id}</td>
+                                                            <td>{new Date(order.create_at).toLocaleDateString('vi-VN')}</td>
+                                                            <td>{order.service_summary || 'Nhiều dịch vụ'}</td>
+                                                            <td>
+                                                                <Badge bg={getStatusBadgeColor(order.status)}>
+                                                                    {order.status}
+                                                                </Badge>
+                                                            </td>
+                                                            <td>{order.total_price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.total_price) : 'Chưa tính'}</td>
+                                                            <td>
+                                                                <Button variant="outline-secondary" size="sm">
+                                                                    Chi tiết
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Invoices Section */}
+                                    <h5 className="mt-5 mb-3">Hóa đơn của tôi</h5>
+                                    
+                                    {loadingInvoices ? (
+                                        <div className="text-center p-4">
+                                            <Spinner animation="border" variant="primary" />
+                                            <p className="mt-2">Đang tải dữ liệu hóa đơn...</p>
+                                        </div>
+                                    ) : invoiceError ? (
+                                        <Alert variant="danger">{invoiceError}</Alert>
+                                    ) : invoices.length === 0 ? (
+                                        <Alert variant="info">
+                                            Bạn chưa có hóa đơn nào.
+                                        </Alert>
+                                    ) : (
+                                        <div className="table-responsive">
+                                            <table className="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Mã hóa đơn</th>
+                                                        <th>Ngày lập</th>
+                                                        <th>Mã đơn hàng</th>
+                                                        <th>Phương thức thanh toán</th>
+                                                        <th>Trạng thái</th>
+                                                        <th>Tổng tiền</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {invoices.map((invoice) => (
+                                                        <tr key={invoice.invoice_id}>
+                                                            <td>#{invoice.invoice_id}</td>
+                                                            <td>{new Date(invoice.create_at).toLocaleDateString('vi-VN')}</td>
+                                                            <td>#{invoice.order_id}</td>
+                                                            <td>{invoice.payment_method}</td>
+                                                            <td>
+                                                                <Badge bg={invoice.is_paid ? "success" : "warning"}>
+                                                                    {invoice.is_paid ? "Đã thanh toán" : "Chưa thanh toán"}
+                                                                </Badge>
+                                                            </td>
+                                                            <td>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(invoice.total_price)}</td>
+                                                            <td>
+                                                                <Button variant="outline-secondary" size="sm">
+                                                                    In hóa đơn
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     )}
                                 </Tab.Pane>
 

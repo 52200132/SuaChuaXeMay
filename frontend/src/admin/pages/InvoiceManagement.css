@@ -1,0 +1,70 @@
+/* Styling cho trang quản lý hóa đơn */
+
+.badge {
+    font-weight: 500;
+}
+
+/* In hóa đơn */
+@media print {
+    body {
+        background-color: #fff;
+        font-size: 14px;
+    }
+    
+    .modal, .modal-body {
+        position: absolute;
+        left: 0;
+        top: 0;
+        margin: 0;
+        padding: 0;
+        overflow: visible !important;
+    }
+    
+    .modal-header, .modal-footer, .d-print-none {
+        display: none !important;
+    }
+    
+    .diagnosis-section {
+        page-break-after: avoid;
+    }
+    
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    
+    .table td, .table th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    
+    /* Add a page header with logo */
+    @page {
+        margin: 1cm;
+    }
+    
+    /* Print title */
+    #invoice-print-content::before {
+        content: "HÓA ĐƠN DỊCH VỤ";
+        display: block;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+}
+
+/* Hover effect for table rows */
+.table tbody tr:hover {
+    background-color: rgba(211, 0, 0, 0.05);
+}
+
+/* Improve dropdown menu styling */
+.dropdown-menu {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: none;
+}
+
+.dropdown-item:active {
+    background-color: #d30000;
+}

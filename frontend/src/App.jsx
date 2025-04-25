@@ -13,6 +13,7 @@ import Register from './pages/auth/Register';
 import Profile from './pages/auth/Profile';
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
+import UserPrivateRoute from './components/UserPrivateRoute';
 import './App.css';
 
 // import contexts
@@ -33,6 +34,8 @@ import StaffLogin from './admin/pages/Login';
 import ReceiptManagement from './admin/pages/ReceiptManagement';
 import OrderManagement from './admin/pages/OrderManagement';
 import TechnicianDashboard from './admin/pages/TechnicianDashboard';
+// Thêm import cho trang hóa đơn
+import InvoiceManagement from './admin/pages/InvoiceManagement';
 
 // Import the new components
 import ServiceDetail from './pages/ServiceDetail';
@@ -81,6 +84,8 @@ function App() {
                             <Route path="reports" element={<Reports />} />
                             <Route path="settings" element={<Settings />} />
                             <Route path="profile" element={<AdminProfile />} />
+                            {/* Thêm route hóa đơn */}
+                            <Route path="invoices" element={<InvoiceManagement />} />
                         </Route>
 
                         {/* Client Routes - With Header/Footer */}
@@ -100,9 +105,9 @@ function App() {
                                         <Route
                                             path="/profile"
                                             element={
-                                                <PrivateRoute>
+                                                <UserPrivateRoute>
                                                     <Profile />
-                                                </PrivateRoute>
+                                                </UserPrivateRoute>
                                             }
                                         />
 

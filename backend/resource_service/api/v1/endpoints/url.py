@@ -62,6 +62,7 @@ URLS = {
         'GET_INVOICE_BY_ID': '/invoice/{invoice_id}',
         'GET_INVOICES_BY_DATE_RANGE': '/invoice/date-range',
         'UPDATE_INVOICE': '/invoice/{invoice_id}',
+        'GET_INVOICE_BY_ORDER_ID': '/invoice/order/{order_id}',
         # 'DELETE_INVOICE': '/invoice/{invoice_id}',
     }
 }

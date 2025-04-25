@@ -208,3 +208,20 @@ async def get_invoice_with_filter(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
         
     return result.scalars().all()
+
+async def get_invoice_by_order_id(
+    db: AsyncSession,
+    order_id: int
+) -> Optional[Invoice]:
+    """Lấy hóa đơn theo ID đơn hàng"""
+    try:
+        result = await db.execute(
+            select(Invoice).where(Invoice.order_id == order_id)
+        )
+        return result.scalar_one_or_none()
+    except MultipleResultsFound:
+        logger.error(f"Nhiều hóa đơn được tìm thấy cho đơn hàng ID {order_id}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nhiều hóa đơn được tìm thấy")
+    except Exception as e:
+        logger.error(f"Lỗi khi lấy hóa đơn theo ID đơn hàng: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
