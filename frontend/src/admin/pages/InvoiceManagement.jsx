@@ -219,21 +219,275 @@ const InvoiceManagement = () => {
     // Hàm xử lý in hóa đơn
     const handlePrintInvoice = () => {
         setIsPrinting(true);
-
-        setTimeout(() => {
+        
+        try {
+            // Lấy nội dung cần in
             const printContent = document.getElementById('invoice-print-content');
-            const originalContents = document.body.innerHTML;
-
-            if (printContent) {
-                document.body.innerHTML = printContent.innerHTML;
-                window.print();
-                document.body.innerHTML = originalContents;
-                // Đặt lại trạng thái các component React
-                setShowDetailModal(true);
+            
+            if (!printContent) {
+                console.error('Không tìm thấy nội dung để in');
+                setIsPrinting(false);
+                return;
             }
+            
+            // Tạo một iframe ẩn
+            const printFrame = document.createElement('iframe');
+            printFrame.style.position = 'absolute';
+            printFrame.style.width = '0';
+            printFrame.style.height = '0';
+            printFrame.style.border = '0';
+            document.body.appendChild(printFrame);
+            
+            // Tạo nội dung HTML đầy đủ cho iframe
+            const frameDocument = printFrame.contentWindow.document;
+            frameDocument.open();
+            
+            // Thêm CSS in ấn và nội dung
+            frameDocument.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Hóa đơn #${currentInvoice?.invoice_id}</title>
+                    <style>
+                        @page {
+                            size: A4;
+                            margin: 10mm 10mm 10mm 10mm; /* Giảm lề trang */
+                        }
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 0;
+                            width: 100%;
+                            max-width: 100%;
+                        }
+                        .invoice-container {
+                            width: 100%;
+                            padding: 10px;
+                        }
+                        .header {
+                            text-align: center;
+                            margin-bottom: 20px;
+                            border-bottom: 1px solid #ddd;
+                            padding-bottom: 10px;
+                        }
+                        .header h1 {
+                            margin: 0;
+                            font-size: 24px;
+                        }
+                        .info-section {
+                            margin-bottom: 20px;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 15px;
+                        }
+                        table, th, td {
+                            border: 1px solid #ddd;
+                        }
+                        th, td {
+                            padding: 8px;
+                            text-align: left;
+                            font-size: 14px;
+                        }
+                        th {
+                            background-color: #f2f2f2;
+                        }
+                        .text-end {
+                            text-align: right;
+                        }
+                        .text-center {
+                            text-align: center;
+                        }
+                        .row {
+                            display: flex;
+                            width: 100%;
+                        }
+                        .col {
+                            flex: 1;
+                            padding-right: 15px;
+                        }
+                        h5 {
+                            margin-top: 20px;
+                            margin-bottom: 10px;
+                            border-bottom: 1px solid #ddd;
+                            padding-bottom: 5px;
+                        }
+                        .footer {
+                            margin-top: 30px;
+                            border-top: 1px solid #ddd;
+                            padding-top: 10px;
+                        }
+                        .totals {
+                            width: 100%;
+                            max-width: 350px;
+                            margin-left: auto;
+                            background-color: #f9f9f9;
+                            padding: 10px;
+                            border-radius: 4px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="invoice-container">
+                        <div class="header">
+                            <h1>HÓA ĐƠN THANH TOÁN</h1>
+                        </div>
 
+                        <div class="info-section">
+                            <div class="row">
+                                <div class="col">
+                                    <p><strong>Mã hóa đơn:</strong> ${currentInvoice?.invoice_id}</p>
+                                    <p><strong>Ngày tạo:</strong> ${formatDateTime(currentInvoice?.create_at)}</p>
+                                    <p><strong>Mã đơn hàng:</strong> ${currentInvoice?.order_id}</p>
+                                    <p><strong>Trạng thái:</strong> ${currentInvoice?.is_paid ? 'Đã thanh toán' : 'Chờ thanh toán'}</p>
+                                    <p><strong>Phương thức:</strong> ${
+                                        currentInvoice?.payment_method === 'cash' ? 'Tiền mặt' :
+                                        currentInvoice?.payment_method === 'transfer' ? 'Chuyển khoản' :
+                                        currentInvoice?.payment_method || 'Không xác định'
+                                    }</p>
+                                </div>
+                                <div class="col">
+                                    <p><strong>Khách hàng:</strong> ${customer?.fullname || 'N/A'}</p>
+                                    <p><strong>SĐT:</strong> ${customer?.phone_num || 'N/A'}</p>
+                                    <p><strong>Biển số xe:</strong> ${motorcycle?.license_plate || 'N/A'}</p>
+                                    <p><strong>Loại xe:</strong> ${motorcycle?.brand || ''} ${motorcycle?.model || ''}</p>
+                                    <p><strong>Nhân viên phụ trách:</strong> ${staff?.fullname || 'N/A'}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${diagnosis?.problem ? `
+                            <div class="info-section">
+                                <h5>Chuẩn đoán</h5>
+                                <p><strong>Vấn đề:</strong> ${diagnosis.problem}</p>
+                            </div>
+                        ` : ''}
+
+                        <h5>Phụ tùng và vật tư</h5>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%">#</th>
+                                    <th style="width: 45%">Tên phụ tùng</th>
+                                    <th style="width: 20%">Đơn giá</th>
+                                    <th style="width: 10%">Số lượng</th>
+                                    <th style="width: 20%">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${partOrderDetails.length > 0 ? 
+                                    partOrderDetails.map((item, index) => `
+                                        <tr>
+                                            <td class="text-center">${index + 1}</td>
+                                            <td>${item.part_name || (item.partDetail && item.partDetail.name) || "Phụ tùng không xác định"}</td>
+                                            <td class="text-center">${formatCurrency(item.price)}</td>
+                                            <td class="text-center">${item.quantity}</td>
+                                            <td class="text-end">${formatCurrency(item.price * item.quantity)}</td>
+                                        </tr>
+                                    `).join('') : 
+                                    `<tr><td colspan="5" class="text-center">Không có phụ tùng nào được sử dụng</td></tr>`
+                                }
+                            </tbody>
+                            ${partOrderDetails.length > 0 ? `
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4" class="text-end"><strong>Tổng chi phí phụ tùng:</strong></td>
+                                        <td class="text-end"><strong>${formatCurrency(
+                                            partOrderDetails.reduce((sum, part) => sum + (part.price * part.quantity), 0)
+                                        )}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            ` : ''}
+                        </table>
+
+                        <h5>Dịch vụ</h5>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%">#</th>
+                                    <th style="width: 55%">Tên dịch vụ</th>
+                                    <th style="width: 20%">Đơn giá</th>
+                                    <th style="width: 20%">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${serviceOrderDetails.length > 0 ? 
+                                    serviceOrderDetails.map((item, index) => `
+                                        <tr>
+                                            <td class="text-center">${index + 1}</td>
+                                            <td>${item.service_name || (item.serviceDetail && item.serviceDetail.name) || "Dịch vụ không xác định"}</td>
+                                            <td class="text-center">${formatCurrency(item.price)}</td>
+                                            <td class="text-end">${formatCurrency(item.price)}</td>
+                                        </tr>
+                                    `).join('') : 
+                                    `<tr><td colspan="4" class="text-center">Không có dịch vụ nào được sử dụng</td></tr>`
+                                }
+                            </tbody>
+                            ${serviceOrderDetails.length > 0 ? `
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Tổng chi phí dịch vụ:</strong></td>
+                                        <td class="text-end"><strong>${formatCurrency(
+                                            serviceOrderDetails.reduce((sum, service) => sum + service.price, 0)
+                                        )}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            ` : ''}
+                        </table>
+
+                        <div class="footer">
+                            ${currentOrder?.note ? `
+                                <div style="margin-bottom: 15px;">
+                                    <p style="margin-bottom: 5px;"><strong>Ghi chú:</strong></p>
+                                    <p style="margin: 0;">${currentOrder.note}</p>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="totals">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>Tổng chi phí phụ tùng:</span>
+                                    <span>${formatCurrency(
+                                        partOrderDetails.reduce((sum, part) => sum + (part.price * part.quantity), 0)
+                                    )}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>Tổng chi phí dịch vụ:</span>
+                                    <span>${formatCurrency(
+                                        serviceOrderDetails.reduce((sum, service) => sum + service.price, 0)
+                                    )}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid #ddd; font-weight: bold;">
+                                    <span>Tổng cộng:</span>
+                                    <span>${formatCurrency(currentInvoice?.total_price)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            
+            frameDocument.close();
+            
+            // Đợi iframe tải xong
+            printFrame.onload = () => {
+                setTimeout(() => {
+                    // Kích hoạt in
+                    printFrame.contentWindow.focus();
+                    printFrame.contentWindow.print();
+                    
+                    // Xóa iframe sau khi in
+                    setTimeout(() => {
+                        document.body.removeChild(printFrame);
+                        setIsPrinting(false);
+                    }, 500);
+                }, 500);
+            };
+        } catch (error) {
+            console.error('Lỗi khi in:', error);
             setIsPrinting(false);
-        }, 500);
+        }
     };
 
     // Xử lý thanh toán hóa đơn
@@ -247,7 +501,7 @@ const InvoiceManagement = () => {
         try {
             // Gọi API cập nhật trạng thái thanh toán và phương thức thanh toán
             await resourceService.invoice.updateInvoice(invoiceToPayment.invoice_id, {
-                ...invoiceToPayment,
+                // ...invoiceToPayment,
                 is_paid: true,
                 payment_method: selectedPaymentMethod,
                 staff_id: currentStaff.staff_id,
@@ -402,7 +656,7 @@ const InvoiceManagement = () => {
                             <thead className="table-light">
                                 <tr>
                                     <th>Mã hóa đơn</th>
-                                    <th>Ngày tạo</th>
+                                    <th>Ngày thanh toán</th>
                                     <th>Mã đơn hàng</th>
                                     <th>Tổng tiền</th>
                                     <th>Phương thức thanh toán</th>

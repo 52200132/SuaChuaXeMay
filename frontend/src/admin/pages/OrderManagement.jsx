@@ -200,8 +200,8 @@ const OrderManagement = () => {
                 });
                 
             setCurrentPage(1);
-            setFilteredOrdersIds(getIds('orders'));
-            setTotalPages(Math.ceil(getIds('orders').length / 10));
+            // setFilteredOrdersIds(getIds('orders'));
+            // setTotalPages(Math.ceil(getIds('orders').length / 10));
             setLoading(false);
         }
 
@@ -214,7 +214,7 @@ const OrderManagement = () => {
         console.log('Các dữ liệu lấy được', ordersById, ordersIds, getIds('orders'));
         if (!loading) {
             console.log('useEffect - Dữ liệu display', ordersDisplay);
-            // setFilteredOrdersIds(getIds('orders'));
+            setFilteredOrdersIds(getIds('orders'));
             setTotalPages(Math.ceil(getIds('orders').length / 10));
             // console.log('useEffect - fillteredOrdersIds và totalPages', fileredOrdersIds, totalPages)
 
@@ -224,7 +224,7 @@ const OrderManagement = () => {
             Object.values(ordersById).map(order => {
                 if (order.staff_id && order.status !== 'delivered') {
                     assingedOrders.push(order.order_id);
-                } else {
+                } else if (order.status !== 'delivered') {
                     pendingOrders.push(order.order_id);
                 }
             });

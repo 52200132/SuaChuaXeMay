@@ -20,6 +20,7 @@ import './App.css';
 import { DataProvider } from './contexts/DataContext';
 import AppDataProvider from './admin/contexts/AppDataContext';
 import { StaffAuthProvider } from './admin/contexts/StaffAuthContext';
+import { PusherProvider } from './contexts/PusherContext';
 
 // Admin imports
 import AdminLayout from './admin/components/AdminLayout';
@@ -42,106 +43,117 @@ import ServiceDetail from './pages/ServiceDetail';
 import NotFound from './pages/NotFound';
 import ComingSoon from './components/ComingSoon';
 
+import TestNotificationSender from './components/TestNotificationSender';
+import NotificationCenter from './components/NotificationCenter';
+
 function App() {
     return (
         <AuthProvider>
             <DataProvider>
-                <div className="App d-flex flex-column min-vh-100">
 
-                    <Routes>
-                        {/* Staff Login Route - No Header/Footer */}
-                        <Route path="/admin/login" element={
-                            <StaffAuthProvider>
-                                <StaffLogin />
-                            </StaffAuthProvider>
-                        } />
+                    <StaffAuthProvider>
+                        <PusherProvider>
+                            <div className="App d-flex flex-column min-vh-100">
 
-                        {/* Admin Routes - No Header/Footer */}
-                        <Route
-                            path="/admin"
-                            element={
-                                <StaffAuthProvider>
-                                    <PrivateRoute>
-                                        <AppDataProvider>
-                                            <AdminLayout />
-                                        </AppDataProvider>
-                                    </PrivateRoute>
-                                </StaffAuthProvider>
-                            }
-                        >
-                            <Route index element={<Dashboard />} />
-                            <Route path="dashboard" element={<Dashboard />} />
-                            <Route path="bookings" element={<BookingManagement />} />
-                            <Route path="bookings/:id" element={<BookingManagement />} />
-                            <Route path="bookings/create" element={<BookingManagement />} />
-                            <Route path="receipts" element={<ReceiptManagement />} />
-                            <Route path="orders" element={<OrderManagement />} />
-                            <Route path="orders/:id/print" element={<OrderManagement />} />
-                            <Route path="orders/create" element={<OrderManagement />} />
-                            <Route path="technician-dashboard" element={<TechnicianDashboard />} />
-                            <Route path="services" element={<ServiceManagement />} />
-                            <Route path="users" element={<UserManagement />} />
-                            <Route path="reports" element={<Reports />} />
-                            <Route path="settings" element={<Settings />} />
-                            <Route path="profile" element={<AdminProfile />} />
-                            {/* Thêm route hóa đơn */}
-                            <Route path="invoices" element={<InvoiceManagement />} />
-                        </Route>
+                                <Routes>
+                                    {/* Staff Login Route - No Header/Footer */}
+                                    <Route path="/admin/login" element={
+                                        <StaffAuthProvider>
+                                            <StaffLogin />
+                                        </StaffAuthProvider>
+                                    } />
 
-                        {/* Client Routes - With Header/Footer */}
-                        <Route path="*" element={
-                            <>
-                                <Header />
-                                <main className="flex-grow-1">
-                                    <Routes>
-                                        <Route path="/" element={<Home />} />
-                                        <Route path="/services" element={<Services />} />
-                                        <Route path="/services/:id" element={<ServiceDetail />} />
-                                        <Route path="/about" element={<About />} />
-                                        <Route path="/contact" element={<Contact />} />
-                                        <Route path="/login" element={<Login />} />
-                                        <Route path="/register" element={<Register />} />
-                                        <Route path="/booking" element={<Booking />} />
-                                        <Route
-                                            path="/profile"
-                                            element={
-                                                <UserPrivateRoute>
-                                                    <Profile />
-                                                </UserPrivateRoute>
-                                            }
-                                        />
+                                    {/* Admin Routes - No Header/Footer */}
+                                    <Route
+                                        path="/admin"
+                                        element={
+                                            <StaffAuthProvider>
+                                                <PrivateRoute>
+                                                    <AppDataProvider>
+                                                        <AdminLayout />
+                                                    </AppDataProvider>
+                                                </PrivateRoute>
+                                            </StaffAuthProvider>
+                                        }
+                                    >
+                                        <Route index element={<Dashboard />} />
+                                        <Route path="notification" element={<NotificationCenter/>} />
+                                        <Route path="test-notification" element={<TestNotificationSender/>} />
+                                        <Route path="dashboard" element={<Dashboard />} />
+                                        <Route path="bookings" element={<BookingManagement />} />
+                                        <Route path="bookings/:id" element={<BookingManagement />} />
+                                        <Route path="bookings/create" element={<BookingManagement />} />
+                                        <Route path="receipts" element={<ReceiptManagement />} />
+                                        <Route path="orders" element={<OrderManagement />} />
+                                        <Route path="orders/:id/print" element={<OrderManagement />} />
+                                        <Route path="orders/create" element={<OrderManagement />} />
+                                        <Route path="technician-dashboard" element={<TechnicianDashboard />} />
+                                        <Route path="services" element={<ServiceManagement />} />
+                                        <Route path="users" element={<UserManagement />} />
+                                        <Route path="reports" element={<Reports />} />
+                                        <Route path="settings" element={<Settings />} />
+                                        <Route path="profile" element={<AdminProfile />} />
+                                        {/* Thêm route hóa đơn */}
+                                        <Route path="invoices" element={<InvoiceManagement />} />
+                                    </Route>
 
-                                        {/* Coming Soon Routes for features that are not yet implemented */}
-                                        <Route path="/shop" element={
-                                            <ComingSoon
-                                                title="Cửa hàng phụ tùng sắp ra mắt"
-                                                description="Chúng tôi đang xây dựng cửa hàng phụ tùng trực tuyến. Bạn sẽ sớm có thể mua phụ tùng và phụ kiện xe máy trực tiếp từ website."
-                                            />
-                                        } />
+                                    {/* Client Routes - With Header/Footer */}
+                                    <Route path="*" element={
+                                        <>
+                                            <Header />
+                                            <main className="flex-grow-1">
+                                                <Routes>
+                                                    <Route path="/" element={<Home />} />
+                                                    <Route path="/services" element={<Services />} />
+                                                    <Route path="/services/:id" element={<ServiceDetail />} />
+                                                    <Route path="/about" element={<About />} />
+                                                    <Route path="/contact" element={<Contact />} />
+                                                    <Route path="/login" element={<Login />} />
+                                                    <Route path="/register" element={<Register />} />
+                                                    <Route path="/booking" element={<Booking />} />
+                                                    <Route
+                                                        path="/profile"
+                                                        element={
+                                                            <UserPrivateRoute>
+                                                                <Profile />
+                                                            </UserPrivateRoute>
+                                                        }
+                                                    />
 
-                                        <Route path="/blog" element={
-                                            <ComingSoon
-                                                title="Blog sắp ra mắt"
-                                                description="Chúng tôi đang xây dựng mục blog với những bài viết hữu ích về bảo dưỡng và sửa chữa xe máy."
-                                            />
-                                        } />
+                                                    {/* Coming Soon Routes for features that are not yet implemented */}
+                                                    <Route path="/shop" element={
+                                                        <ComingSoon
+                                                            title="Cửa hàng phụ tùng sắp ra mắt"
+                                                            description="Chúng tôi đang xây dựng cửa hàng phụ tùng trực tuyến. Bạn sẽ sớm có thể mua phụ tùng và phụ kiện xe máy trực tiếp từ website."
+                                                        />
+                                                    } />
 
-                                        <Route path="/membership" element={
-                                            <ComingSoon
-                                                title="Chương trình thành viên sắp ra mắt"
-                                                description="Đăng ký thành viên để nhận nhiều ưu đãi hấp dẫn. Tính năng này sẽ sớm được ra mắt."
-                                            />
-                                        } />
+                                                    <Route path="/blog" element={
+                                                        <ComingSoon
+                                                            title="Blog sắp ra mắt"
+                                                            description="Chúng tôi đang xây dựng mục blog với những bài viết hữu ích về bảo dưỡng và sửa chữa xe máy."
+                                                        />
+                                                    } />
 
-                                        {/* 404 Route - Must be the last route */}
-                                        <Route path="*" element={<NotFound />} />
-                                    </Routes>
-                                </main>
-                                <Footer />
-                            </>
-                        } />
-                    </Routes>
-                </div>
+                                                    <Route path="/membership" element={
+                                                        <ComingSoon
+                                                            title="Chương trình thành viên sắp ra mắt"
+                                                            description="Đăng ký thành viên để nhận nhiều ưu đãi hấp dẫn. Tính năng này sẽ sớm được ra mắt."
+                                                        />
+                                                    } />
+
+                                                    {/* 404 Route - Must be the last route */}
+                                                    <Route path="*" element={<NotFound />} />
+                                                </Routes>
+                                            </main>
+                                            <Footer />
+                                        </>
+                                    } />
+                                </Routes>
+                            </div>
+                        </PusherProvider>
+                    </StaffAuthProvider>
+                
             </DataProvider>
         </AuthProvider>
     );

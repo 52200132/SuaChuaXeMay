@@ -1717,10 +1717,18 @@ const TechnicianDashboard = () => {
 
     const handleSubmitCompleteRepairing = async (orderId) => {
         setCompleteLoading(true);
+        setCurrentOrder(myOrdersDisplay[orderId]);
 
         try {
             // TODO: Gọi api cập nhật trạng thái và tạo hóa đơn
-            await repairService.order.updateOrderStatus(orderId, 'wait_delivery');
+            console.log(myOrdersDisplay[orderId]);
+            await Promise.all([
+                resourceService.invoice.createInvoice({
+                    order_id: orderId,
+                    total_price: myOrdersDisplay[orderId].totalAmount
+                }),
+                repairService.order.updateOrderStatus(orderId, 'wait_delivery')
+            ]);
 
             // 
             setMyOrdersDisplay(prev => ({
@@ -1738,6 +1746,7 @@ const TechnicianDashboard = () => {
             console.log('Lỗi khi cập nhật hoàn thành', error);
             setCompleteLoading(false);
         }
+        setCurrentOrder({});
     }
 
     // Fetch part order details
@@ -1920,7 +1929,10 @@ const TechnicianDashboard = () => {
                                                                     variant="outline-success"
                                                                     disabled={completeLoading}
                                                                     size="sm"
-                                                                    onClick={() => handleSubmitCompleteRepairing(order.orderId)}
+                                                                    onClick={() => {
+                                                                        setCurrentOrder(myOrdersDisplay[order.orderId])
+                                                                        handleSubmitCompleteRepairing(order.orderId)
+                                                                    }}
                                                                     title="Hoàn thành sửa chửa"
                                                                 >
                                                                     <i className="bi bi-check2-circle"></i>
@@ -2061,11 +2073,12 @@ const TechnicianDashboard = () => {
                             variant="success"
                             onClick={() => {
                                 setShowDetailModal(false);
+                                setCurrentOrder(myOrdersDisplay[currentOrder.orderId]);
                                 handleSubmitCompleteRepairing(currentOrder.orderId);
                             }}
                         >
                             <i className="bi bi-check2-circle me-1"></i>
-                            {completeLoading ? 'Đang xử lý...' : 'Hoàn hành sửa chửa' }
+                            {completeLoading ? 'Đang xử lý...' : 'Hoàn thành sửa chửa' }
                         </Button>
                     ) 
                     }

@@ -150,6 +150,41 @@ const AssignmentManagement = ({
         setValidated(false);
         setShowAssignModal(true);
     };
+
+    const handleSendNotification = async (channel, title, message, type) => {
+        try {
+            const socket = new WebSocket('ws://localhost:4000');
+
+            socket.onopen = () => {
+                const payload = {
+                    event: 'notification',
+                    channel: channel,
+                    data: {
+                        title: title,
+                        message: message,
+                        type: type,
+                        timestamp: new Date().toISOString(),
+                        id: Date.now().toString()
+                    }
+                };
+
+                socket.send(JSON.stringify(payload));
+                console.log('Đã gửi thông báo thử nghiệm', payload);
+
+                // Đóng socket sau khi gửi
+                setTimeout(() => {
+                    socket.close();
+                }, 1000);
+            };
+            socket.onerror = (error) => {
+                console.error('Lỗi WebSocket:', error);
+                // alert('Không thể kết nối đến server WebSocket');
+            };
+        } catch (error) {
+            console.error('Lỗi khi gửi thông báo thử nghiệm:', error);
+            // alert('Có lỗi khi gửi thông báo');
+        }
+    }
     
     // TODO: Xử lý phân công đơn hàng
     const handleAssignOrder = async (e) => {
@@ -164,13 +199,15 @@ const AssignmentManagement = ({
         
         try {
             setLoading(true);
-            /// Gọi api
+            // Gọi api
             // console.log('Phân công đơn hàng:', currentOrder, technicianId);
             setLoading(true);
             // Gọi API phân công
             const response = await repairService.order.asignStaffToOrder(currentOrderId, selectedTechnician);
             const orderData = response.data;
             // console.log('order Data mới', orderData);
+            // TODO: Thông báo cho nhân viên được phân công
+            handleSendNotification(`staff-${selectedTechnician}`, `Phân công`,`Đơn hàng #${currentOrderId} đã được phân công cho bạn`, `info`);
             setData('orders', orderData, orderData.order_id);
             if (onAssignOrder) {
                 await onAssignOrder(orderData);

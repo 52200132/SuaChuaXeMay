@@ -5,6 +5,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useStaffAuth } from '../contexts/StaffAuthContext';    
 import { receptionistRoutes, technicianRoutes, cashierRoutes, managerRoutes } from '../routes';
 import './AdminLayout.css';
+import NotificationCenter from '../../components/NotificationCenter';
 
 const AdminLayout = () => {
     const { currentStaff, logout } = useStaffAuth();
@@ -122,7 +123,7 @@ const AdminLayout = () => {
                         
                         <Navbar.Collapse className="justify-content-end">
                             <Nav>
-                                <NavDropdown 
+                                {/* <NavDropdown 
                                     title={
                                         <div className="d-inline-block">
                                             <i className="bi bi-bell me-2"></i>
@@ -137,11 +138,16 @@ const AdminLayout = () => {
                                     <NavDropdown.Divider />
                                     <NavDropdown.Item>Xem tất cả thông báo</NavDropdown.Item>
                                 </NavDropdown>
+                                 */}
+
+                                <div className="me-3">
+                                    <NotificationCenter />
+                                </div>
                                 
                                 <Nav.Link as={Link} to="/" target="_blank">
                                     <i className="bi bi-house-door"></i>
                                 </Nav.Link>
-                                
+
                                 <NavDropdown 
                                     align="end"
                                     title={

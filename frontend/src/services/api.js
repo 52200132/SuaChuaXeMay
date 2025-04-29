@@ -38,7 +38,7 @@ const resourceService = {
     // Lấy tất cả các loại dịch vụ
     getAllServiceTypes: async () => {
         try {
-            const response = await apiClient.get(URLS.SERVICE.GET_ALL_SERVICE_TYPE);
+            const response = await apiClient.get(URLS.SERVICE_TYPE.GET_ALL_SERVICE_TYPES);
             // console.log('Dữ liệu dịch vụ:', response.data); // Log dữ liệu để kiểm tra
             const serviceTypes = response.data;
             // console.log('serviceTypes:', serviceTypes); // Log dữ liệu để kiểm tra
@@ -220,7 +220,7 @@ const resourceService = {
 
         getAllInvoices: async () => {
             try {
-                const response = await apiClient.get(URLS.INVOICE.GET_ALL_TODAY);
+                const response = await apiClient.get(URLS.INVOICE.GET_ALL_INVOICES);
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi lấy danh sách hóa đơn hôm nay:', error);
@@ -345,6 +345,16 @@ const customerService = {
                 throw error;
             }
         },
+
+        getAllMotorcycleByCustomerId: async (customerId) => {
+            try {
+                const response = await apiCustomerService.get(URLS.MOTORCYCLE.GET_ALL_MOTORCYCLE_BY_CUSTOMER_ID.replace('{customer_id}', customerId));
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi lấy danh sách xe máy của khách hàng ID=${customerId}:`, error);
+                throw error;
+            }
+        }
     },
 
     appointment: {
@@ -527,6 +537,16 @@ const repairService = {
                 return response;
             } catch (error) {
                 console.error(`api - Lỗi khi phân công nhân viên cho đơn hàng ID=${orderId}:`, error);
+                throw error;
+            }
+        },
+
+        getAllOrdersByMotorcycleId: async (motorcycleId) => {
+            try {
+                const response = await apiRepairService.get(URLS.ORDER.GET_ALL_ORDERS_BY_MOTO_ID.replace('{motocycle_id}', motorcycleId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy các đơn hàng bởi motorcycleID=${motorcycleId}`, error);
                 throw error;
             }
         },

@@ -37,6 +37,7 @@ export function AuthProvider({ children }) {
         try {
             const response = await customerService.login(email, password);
             const userData = response.data;
+            console.log("Đăng nhập thành công:", userData);
             const user = {
                 id: userData.customer_id,
                 email: userData.email,

@@ -10,7 +10,7 @@ URLS = {
         'GET_CUSTOMER_WITH_MOTORCYCLES': '/customer/phone/{phone_num}/with-motorcycles', # completed
     },
     'MOTORCYCLE': {
-        'GET_ALL_MOTORCYCLE_BY_CUSTOMER_ID': 'motorcycle/customer/{customer_id}', # completed
+        'GET_ALL_MOTORCYCLE_BY_CUSTOMER_ID': '/motorcycle/customer/{customer_id}', # completed
         'GET_ALL_MOTORCYCLE_TYPES': '/motorcycle/types', # completed
         'GET_ALL_MOTORCYCLES': '/motorcycles', # completed
         'GET_MOTORCYCLE_BY_ID': '/motorcycle/{motorcycle_id}', # completed

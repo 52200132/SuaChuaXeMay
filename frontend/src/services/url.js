@@ -78,8 +78,14 @@ const URLS = {
         'GET_CUSTOMER_WITH_MOTORCYCLES': '/customer/phone/{phone_num}/with-motorcycles', //completed,
     },
     'MOTORCYCLE': {
-        'GET_ALL_MOTORCYCLE_TYPES': '/motorcycle/types',
-        'GET_MOTORCYCLE_BY_ID': '/motorcycle/{motorcycle_id}',
+        'GET_ALL_MOTORCYCLE_BY_CUSTOMER_ID': '/motorcycle/customer/{customer_id}', //  completed
+        'GET_ALL_MOTORCYCLE_TYPES': '/motorcycle/types', //  completed
+        'GET_ALL_MOTORCYCLES': '/motorcycles', //  completed
+        'GET_MOTORCYCLE_BY_ID': '/motorcycle/{motorcycle_id}', //  completed
+        'CREATE_MOTORCYCLE': '/motorcycle/create', //  completed
+        // 'UPDATE_MOTORCYCLE': '/motorcycle/update/{motorcycle_id}', //  completed
+        // 'DELETE_MOTORCYCLE': '/motorcycle/delete/{motorcycle_id}', //  completed
+        
     },
     'APPOINTMENT': {
         'CREATE': '/appointment/create',
@@ -111,6 +117,7 @@ const URLS = {
         'ASSIGN_STAFF':'/order/{order_id}/assign-staff/{staff_id}',
         'GET_ALL_ORDERS_BY_STAFF_ID_TODAY':'/orders/staff/{staff_id}/today',
         'GET_CUSTOMER_ORDERS':'/orders/customer/{customer_id}',
+        'GET_ALL_ORDERS_BY_MOTO_ID':'/orders/motorcycle/{motocycle_id}',
     },
     'DIAGNOSIS':{
         'CREATE_DIAGNOSIS':'/diagnosis/create',

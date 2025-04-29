@@ -26,6 +26,7 @@ const Booking = () => {
     // Điền thông tin từ người dùng đã đăng nhập
     useEffect(() => {
         if (currentUser) {
+            console.log("currentUser:", currentUser); // Log currentUser để kiểm tra
             setFormData(prevState => ({
                 ...prevState,
                 customer_id: currentUser.id || '',
@@ -167,7 +168,7 @@ const Booking = () => {
                                                 required
                                                 type="tel"
                                                 name="phone"
-                                                value={formData.phone}
+                                                value={formData.phone || formData.phone_num}
                                                 onChange={handleChange}
                                             />
                                             <Form.Control.Feedback type="invalid">
