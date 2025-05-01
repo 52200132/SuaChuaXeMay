@@ -197,6 +197,12 @@ async def get_reception_form_by_id(db: AsyncSession, form_id: int):
     )
     return result.scalar_one_or_none()
 
+async def get_reception_form_by_motorcycle_id(db: AsyncSession, motocycle_id: int)-> List[ReceptionForm]:
+    result = await db.execute(
+        select(ReceptionForm).options(selectinload(ReceptionForm.reception_images)).where(ReceptionForm.motocycle_id == motocycle_id)
+    )
+    return result.scalars().all()
+
 async def get_reception_forms_by_customer(
     db: AsyncSession, 
     customer_id: int,
