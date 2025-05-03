@@ -53,82 +53,82 @@ async def get_staffs(
     return result.scalars().all()
 
 
-# async def create_staff(db: AsyncSession, staff: StaffCreate) -> Staff:
-#     """Create a new staff member"""
-#     # Check if email already exists
-#     existing_staff = await get_staff_by_email(db, staff.email)
-#     if existing_staff:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="Email already registered"
-#         )
+async def create_staff(db: AsyncSession, staff: StaffCreate) -> Staff:
+    """Create a new staff member"""
+    # Check if email already exists
+    existing_staff = await get_staff_by_email(db, staff.email)
+    if existing_staff:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
     
-#     # TODO: Có thể mã hóa mật khẩu ở đây nếu cần thiết
-#     # hashed_password = get_password_hash(staff.password)
-#     hashed_password = staff.password
+    # TODO: Có thể mã hóa mật khẩu ở đây nếu cần thiết
+    # hashed_password = get_password_hash(staff.password)
+    hashed_password = staff.password
 
     
-#     # Create new staff object
-#     db_staff = Staff(
-#         fullname=staff.fullname,
-#         role=staff.role,
-#         status=staff.status,
-#         email=staff.email,
-#         password=hashed_password
-#     )
+    # Create new staff object
+    db_staff = Staff(
+        fullname=staff.fullname,
+        role=staff.role,
+        status=staff.status,
+        email=staff.email,
+        password=hashed_password
+    )
     
-#     try:
-#         db.add(db_staff)
-#         await db.commit()
-#         await db.refresh(db_staff)
-#         return db_staff
-#     except IntegrityError:
-#         await db.rollback()
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="Error creating staff member"
-#         )
+    try:
+        db.add(db_staff)
+        await db.commit()
+        await db.refresh(db_staff)
+        return db_staff
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Error creating staff member"
+        )
 
 
-# async def update_staff(db: AsyncSession, staff_id: int, staff_update: StaffUpdate) -> Staff:
-#     """Update staff member details"""
-#     db_staff = await get_staff(db, staff_id)
-#     if not db_staff:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"Staff with ID {staff_id} not found"
-#         )
+async def update_staff(db: AsyncSession, staff_id: int, staff_update: StaffUpdate) -> Staff:
+    """#Update staff member details"""
+    db_staff = await get_staff_by_id(db, staff_id)
+    if not db_staff:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Staff with ID {staff_id} not found"
+        )
     
-#     # Prepare update data
-#     update_data = staff_update.dict(exclude_unset=True)
+    # Prepare update data
+    update_data = staff_update.dict(exclude_unset=True)
     
-#     # Hash password if it was provided
-#     if "password" in update_data and update_data["password"]:
-#         update_data["password"] = get_password_hash(update_data["password"])
+    # Hash password if it was provided
+    # if "password" in update_data and update_data["password"]:
+    #     update_data["password"] = get_password_hash(update_data["password"])
     
-#     # Check email uniqueness if changing email
-#     if "email" in update_data and update_data["email"] != db_staff.email:
-#         existing_staff = await get_staff_by_email(db, update_data["email"])
-#         if existing_staff:
-#             raise HTTPException(
-#                 status_code=status.HTTP_400_BAD_REQUEST,
-#                 detail="Email already registered"
-#             )
+    # Check email uniqueness if changing email
+    if "email" in update_data and update_data["email"] != db_staff.email:
+        existing_staff = await get_staff_by_email(db, update_data["email"])
+        if existing_staff:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
     
-#     # Update the staff object attributes
-#     for key, value in update_data.items():
-#         setattr(db_staff, key, value)
+    # Update the staff object attributes
+    for key, value in update_data.items():
+        setattr(db_staff, key, value)
     
-#     try:
-#         await db.commit()
-#         await db.refresh(db_staff)
-#         return db_staff
-#     except IntegrityError:
-#         await db.rollback()
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="Error updating staff member"
-#         )
+    try:
+        await db.commit()
+        await db.refresh(db_staff)
+        return db_staff
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Error updating staff member"
+        )
 
 
 # async def delete_staff(db: AsyncSession, staff_id: int) -> Dict[str, Any]:

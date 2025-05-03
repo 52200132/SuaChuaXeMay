@@ -24,33 +24,24 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
-# @router.post("/", response_model=StaffResponse, status_code=status.HTTP_201_CREATED)
-# def create_staff(
-#     staff_data: StaffCreate,
-#     db: AsyncSession = Depends(get_db),
-#     current_staff: dict = Depends(get_current_staff)
-# ):
-#     """
-#     Create a new staff member.
-#     Only managers can create new staff members.
-#     """
-#     # Check if the current user has permission (manager role)
-#     if current_staff["role"] != "manager":
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Only managers can create new staff members"
-#         )
-    
-#     return staff_crud.create_staff(db, staff_data)
+@router.post(URLS['STAFF']['CREATE_NEW_STAFF'], response_model=StaffResponse, status_code=status.HTTP_201_CREATED)
+async def create_staff(
+    staff_data: StaffCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Create a new staff member.
+    """
+    return await staff_crud.create_staff(db, staff_data)
 
-@router.get(URLS['STAFF']['GET_ALL_STAFF'], response_model=List[StaffResponse])
-async def get_all_staffs(
-    skip: int = 0,
-    limit: int = 100,
-    db: AsyncSession = Depends(get_db)):
+# @router.get(URLS['STAFF']['GET_ALL_STAFF'], response_model=List[StaffResponse])
+# async def get_all_staffs(
+#     skip: int = 0,
+#     limit: int = 100,
+#     db: AsyncSession = Depends(get_db)):
     
-    db_staffs = await staff_crud.get_all_staff(db, skip=skip, limit=limit)
-    return db_staffs
+#     db_staffs = await staff_crud.get_all_staff(db, skip=skip, limit=limit)
+#     return db_staffs
 
 @router.get(URLS['STAFF']['FILTER'], response_model=List[StaffResponse])
 async def get_filter_staffs(
@@ -86,37 +77,18 @@ async def read_staff(
     return db_staff
 
 
-# @router.put(URLS['STAFF']['UPDATE_STAFF'], response_model=StaffResponse)
-# def update_staff(
-#     staff_id: int,
-#     staff_data: StaffUpdate,
-#     db: AsyncSession = Depends(get_db),
-#     # current_staff: dict = Depends(get_current_staff)
-# ):
-#     """
-#     Update a staff member.
-#     Staff can update their own profile, but only managers can update other staff members.
-#     """
-#     # Check permissions
-#     if current_staff["staff_id"] != staff_id and current_staff["role"] != "manager":
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="You don't have permission to update this staff member"
-#         )
+@router.put(URLS['STAFF']['UPDATE_STAFF'], response_model=StaffResponse)
+async def update_staff(
+    staff_id: int,
+    staff_data: StaffUpdate,
+    db: AsyncSession = Depends(get_db),
+    # current_staff: dict = Depends(get_current_staff)
+):
+    """
+    Update a staff member.
+    """
     
-#     # Additional check: non-managers cannot change their own role
-#     if (
-#         current_staff["staff_id"] == staff_id and 
-#         current_staff["role"] != "manager" and 
-#         staff_data.role is not None and 
-#         staff_data.role != current_staff["role"]
-#     ):
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="You cannot change your own role"
-#         )
-    
-#     return staff_crud.update_staff(db, staff_id, staff_data)
+    return await staff_crud.update_staff(db, staff_id, staff_data)
 
 
 # @router.delete("/{staff_id}", status_code=status.HTTP_200_OK)
