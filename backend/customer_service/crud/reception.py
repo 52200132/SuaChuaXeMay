@@ -231,18 +231,44 @@ async def get_reception_forms_by_motorcycle(
 
 async def get_all_reception_forms(
     db: AsyncSession,
+    staff_id: Optional[int] = None,
+    motocycle_id: Optional[int] = None,
+    is_returned: Optional[bool] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
     skip: int = 0,
     limit: int = 100
 ) -> List[ReceptionForm]:
     """Lấy tất cả biểu mẫu tiếp nhận"""
     try:
+        query = select(ReceptionForm).options(selectinload(ReceptionForm.reception_images))
+
+        if staff_id:
+            query = select(ReceptionForm).where(ReceptionForm.staff_id == staff_id)
+        if motocycle_id:
+            query = select(ReceptionForm).where(ReceptionForm.motocycle_id == motocycle_id)
+        if is_returned is not None:
+            query = select(ReceptionForm).where(ReceptionForm.is_returned == is_returned)
+        
+        if start_date:
+            start_date = datetime.combine(start_date, datetime.min.time())
+        if end_date:
+            end_date = datetime.combine(end_date, datetime.max.time())
+
+        if start_date and end_date:
+            query = select(ReceptionForm).where(
+                and_(
+                    ReceptionForm.created_at >= start_date,
+                    ReceptionForm.created_at <= end_date
+                )
+            )
+        elif start_date:
+            query = select(ReceptionForm).where(ReceptionForm.created_at >= start_date)
+        elif end_date:
+            query = select(ReceptionForm).where(ReceptionForm.created_at <= end_date)
         result = await db.execute(
-        select(ReceptionForm)
-        .options(selectinload(ReceptionForm.reception_images))
-        .order_by(ReceptionForm.form_id.asc())  
-        .offset(skip)
-        .limit(limit)
-    )
+            query.order_by(ReceptionForm.created_at.desc()).offset(skip).limit(limit)
+        )
     except IntegrityError as e:
         await db.rollback()
         logger.error(f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
@@ -289,13 +315,17 @@ async def update_return_status(
 ) -> Optional[ReceptionForm]:
     """Cập nhật trạng thái trả xe"""
     try:
+        if is_returned:
+            returned_at = datetime.now()
+        else:
+            returned_at = None
         db_reception_form = await get_reception_form_by_id(db, form_id)
         if not db_reception_form:
             raise ValueError(f"Không tìm phiếu tiếp nhận với ID: {form_id}")
         
         stmt = update(ReceptionForm).where(
             ReceptionForm.form_id == form_id
-        ).values(is_returned=is_returned)
+        ).values(is_returned=is_returned, returned_at=returned_at)
         await db.execute(stmt)
         await db.commit()
         

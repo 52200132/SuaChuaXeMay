@@ -228,6 +228,11 @@ async def get_appointment_with_filter(
         if status:
             query = query.where(Appointment.status == status.value)
         
+        if start_date:
+            start_date = datetime.combine(start_date, datetime.min.time())
+        if end_date:
+            end_date = datetime.combine(end_date, datetime.max.time())
+
         # Handle case where only one date is provided
         if start_date and not end_date:
             query = query.where(Appointment.appointment_date >= start_date)
@@ -241,7 +246,7 @@ async def get_appointment_with_filter(
                 )
             )
         
-        query = query.order_by(Appointment.appointment_id.asc()).offset(skip).limit(limit)
+        query = query.order_by(Appointment.appointment_id.desc()).offset(skip).limit(limit)
         result = await db.execute(query)
 
     except IntegrityError as e:

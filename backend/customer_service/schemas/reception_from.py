@@ -44,6 +44,7 @@ class ReceptionFormUpdate(BaseModel):
     """Schema để cập nhật ReceptionForm"""
     motocycle_id: Optional[int] = Field(None, description="ID của xe máy")
     staff_id: Optional[int] = Field(None, description="ID của nhân viên tiếp nhận")
+    note: Optional[str] = Field(None, description="Ghi chú thêm từ nhân viên tiếp nhận")
     initial_conditon: Optional[str] = Field(None, description="Tình trạng ban đầu do khách mô tả")
 
 class ReceptionFormResponse(BaseModel):
@@ -56,6 +57,7 @@ class ReceptionFormResponse(BaseModel):
     initial_conditon: str
     note: Optional[str] = None
     is_returned: bool = False
+    returned_at: Optional[datetime] = None
     reception_images: List[ReceptionImageResponse] = []
 
     class Config:

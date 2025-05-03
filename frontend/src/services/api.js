@@ -7,7 +7,7 @@ import URLS from './url';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 // Tạo instance axios với cấu hình mặc định
-const apiClient = axios.create({
+const apiResourceService = axios.create({
     baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json'
@@ -38,7 +38,7 @@ const resourceService = {
     // Lấy tất cả các loại dịch vụ
     getAllServiceTypes: async () => {
         try {
-            const response = await apiClient.get(URLS.SERVICE_TYPE.GET_ALL_SERVICE_TYPES);
+            const response = await apiResourceService.get(URLS.SERVICE_TYPE.GET_ALL_SERVICE_TYPES);
             // console.log('Dữ liệu dịch vụ:', response.data); // Log dữ liệu để kiểm tra
             const serviceTypes = response.data;
             // console.log('serviceTypes:', serviceTypes); // Log dữ liệu để kiểm tra
@@ -52,7 +52,7 @@ const resourceService = {
     // Lấy thông tin chi tiết của một loại dịch vụ theo ID
     getServiceTypeById: async (id) => {
         try {
-            const response = await apiClient.get(URLS.SERVICE.GET_SERVICE_TYPE_BY_ID.replace('{service-type-id}', id));
+            const response = await apiResourceService.get(URLS.SERVICE.GET_SERVICE_TYPE_BY_ID.replace('{service-type-id}', id));
             // console.log('Dữ liệu dịch vụ theo ID:', response.data); // Log dữ liệu để kiểm tra
             return response.data;
         } catch (error) {
@@ -64,7 +64,7 @@ const resourceService = {
     // Tạo một loại dịch vụ mới
     createServiceType: async (serviceData) => {
         try {
-            const response = await apiClient.post('/service-types/create', serviceData);
+            const response = await apiResourceService.post('/service-types/create', serviceData);
             return response.data;
         } catch (error) {
             console.error('Lỗi khi tạo dịch vụ mới:', error);
@@ -75,7 +75,7 @@ const resourceService = {
     // Lấy service theo srvice_type_id
     getServiceFollowTypeId: async (serviceTypeId) => {
         try {
-            const response = await apiClient.get(URLS.SERVICE.GET_SERVICES_BY_SERVICE_TYPE_ID.replace('{service_type_id}', serviceTypeId));
+            const response = await apiResourceService.get(URLS.SERVICE.GET_SERVICES_BY_SERVICE_TYPE_ID.replace('{service_type_id}', serviceTypeId));
             // console.log('Dữ liệu dịch vụ theo loại:', response.data); // Log dữ liệu để kiểm tra
             return response.data;
         } catch (error) {
@@ -89,7 +89,7 @@ const resourceService = {
     staff: {
         login: async (email, password) => {
             try {
-                const response = await apiClient.post(URLS.STAFF.LOGIN, { email, password });
+                const response = await apiResourceService.post(URLS.STAFF.LOGIN, { email, password });
                 return response;
             } catch (error) {
                 console.error('Lỗi khi đăng nhập nhân viên:', error);
@@ -99,7 +99,7 @@ const resourceService = {
 
         getStaffById: async (id) => {
             try {
-                const response = await apiClient.get(URLS.STAFF.GET_STAFF_BY_ID.replace('{staff_id}', id));
+                const response = await apiResourceService.get(URLS.STAFF.GET_STAFF_BY_ID.replace('{staff_id}', id));
                 return response;
             } catch (error) {
                 console.error(`Lỗi khi lấy thông tin nhân viên ID=${id}:`, error);
@@ -109,7 +109,7 @@ const resourceService = {
 
         getAllTechnicians: async () => {
             try {
-                const response = await apiClient.get(URLS.STAFF.FILTER + '?role=technician');
+                const response = await apiResourceService.get(URLS.STAFF.FILTER + '?role=technician');
                 return response;
             }
             catch (error) {
@@ -122,7 +122,7 @@ const resourceService = {
     part: {
         getAllParts: async () => {
             try {
-                const response = await apiClient.get(URLS.PART.GET_ALL_PARTS);
+                const response = await apiResourceService.get(URLS.PART.GET_ALL_PARTS);
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi lấy danh sách phụ tùng:', error);
@@ -132,7 +132,7 @@ const resourceService = {
         
         getPartById: async (id) => {
             try {
-                const response = await apiClient.get(URLS.PART.GET_PART_BY_ID.replace('{part_id}', id));
+                const response = await apiResourceService.get(URLS.PART.GET_PART_BY_ID.replace('{part_id}', id));
                 return response;
             } catch (error) {
                 console.error(`api - Lỗi khi lấy thông tin phụ tùng ID=${id}:`, error);
@@ -144,7 +144,7 @@ const resourceService = {
     service: {
         getAllServices: async () => {
             try {
-                const response = await apiClient.get('/services');
+                const response = await apiResourceService.get('/services');
                 return response;
             } catch (error) {
                 console.error('Lỗi khi lấy danh sách dịch vụ:', error);
@@ -154,7 +154,7 @@ const resourceService = {
         
         getServiceById: async (id) => {
             try {
-                const response = await apiClient.get(`/services/${id}`);
+                const response = await apiResourceService.get(`/services/${id}`);
                 return response;
             } catch (error) {
                 console.error(`Lỗi khi lấy thông tin dịch vụ ID=${id}:`, error);
@@ -166,7 +166,7 @@ const resourceService = {
     partMotoType: {
         getAllPartMotoTypesByMotoTypeId: async (motoTypeId) => {
             try {
-                const response = await apiClient.get(URLS.PART_MOTO_TYPE.GET_ALL_PART_MOTO_TYPES_BY_MOTOTYPE_ID.replace('{moto_type_id}', motoTypeId));
+                const response = await apiResourceService.get(URLS.PART_MOTO_TYPE.GET_ALL_PART_MOTO_TYPES_BY_MOTOTYPE_ID.replace('{moto_type_id}', motoTypeId));
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi lấy danh sách phụ tùng theo loại xe:', error);
@@ -176,7 +176,7 @@ const resourceService = {
 
         getPartMotoTypeByPartIdAndMototypeId: async (partId, motoTypeId) => {
             try {
-                const response = await apiClient.get(URLS.PART_MOTO_TYPE.GET_PART_MOTO_TYPE_BY_PART_ID_AND_MOTOTYPE_ID.replace('{part_id}', partId).replace('{moto_type_id}', motoTypeId));
+                const response = await apiResourceService.get(URLS.PART_MOTO_TYPE.GET_PART_MOTO_TYPE_BY_PART_ID_AND_MOTOTYPE_ID.replace('{part_id}', partId).replace('{moto_type_id}', motoTypeId));
                 return response;
             } catch (error) {
                 console.error(`api - Lỗi khi lấy thông tin phụ tùng theo ID=${partId} và loại xe=${motoTypeId}:`, error);
@@ -188,7 +188,7 @@ const resourceService = {
     serviceMotoType: {
         getAllServiceMotoTypesByMotoTypeId: async (motoTypeId) => {
             try {
-                const response = await apiClient.get(URLS.SERVICE_MOTO_TYPE.GET_ALL_SERVICE_MOTO_TYPES_BY_MOTOTYPE_ID.replace('{moto_type_id}', motoTypeId));
+                const response = await apiResourceService.get(URLS.SERVICE_MOTO_TYPE.GET_ALL_SERVICE_MOTO_TYPES_BY_MOTOTYPE_ID.replace('{moto_type_id}', motoTypeId));
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi lấy danh sách dịch vụ theo loại xe:', error);
@@ -198,7 +198,7 @@ const resourceService = {
 
         getServiceMotoTypeByServiceIdAndMototypeId: async (serviceId, motoTypeId) => {
             try {
-                const response = await apiClient.get(URLS.SERVICE_MOTO_TYPE.GET_SERVICE_MOTO_TYPE_BY_SERVICE_ID_AND_MOTOTYPE_ID.replace('{service_id}', serviceId).replace('{moto_type_id}', motoTypeId));
+                const response = await apiResourceService.get(URLS.SERVICE_MOTO_TYPE.GET_SERVICE_MOTO_TYPE_BY_SERVICE_ID_AND_MOTOTYPE_ID.replace('{service_id}', serviceId).replace('{moto_type_id}', motoTypeId));
                 return response;
             } catch (error) {
                 console.error(`api - Lỗi khi lấy thông tin dịch vụ theo ID=${serviceId} và loại xe=${motoTypeId}:`, error);
@@ -210,7 +210,7 @@ const resourceService = {
     invoice: {
         createInvoice: async (data) => {
             try {
-                const response = await apiClient.post(URLS.INVOICE.CREATE, data);
+                const response = await apiResourceService.post(URLS.INVOICE.CREATE, data);
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi tạo hóa đơn:', error);
@@ -220,7 +220,7 @@ const resourceService = {
 
         getAllInvoices: async () => {
             try {
-                const response = await apiClient.get(URLS.INVOICE.GET_ALL_INVOICES);
+                const response = await apiResourceService.get(URLS.INVOICE.GET_ALL_INVOICES);
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi lấy danh sách hóa đơn hôm nay:', error);
@@ -230,7 +230,7 @@ const resourceService = {
 
         updateInvoice: async (invoiceId, data) => {
             try {
-                const response = await apiClient.put(URLS.INVOICE.UPDATE_INVOICE.replace('{invoice_id}', invoiceId), data);
+                const response = await apiResourceService.put(URLS.INVOICE.UPDATE_INVOICE.replace('{invoice_id}', invoiceId), data);
                 return response;
             } catch (error) {
                 console.error(`api - Lỗi khi cập nhật hóa đơn ID=${invoiceId}:`, error);
@@ -244,7 +244,7 @@ const customerService = {
     // Lấy tất cả khách hàng
     // getAllCustomers: async () => {
     //     try {
-    //         const response = await apiClient.get('customer/get-all-customers');
+    //         const response = await apiResourceService.get('customer/get-all-customers');
     //         return response.data;
     //     } catch (error) {
     //         console.error('Lỗi khi lấy danh sách khách hàng:', error);
@@ -255,7 +255,7 @@ const customerService = {
     // Lấy thông tin chi tiết của một khách hàng theo ID
     // getCustomerById: async (id) => {
     //     try {
-    //         const response = await apiClient.get(`customer/${id}`);
+    //         const response = await apiResourceService.get(`customer/${id}`);
     //         return response.data;
     //     } catch (error) {
     //         console.error(`Lỗi khi lấy thông tin khách hàng ID=${id}:`, error);
@@ -378,19 +378,11 @@ const customerService = {
             }
         },
 
-        getAllTodayAppointments: async () => {
+        getAllAppointments: async (query) => {
             try {
-                const response = await apiCustomerService.get(URLS.APPOINTMENT.GET_ALL_TODAY);
-                return response;
-            } catch (error) {
-                console.error('Lỗi khi lấy danh sách lịch hẹn hôm nay:', error);
-                throw error;
-            }
-        },
-
-        getAllAppointments: async () => {
-            try {
-                const response = await apiCustomerService.get(URLS.APPOINTMENT.GET_ALL);
+                const response = await apiCustomerService.get(URLS.APPOINTMENT.GET_ALL, {
+                    params: query
+                });
                 return response;
             } catch (error) {
                 console.error('Lỗi khi lấy danh sách lịch hẹn:', error);
@@ -408,6 +400,16 @@ const customerService = {
                 throw error;
             }
         },
+        
+        updateAppointment: async (appointmentId, data) => {
+            try {
+                const response = await apiCustomerService.put(URLS.APPOINTMENT.UPDATE_APPOINTMENT.replace('{appointment_id}', appointmentId), data);
+                return response;
+            } catch (error) {
+                console.error(`Lỗi khi cập nhật lịch hẹn ID=${appointmentId}:`, error);
+                throw error;
+            }
+        }
     },
 
     reception: {
@@ -484,6 +486,18 @@ const customerService = {
             }
         },
 
+        getAllReceptions: async (query) => {
+            try {
+                const response = await apiCustomerService.get(URLS.RECEPTION.GET_ALL, {
+                    params: query
+                });
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách đơn tiếp nhận:', error);
+                throw error;
+            }
+        },
+
         getReceptionById: async (id) => {
             try {
                 const response = await apiCustomerService.get(URLS.RECEPTION.GET_RECEPTION_BY_ID.replace('{form_id}', id));
@@ -493,6 +507,28 @@ const customerService = {
                 throw error;
             }
         }, 
+
+        updateReception: async (receptionId, data) => {
+            try {
+                const response = await apiCustomerService.put(URLS.RECEPTION.UPDATE.replace('{form_id}', receptionId), data);
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi cập nhật đơn tiếp nhận ID=${receptionId}:`, error);
+                throw error;
+            }
+        },
+
+        updateReceptionReturn: async (receptionId, query) => {
+            try {
+                const response = await apiCustomerService.put(URLS.RECEPTION.UPDATE_RETURN.replace('{form_id}', receptionId), {}, {
+                    params: query
+                });
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi cập nhật trạng thái đơn tiếp nhận ID=${receptionId}:`, error);
+                throw error;
+            }
+        },
     }
 };
 
@@ -511,9 +547,11 @@ const repairService = {
             }
         },
 
-        getAllOrders: async () => {
+        getAllOrders: async (query) => {
             try {
-                const response = await apiRepairService.get(URLS.ORDER.GET_ALL_ORDERS);
+                const response = await apiRepairService.get(URLS.ORDER.GET_ALL_ORDERS, {
+                    params: query
+                });
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi lấy danh sách đơn hàng:', error);
@@ -597,6 +635,17 @@ const repairService = {
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi tạo chẩn đoán:', error);
+                throw error;
+            }
+        },
+        getAllDiagnosis: async (query) => {
+            try {
+                const response = await apiRepairService.get(URLS.DIAGNOSIS.GET_ALL_DIAGNOSIS, {
+                    params: query
+                });
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách chẩn đoán:', error);
                 throw error;
             }
         },

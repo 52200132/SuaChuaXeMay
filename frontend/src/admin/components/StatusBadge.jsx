@@ -2,28 +2,6 @@ import React from 'react';
 import { Badge } from 'react-bootstrap';
 
 const StatusBadge = ({ status }) => {
-    // const getVariant = () => {
-    //     switch (status.toLowerCase()) {
-    //         case 'pending':
-    //         case 'đang sửa chữa':
-    //             return 'warning';
-    //         case 'đã xác nhận':
-    //             return 'info';
-    //         case 'in progress':
-    //         case 'đang thực hiện':
-    //             return 'primary';
-    //         case 'completed':
-    //         case 'hoàn thành':
-    //         case 'đã trả khách':
-    //             return 'success';
-    //         case 'cancelled':
-    //         case 'đã hủy':
-    //             return 'danger';
-    //         default:
-    //             return 'secondary';
-    //     }
-    // };
-
     const statusToBootstrapColor = {
         // Order Statuses
         'received': 'primary',
@@ -48,8 +26,10 @@ const StatusBadge = ({ status }) => {
 
         'chờ xử lý': 'warning',
         'đã xác nhận': 'info',
-        'hoan thành': 'success',
+        'hoàn thành': 'success',
         'đã hủy': 'danger',
+
+        'đã trả khách': 'success',
     };
 
 

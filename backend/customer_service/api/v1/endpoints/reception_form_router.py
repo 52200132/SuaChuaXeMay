@@ -88,6 +88,11 @@ async def create_reception_form_without_customer_id_and_without_motorcycle_id(
 
 @router.get(URLS['RECEPTION']['GET_ALL'], response_model=List[ReceptionFormResponse])
 async def get_all_reception_forms(
+    staff_id: Optional[int] = Query(None, description="ID nhân viên"),
+    motocycle_id: Optional[int] = Query(None, description="ID xe máy"),
+    is_returned: Optional[bool] = Query(None, description="Trạng thái trả xe"),
+    start_date: Optional[datetime] = Query(None, description="Ngày bắt đầu"),
+    end_date: Optional[datetime] = Query(None, description="Ngày kết thúc"),
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db)
@@ -96,7 +101,10 @@ async def get_all_reception_forms(
         Lấy danh sách tất cả biểu mẫu tiếp nhận.
     """
 
-    db_reception_forms = await reception_crud.get_all_reception_forms(db, skip, limit)
+    db_reception_forms = await reception_crud.get_all_reception_forms(
+        db, staff_id=staff_id, motocycle_id=motocycle_id, is_returned=is_returned,
+        start_date=start_date, end_date=end_date, skip=skip, limit=limit
+    )
     return db_reception_forms
 
 @router.get(URLS['RECEPTION']['GET_ALL_TODAY'], response_model=List[ReceptionFormResponse])

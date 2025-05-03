@@ -21,12 +21,10 @@ URLS = {
     },
     'APPOINTMENT': {
         'CREATE': '/appointment/create',
-        'GET_ALL_TODAY': '/appointment/today',
-        'FILTER': '/appointment/filter',
-        'GET_ALL': '/appointment/all',
+        'GET_ALL': '/appointments',
         'GET_APPOINTMENT_BY_ID': '/appointment/{appointment_id}',
         'GET_APPOINTMENTS_BY_DATE_RANGE': '/appointment/date-range',
-        # 'UPDATE_APPOINTMENT': '/appointment/{appointment_id}',
+        'UPDATE_APPOINTMENT': '/appointment/update/{appointment_id}',
         # 'DELETE_APPOINTMENT': '/appointment/{appointment_id}',
     },
     'RECEPTION': {

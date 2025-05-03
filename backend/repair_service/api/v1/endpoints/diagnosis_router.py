@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from sqlalchemy.exc import IntegrityError
+
 from utils.logger import get_logger
 from db.session import get_db
 from schemas.diagnosis import DiagnosisCreate, DiagnosisUpdate, DiagnosisResponse
@@ -12,13 +13,13 @@ router = APIRouter()
 
 logger = get_logger(__name__)
 
-# @router.get("/", response_model=List[DiagnosisResponse])
-# def read_diagnoses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-#     """Get all diagnoses"""
-#     return crud.get_diagnoses(db, skip=skip, limit=limit)
+@router.get(URLS['DIAGNOSIS']['GET_ALL_DIAGNOSIS'], response_model=List[DiagnosisResponse])
+async def get_diagnoses(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
+    """Get all diagnoses"""
+    return await crud.get_diagnoses(db, skip=skip, limit=limit)
 
 @router.get(URLS['DIAGNOSIS']['GET_DIAGNOSIS_BY_ID'], response_model=DiagnosisResponse)
-async def get_diagnosis_by_id(diagnosis_id: int, db: Session = Depends(get_db)):
+async def get_diagnosis_by_id(diagnosis_id: int, db: AsyncSession = Depends(get_db)):
     """Get a specific diagnosis by ID"""
     db_diagnosis = await crud.get_diagnosis_by_id(db, diagnosis_id=diagnosis_id)
     if db_diagnosis is None:
@@ -26,7 +27,7 @@ async def get_diagnosis_by_id(diagnosis_id: int, db: Session = Depends(get_db)):
     return DiagnosisResponse.from_orm(db_diagnosis)
 
 @router.get(URLS['DIAGNOSIS']['GET_DIAGNOSIS_BY_ORDER_ID'], response_model=DiagnosisResponse)
-async def get_diagnosis_by_order_id(order_id: int, db: Session = Depends(get_db)):
+async def get_diagnosis_by_order_id(order_id: int, db: AsyncSession = Depends(get_db)):
     """Get a specific diagnosis by order ID"""
     db_diagnosis = await crud.get_diagnosis_by_order_id(db, order_id=order_id)
     if db_diagnosis is None:
@@ -34,7 +35,7 @@ async def get_diagnosis_by_order_id(order_id: int, db: Session = Depends(get_db)
     return DiagnosisResponse.from_orm(db_diagnosis)
 
 @router.post(URLS['DIAGNOSIS']['CREATE_DIAGNOSIS'], response_model=DiagnosisResponse, status_code=status.HTTP_201_CREATED)
-async def create_diagnosis(diagnosis: DiagnosisCreate, db: Session = Depends(get_db)):
+async def create_diagnosis(diagnosis: DiagnosisCreate, db: AsyncSession = Depends(get_db)):
     """Create a new diagnosis"""
 
     try:
@@ -49,7 +50,7 @@ async def create_diagnosis(diagnosis: DiagnosisCreate, db: Session = Depends(get
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.put(URLS['DIAGNOSIS']['UPDATE_DIAGNOSIS'], response_model=DiagnosisResponse)
-async def update_diagnosis(diagnosis_id: int, diagnosis: DiagnosisUpdate, db: Session = Depends(get_db)):
+async def update_diagnosis(diagnosis_id: int, diagnosis: DiagnosisUpdate, db: AsyncSession = Depends(get_db)):
     # """Update an existing diagnosis"""
     db_diagnosis = await crud.update_diagnosis(db, diagnosis_id=diagnosis_id, diagnosis=diagnosis)
     if db_diagnosis is None:
@@ -57,7 +58,7 @@ async def update_diagnosis(diagnosis_id: int, diagnosis: DiagnosisUpdate, db: Se
     return db_diagnosis
 
 # @router.delete("/{diagnosis_id}", status_code=status.HTTP_204_NO_CONTENT)
-# def delete_diagnosis(diagnosis_id: int, db: Session = Depends(get_db)):
+# def delete_diagnosis(diagnosis_id: int, db: AsyncSession = Depends(get_db)):
 #     """Delete a diagnosis"""
 #     result = crud.delete_diagnosis(db, diagnosis_id=diagnosis_id)
 #     if not result:

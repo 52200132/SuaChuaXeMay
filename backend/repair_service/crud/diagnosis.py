@@ -31,11 +31,19 @@ async def create_diagnosis(db: AsyncSession, diagnosis: DiagnosisCreate) -> Diag
         await db.rollback()
         logger.error(f"Lỗi không xác định khi tạo bảng chẩn đoán: {str(e)}")
         raise ValueError("Lỗi không xác định khi tạo bảng chẩn đoán")
+
+async def get_diagnoses(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[Diagnosis]:
+    """Lấy danh sách tất cả các bản chẩn đoán"""
+    result = await db.execute(select(Diagnosis).offset(skip).limit(limit))
+    db_diagnoses = result.scalars().all()
+    return db_diagnoses
+
 async def get_diagnosis_by_id(db: AsyncSession, diagnosis_id: int) -> Diagnosis:
     """Lấy thông tin chẩn đoán theo ID"""
     result = await db.execute(select(Diagnosis).where(Diagnosis.diagnosis_id == diagnosis_id))
     db_diagnosis = result.scalar_one_or_none()
     return db_diagnosis
+
 async def get_diagnosis_by_order_id (db: AsyncSession, order_id: int) -> Diagnosis:
     """Lấy thông tin chẩn đoán theo ID đơn hàng"""
     result = await db.execute(select(Diagnosis).where(Diagnosis.order_id == order_id))

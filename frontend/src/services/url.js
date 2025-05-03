@@ -89,23 +89,22 @@ const URLS = {
     },
     'APPOINTMENT': {
         'CREATE': '/appointment/create',
-        'GET_ALL_TODAY': '/appointment/today',
-        'FILLTER': '/appointment/filter',
-        'GET_ALL': '/appointment/all',
+        'GET_ALL': '/appointments',
         'GET_APPOINTMENT_BY_ID': '/appointment/{appointment_id}',
-        'GET_APPOINTMENTS_BY_DATE_RANGE': '/appointment/date-range',
+        'UPDATE_APPOINTMENT': '/appointment/update/{appointment_id}',
         // 'GET_ALL_APPOINTMENT_TYPES': '/appointment/types',
         // 'GET_APPOINTMENT_BY_ID': '/appointment/{appointment_id}',
     },
     'RECEPTION': {
-        'CREATE': '/reception/create', // completed
-        'CREATE_WITHOUT_MOTORCYCLE_ID': '/reception/create/without-motorcycle-id', // 
-        'CREATE_WITHOUT_CUSTOMER_ID_AND_WITHOUT_MOTORCYCLE_ID': '/reception/create/without-customer-id-and-with-motorcycle-id', // completed
-
-        'GET_ALL': '/receptions', // completed
-        'GET_ALL_TODAY': '/receptions/today', // completed
-        'GET_RECEPTION_BY_ID': '/reception/{form_id}', // completed
-        'GET_RECEPTION_BY_DATE_RANGE': '/receptions/date-range', // completed
+        'CREATE': '/reception/create', //  completed
+        'CREATE_WITHOUT_MOTORCYCLE_ID': '/reception/create/without-motorcycle-id', //  completed
+        'CREATE_WITHOUT_CUSTOMER_ID_AND_WITHOUT_MOTORCYCLE_ID': '/reception/create/without-customer-id-and-with-motorcycle-id', //  completed
+        'GET_ALL': '/receptions', //  completed
+        'GET_ALL_TODAY': '/receptions/today', //  completed
+        'GET_RECEPTION_BY_ID': '/reception/{form_id}', //  completed
+        'GET_RECEPTION_BY_DATE_RANGE': '/receptions/date-range', //  completed
+        'UPDATE': '/reception/update/{form_id}', //  completed
+        'UPDATE_RETURN': '/reception/{form_id}/return', //  completed
     },
 
     // repair service
@@ -121,6 +120,7 @@ const URLS = {
     },
     'DIAGNOSIS':{
         'CREATE_DIAGNOSIS':'/diagnosis/create',
+        'GET_ALL_DIAGNOSIS':'/diagnosis',
         'GET_DIAGNOSIS_BY_ID':'/diagnosis/{diagnosis_id}',
         'GET_DIAGNOSIS_BY_ORDER_ID':'/diagnosis/order/{order_id}',
         'UPDATE_DIAGNOSIS':'/diagnosis/update/{diagnosis_id}',

@@ -244,13 +244,6 @@ const Booking = () => {
                                                 {service.name}
                                             </option>
                                         ))}
-                                        {/* <option value="">Chọn dịch vụ</option>
-                                        <option value="bao-duong">Bảo dưỡng định kỳ</option>
-                                        <option value="sua-chua-dong-co">Sửa chữa động cơ</option>
-                                        <option value="thay-the-phu-tung">Thay thế phụ tùng</option>
-                                        <option value="sua-he-thong-dien">Sửa hệ thống điện</option>
-                                        <option value="ve-sinh-xe">Vệ sinh xe</option>
-                                        <option value="khac">Dịch vụ khác</option> */}
                                     </Form.Control>
                                     <Form.Control.Feedback type="invalid">
                                         Vui lòng chọn dịch vụ.

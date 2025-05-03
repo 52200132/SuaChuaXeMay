@@ -1,5 +1,6 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
-import * as moldel from '../../models';
+import React, { createContext, useState, useContext, useCallback, useMemo, useEffect, useRef, use } from 'react';
+import { useStaffAuth } from './StaffAuthContext';
+import { customerService, repairService, resourceService } from '../../services/api';
 
 // Create context
 const AppDataContext = createContext();
@@ -8,25 +9,35 @@ const AppDataContext = createContext();
 export const useAppData = () => useContext(AppDataContext);
 
 export const AppDataProvider = ({ children }) => {
-    const [currentCustomer, setCurrentCustomer] = useState(null); // State for current customer
+    const { currentStaff } = useStaffAuth(); 
+    const hasDataLoaded = useRef(false); // Flag to check if data has been loaded
+    const idsNeeded = useRef({
+        customersIds: new Set(), 
+        motorcyclesIds: new Set(), 
+    });
 
     // State for different data categories
     const [dataStore, setDataStore] = useState({
         customers: {},    // Customer data by ID
         customersIds: new Set(),  // IDs of customers
+
         appointments: {}, // Appointment data by ID
         appointmentsIds: new Set(),  // IDs of appointments
+
+        receptions: {}, // Reception data by ID
+        receptionsIds: new Set(),  // IDs of receptions
+
         services: {},     // Service data by ID
         servicesIds: new Set(),  // IDs of services
-        products: {},     // Product data by ID
-        productsIds: new Set(),  // IDs of products
-        settings: {},     // App settings
-        settingsIds: new Set(),  // IDs of settings
-        stats: {},        // Statistics and analytics data
-        statsIds: new Set(),  // IDs of stats
+
+        staffs: {},     // Staff data by ID
+        staffsIds: new Set(),  // IDs of staffs
 
         orders: {},     // Order data by ID
         ordersIds: new Set(),  // IDs of orders
+
+        diagnosis: {},     // Diagnosis data by ID
+        diagnosisIds: new Set(),  // IDs of diagnosis
 
         motorcycles: {},     // Motorcycle data by ID
         motorcyclesIds: new Set(),  // IDs of motorcycles
@@ -36,6 +47,7 @@ export const AppDataProvider = ({ children }) => {
     const [loading, setLoading] = useState({
         customers: false,
         appointments: false,
+        receptions: false,
         services: false,
         products: false,
         employees: false,
@@ -46,22 +58,237 @@ export const AppDataProvider = ({ children }) => {
     // State to track errors
     const [errors, setErrors] = useState({});
 
+    // Tải các dữ liệu cần thiết theo role
+    const fetchCustomers = async (customerIds) => { 
+        setLoadingState('customers', true);
+        await Promise.allSettled(
+            (Array.isArray(customerIds) ? customerIds : Array.from(customerIds)).map(async (id) => {
+                try {
+                    if (getData('customers', id)) { return; } // Có rồi không lấy nữa
+                    console.log(`Lấy dữ liệu customer ${id}`);
+                    const response = await customerService.customer.getCustomerById(id);
+                    const customer = response?.data;
+                    setData('customers', customer, id);
+                } catch (error) {
+                    console.error(`Error fetching customer ${id}:`, error);
+                }
+            })
+        );
+        setLoadingState('customers', false);
+    }
+
+    const fetchMotorcycles = async (motorcycleIds) => { 
+        setLoadingState('motorcycles', true);
+        const customersIds = idsNeeded.current['customersIds'];
+        await Promise.allSettled(
+            (Array.isArray(motorcycleIds) ? motorcycleIds : Array.from(motorcycleIds)).map(async (id) => {
+                try {
+                    if (getData('motorcycles', id)) { return; }
+                    const response = await customerService.motorcycle.getMotorcycleById(id);
+                    const motorcycle = response?.data;
+                    if (motorcycle?.customer_id) {
+                        customersIds.add(motorcycle.customer_id.toString()); // Thêm customer_id vào danh sách
+                    }
+                    setData('motorcycles', motorcycle, id);
+                } catch (error) {
+                    console.error(`Error fetching motorcycle ${id}:`, error);
+                }
+            })
+        );
+        console.log('Danh sang customerID trong moto', customersIds);
+        // fetchCustomers(customersIds);
+        setLoadingState('motorcycles', false);
+    }
+
+    useEffect(() => {        
+        if (!currentStaff || hasDataLoaded.current) return;
+        hasDataLoaded.current = true; // Set the flag to true after loading data
+        
+        // Các hàm fetch dữ liệu từ api
+        const fetchAppointments = async () => {
+            try {
+                setLoadingState('appointments', true);
+                const startDate = new Date().toISOString().split('T')[0];
+                const endDate = new Date().toISOString().split('T')[0];
+                // TODO: Đặt kiều kiện
+                const response = await customerService.appointment.getAllAppointments({
+                    // start_date: startDate,
+                    // end_date: endDate,
+                    skip: 0,
+                    limit: 1000,
+                });
+                const appointmentsData = response?.data || response || [];
+                const appointmentsArray = Array.isArray(appointmentsData) ? appointmentsData : [appointmentsData]; // Ensure data is an array
+                setMultipleData('appointments', appointmentsArray, 'appointment_id');
+                const customersIds = idsNeeded.current['customersIds']; // Tạo một Set để lưu trữ customer_id
+                appointmentsArray.forEach((appointment) => {  
+                    if (appointment.customer_id) {
+                        customersIds.add(appointment.customer_id.toString());
+                    }
+                });
+                // console.log('Danh sách customersIds', customersIds);
+                // fetchCustomers(customersIds);
+            } catch (error) {
+                console.error('Error fetching appointments:', error);
+                setError('appointments', error.message || 'Failed to fetch appointments');
+            }
+            setLoadingState('appointments', false);
+        }
+
+        const fetchReceptions = async () => {
+            setLoadingState('receptions', true);
+            try {
+                const receptionsDataToday = async () => {
+                    const startDate = new Date().toISOString().split('T')[0];
+                    const endDate = new Date().toISOString().split('T')[0];
+                    // TODO: Đặt kiều kiện
+                    const response = await customerService.reception.getAllReceptions({
+                        // start_date: startDate,
+                        // end_date: endDate,
+                        skip: 0,
+                        limit: 1000,
+                    });
+                    return response;
+                }
+                await fetchAndStoreData('receptions', receptionsDataToday, 'form_id')
+                .then((response) => {
+                    const dataArray = response.dataArray;
+                    const motorcyclesIds = idsNeeded.current['motorcyclesIds']; // Tạo một Set để lưu trữ motorcycle_id
+                    dataArray.forEach((reception) => {
+                        motorcyclesIds.add(reception?.motocycle_id?.toString())
+                    });
+                    // console.log(motorcyclesIds);
+                    // fetchMotorcycles(motorcyclesIds);
+                });
+            } catch (error) {
+                console.error('Error fetching receptions:', error);
+                setError('receptions', error.message || 'Failed to fetch receptions');
+            }
+            setLoadingState('receptions', false);
+        }
+
+        const fetchOrders = async () => {
+            setLoadingState('orders', true);
+            try {
+                const ordersData = async () => {
+                    const response = await repairService.order.getAllOrders({
+                        skip: 0,
+                        limit: 1000,
+                    });
+                    return response;
+                }
+                await fetchAndStoreData('orders', ordersData, 'order_id')
+                .then((response) => {
+                    const dataArray = response.dataArray;
+                    const motorcyclesIds = idsNeeded.current['motorcyclesIds']; // Tạo một Set để lưu trữ motorcycle_id
+                    dataArray.forEach((order) => {
+                        motorcyclesIds.add(order?.motocycle_id?.toString())
+                    });
+                });
+            } catch (error) {
+                console.error('Error fetching orders:', error);
+            }
+            setLoadingState('orders', false);
+        }
+
+        const fetchDiagnosis = async () => {
+            setLoadingState('diagnosis', true);
+            try {
+                const diagnosisData = async () => {
+                    const response = await repairService.diagnosis.getAllDiagnosis({
+                        skip: 0,
+                        limit: 1000,
+                    });
+                    return response;
+                }
+                await fetchAndStoreData('diagnosis', diagnosisData, 'order_id')
+            } catch (error) {
+                console.error('Error fetching diagnosis:', error);
+            }
+            setLoadingState('diagnosis', false);
+        }
+
+        const fetchStaffs = async () => {
+            setLoadingState('staffs', true);
+            try {
+                const staffsData = async () => {
+                    const response = await resourceService.staff.getAllTechnicians();
+                    return response;
+                }
+                await fetchAndStoreData('staffs', staffsData, 'staff_id')
+            } catch (error) {
+                console.error('Error fetching staffs:', error);
+            }
+            setLoadingState('staffs', false);
+        }
+
+
+        if (currentStaff.role === 'receptionist') {
+            console.log('Đang là nhân viên lễ tân');
+            fetchAppointments();
+            fetchReceptions();
+            fetchOrders();
+            fetchDiagnosis();
+            fetchStaffs();
+            // fetchAndStoreData('customers', fetchCustomers);
+            // fetchAndStoreData('appointments', () => fetchAppointments(), 'appointment_id');
+            // fetchAndStoreData('services', fetchServices);
+            // fetchAndStoreData('products', fetchProducts);
+        }
+    }, [currentStaff]);
+
+    // Fetch các dữ liệu liên quan
+    useEffect(() => {
+        console.log(loading['appointments'], loading['receptions']);
+        if (loading['appointments'] === true || loading['receptions'] === true || loading['orders'] === true) return; // Chỉ gọi khi loading appointments là false
+        // console.log(getData('appointments'), getData('receptions'));
+        console.log(dataStore['orders'], dataStore['diagnosis']);
+        const fetchData = async () => {
+            try {
+                const motorcyclesIds = idsNeeded.current['motorcyclesIds'];
+                await fetchMotorcycles(motorcyclesIds); // Lấy danh sách xe máy
+                const customersIds = idsNeeded.current['customersIds'];
+                await fetchCustomers(customersIds); // Lấy danh sách khách hàng
+            } catch (error) { 
+                console.error('Lỗi khi fetch dữ liệu liên quan', error);
+            }
+        }
+        fetchData();
+        
+    }, [loading['appointments'], loading['receptions'], loading['orders']]);
+
+    
+
     // Set data for a specific category
     const setData = useCallback((category, data, id = null) => {
         setDataStore(prevStore => {
             // If an ID is provided, set/update that specific item
             if (id) {
                 const idsKey = `${category}Ids`;
-                const updatedIds = new Set(prevStore[idsKey]);
-                updatedIds.add(id.toString());
+                const idStr = id.toString();
                 
+                // Kiểm tra xem ID đã tồn tại chưa
+                if (!prevStore[idsKey].has(idStr)) {
+                    // Clone Set và thêm ID mới
+                    const updatedIds = prevStore[idsKey];
+                    updatedIds.add(idStr);
+                    
+                    return {
+                        ...prevStore,
+                        [category]: {
+                            ...prevStore[category],
+                            [id]: data
+                        }
+                    };
+                }
+                
+                // Nếu ID đã tồn tại, chỉ cập nhật dữ liệu, không cần cập nhật Set
                 return {
                     ...prevStore,
                     [category]: {
                         ...prevStore[category],
                         [id]: data
-                    },
-                    [idsKey]: updatedIds
+                    }
                 };
             }
             
@@ -91,11 +318,11 @@ export const AppDataProvider = ({ children }) => {
             // If dataItems is an object (id -> data mapping)
             setDataStore(prevStore => {
                 const idsKey = `${category}Ids`;
-                const updatedIds = new Set(prevStore[idsKey]);
+                const existingIds = prevStore[idsKey];
                 
-                // Add all keys to the IDs set
+                // Thêm ID mới trực tiếp vào Set hiện có
                 Object.keys(dataItems).forEach(id => {
-                    updatedIds.add(id.toString());
+                    existingIds.add(id.toString());
                 });
                 
                 return {
@@ -103,8 +330,7 @@ export const AppDataProvider = ({ children }) => {
                     [category]: {
                         ...prevStore[category],
                         ...dataItems
-                    },
-                    [idsKey]: updatedIds
+                    }
                 };
             });
         } else if (Array.isArray(dataItems) && dataItems.length > 0 && dataItems[0][idProperty]) {
@@ -116,11 +342,11 @@ export const AppDataProvider = ({ children }) => {
             
             setDataStore(prevStore => {
                 const idsKey = `${category}Ids`;
-                const updatedIds = new Set(prevStore[idsKey]);
+                const existingIds = prevStore[idsKey];
                 
-                // Add all IDs to the set
+                // Thêm ID mới trực tiếp vào Set hiện có
                 dataItems.forEach(item => {
-                    updatedIds.add(item[idProperty]);
+                    existingIds.add(item[idProperty].toString());
                 });
                 
                 return {
@@ -128,8 +354,7 @@ export const AppDataProvider = ({ children }) => {
                     [category]: {
                         ...prevStore[category],
                         ...dataObject
-                    },
-                    [idsKey]: updatedIds
+                    }
                 };
             });
         }
@@ -157,28 +382,43 @@ export const AppDataProvider = ({ children }) => {
     // Delete an item from a category
     const deleteData = useCallback((category, id) => {
         setDataStore(prevStore => {
-            const newCategoryData = { ...prevStore[category] };
-            delete newCategoryData[id];
-            
             const idsKey = `${category}Ids`;
-            const updatedIds = new Set(prevStore[idsKey]);
-            updatedIds.delete(id.toString());
+            const existingIds = prevStore[idsKey];
+            const idStr = id.toString();
             
-            return {
-                ...prevStore,
-                [category]: newCategoryData,
-                [idsKey]: updatedIds
-            };
+            // Chỉ xóa nếu ID tồn tại
+            if (existingIds.has(idStr)) {
+                const newCategoryData = { ...prevStore[category] };
+                delete newCategoryData[id];
+                
+                // Xóa trực tiếp từ Set hiện có
+                existingIds.delete(idStr);
+                
+                return {
+                    ...prevStore,
+                    [category]: newCategoryData
+                };
+            }
+            
+            // Không làm gì nếu ID không tồn tại
+            return prevStore;
         });
     }, []);
 
     // Clear all data for a category
     const clearData = useCallback((category) => {
-        setDataStore(prevStore => ({
-            ...prevStore,
-            [category]: {},
-            [`${category}Ids`]: new Set()
-        }));
+        setDataStore(prevStore => {
+            const idsKey = `${category}Ids`;
+            const existingIds = prevStore[idsKey];
+            
+            // Xóa tất cả phần tử khỏi Set hiện có
+            existingIds.clear();
+            
+            return {
+                ...prevStore,
+                [category]: {}
+            };
+        });
     }, []);
 
     // Clear all data in the store
@@ -235,34 +475,44 @@ export const AppDataProvider = ({ children }) => {
             const response = await fetchFunction();
             const data = response.data || response || [];
             const dataArray = Array.isArray(data) ? data : [data]; // Ensure data is an array
-            const dataIdSet = new Set();
-
+            
             // Convert to object with ID as key
             const dataObject = Array.isArray(data) 
                 ? data.reduce((obj, item) => {
                     const idValue = item[idProperty].toString();
-                    dataIdSet.add(idValue);
                     obj[idValue] = item;
                     return obj;
                 }, {})
                 : data;
 
-            // Lấy ID từ data nếu không có ID nào trong dataIdSet
-            if (dataIdSet.size === 0 && typeof data === 'object' && Object.values(data)[0]?.[idProperty]) {
-                // If data is an object, use its keys as IDs
-                Object.keys(data).forEach(key => {
-                    dataIdSet.add(key.toString());
-                });
-            }
-            
-            setDataStore(prevStore => ({
-                ...prevStore,
-                [category]: dataObject,
-                [`${category}Ids`]: dataIdSet
-            }));
+            setDataStore(prevStore => {
+                const idsKey = `${category}Ids`;
+                const existingIds = prevStore[idsKey] || new Set();
+                
+                // Xóa tất cả các ID cũ và thêm ID mới
+                existingIds.clear();
+                
+                if (Array.isArray(data)) {
+                    // Thêm các ID mới từ mảng data
+                    data.forEach(item => {
+                        const idValue = item[idProperty].toString();
+                        existingIds.add(idValue);
+                    });
+                } else if (typeof data === 'object' && Object.values(data)[0]?.[idProperty]) {
+                    // Thêm các ID từ object data nếu có idProperty
+                    Object.keys(data).forEach(key => {
+                        existingIds.add(key.toString());
+                    });
+                }
+                
+                return {
+                    ...prevStore,
+                    [category]: dataObject
+                };
+            });
             
             setLoadingState(category, false);
-            return { data, dataArray, dataIdSet, dataObject };
+            return { data, dataArray, dataObject };
         } catch (error) {
             console.error(`Error fetching ${category}:`, error);
             setError(category, error.message || `Failed to fetch ${category}`);
@@ -271,13 +521,12 @@ export const AppDataProvider = ({ children }) => {
         }
     }, [setLoadingState, setError, clearError]);
 
-    // Context value
-    const value = {
-        currentCustomer,
-        setCurrentCustomer,
+    // Context value - sử dụng useMemo để tránh tạo object mới mỗi lần render
+    const value = useMemo(() => ({
         dataStore,
         loading,
         errors,
+        idsNeeded,
         setData,
         setMultipleData,
         getData,
@@ -290,7 +539,24 @@ export const AppDataProvider = ({ children }) => {
         setError,
         clearError,
         fetchAndStoreData
-    };
+    }), [
+        dataStore, 
+        loading, 
+        errors, 
+        idsNeeded,
+        setData, 
+        setMultipleData, 
+        getData, 
+        getAllData, 
+        getIds, 
+        deleteData, 
+        clearData, 
+        clearAllData, 
+        setLoadingState, 
+        setError, 
+        clearError, 
+        fetchAndStoreData
+    ]);
 
     return (
         <AppDataContext.Provider value={value}>

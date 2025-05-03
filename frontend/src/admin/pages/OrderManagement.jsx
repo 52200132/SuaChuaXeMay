@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Pagination, Modal, Form, Row, Col, InputGroup, Badge, Tabs, Tab, Dropdown } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import AssignmentManagement from './AssignmentManagement';
 
+import AssignmentManagement from './AssignmentManagement';
 import StatusBadge from '../components/StatusBadge';
 import CustomModal from '../components/CustomModal';
 import { useAppData } from '../contexts/AppDataContext';
 import { customerService, resourceService, repairService } from '../../services/api';
 import './OrderManagement.css';
-import { set } from 'date-fns';
 import OrderDetailView from '../components/OrderDetailView';
 
 // Register Chart.js components
 const OrderManagement = () => {
     // TODO: Lấy từ context
-    const { getData, getIds, setData, fetchAndStoreData, setMultipleData, errors, setError } = useAppData();
+    const { getData, getIds, setData, loading } = useAppData();
     const ordersById = getData('orders');
     const ordersIds = getData('ordersIds');
     const customersById = getData('customers');
@@ -24,9 +22,7 @@ const OrderManagement = () => {
     const staffsById = getData('staffs');
 
     // State quản lý danh sách đơn hàng
-    const [orders, setOrders] = useState([]);
     const [fileredOrdersIds, setFilteredOrdersIds] = useState([]);
-    const [ordersDisplay, setOrdersDisplay] = useState({});
     
     // State cho filter và phân trang
     const [filters, setFilters] = useState({
@@ -70,7 +66,7 @@ const OrderManagement = () => {
     });
     
     const [validated, setValidated] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [localLoading, setLocalLoading] = useState(false);
     
     // Tab management
     const [activeTab, setActiveTab] = useState('orders');
@@ -90,13 +86,6 @@ const OrderManagement = () => {
         cancelled: 0
     });
     
-    // States for technician assignment modal
-    const [showAssignModal, setShowAssignModal] = useState(false);
-    const [selectedTechnician, setSelectedTechnician] = useState('');
-    const [assignmentNote, setAssignmentNote] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [estimatedEndTime, setEstimatedEndTime] = useState('');
-    
     // State for showing technician workload details
     const [showWorkloadModal, setShowWorkloadModal] = useState(false);
     const [selectedTechnicianDetail, setSelectedTechnicianDetail] = useState(null);
@@ -105,115 +94,17 @@ const OrderManagement = () => {
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
     const [orderToDeliver, setOrderToDeliver] = useState(null);
 
-    // Load mock data
     useEffect(() => {
-
-        // TODO: Fetch dữ liệu từ API
-        const fetchData = async () => { 
-            setLoading(true);
-
-            errors.customers = [];
-            errors.motorcycles = [];
-            errors.staffs = [];
-            errors.diagnosis = [];
-
-            await fetchAndStoreData('orders', repairService.order.getAllOrders, 'order_id')
-                .then(async response => {
-                    const orderData = response.dataArray;
-
-                    // Sử dụng Promise.allSettled cho map chính
-                    const results = await Promise.allSettled(orderData.map(async order => {
-                        // const customerId = order.customer_id;
-                        const motorcycleId = order.motocycle_id;
-                        const staffId = order.staff_id;
-                        console.log(staffId);
-
-                        // Sử dụng Promise.allSettled cho các fetch phụ để biết cái nào lỗi
-                        const [ motorcycleResult, staffResult, diagnosisResult] = await Promise.allSettled([
-                            motorcyclesById[motorcycleId] ? Promise.resolve({ data: motorcyclesById[motorcycleId] }) : customerService.motorcycle.getMotorcycleById(motorcycleId),
-                            staffsById[staffId] ? Promise.resolve({ data: staffsById[staffId] }) : resourceService.staff.getStaffById(staffId),
-                            diagnosisById[order.order_id] ? Promise.resolve({ data: diagnosisById[order.order_id] }) : repairService.diagnosis.getDiagnosisByOrderId(order.order_id),
-                        ]);
-
-                        const customerId = motorcycleResult.value?.data?.customer_id || '';
-                        // Lấy dữ liệu khách hàng từ context hoặc gọi API nếu không có trong context
-                        const [ customerResult ] = await Promise.allSettled([
-                            customersById[customerId] ? Promise.resolve({ data: customersById[customerId] }) : customerService.customer.getCustomerById(customerId)
-                        ]);
-
-                        // Lấy dữ liệu nếu thành công, hoặc dùng object rỗng nếu thất bại
-                        const customer = customerResult.status === 'fulfilled' ? customerResult.value?.data || {} : {};
-                        const motorcycle = motorcycleResult.status === 'fulfilled' ? motorcycleResult.value?.data || {} : {};
-                        const staff = staffResult.status === 'fulfilled' ? staffResult.value?.data || {} : {};
-                        const diagnosis = diagnosisResult.status === 'fulfilled' ? diagnosisResult.value?.data || {} : {};
-
-                        // Ghi log lỗi cụ thể nếu có
-                        Object.entries({
-                            customers: customerResult,
-                            motorcycles: motorcycleResult,
-                            staffs: staffResult,
-                            diagnosis: diagnosisResult,
-                        }).forEach(([key, res]) => { 
-                            errors[key].push(res.status === 'rejected' ? `Lỗi khi lấy ${key} cho đơn ${order.order_id}: ${res.reason.response?.data?.detail}` : null);
-                        })
-
-                        // Lưu dữ liệu vào context
-                        if (staffId) { // có staffId thì mới lưu staff, và đã phân công
-                            setData('staffs', staff, staffId); 
-                            // console.log('staff:', staff); 
-                        }
-                        if (customerId) { setData('customers', customer, customerId); }
-                        if (motorcycleId) { setData('motorcycles', motorcycle, motorcycleId); }
-                        if (order.order_id) { setData('diagnosis', diagnosis, order.order_id); }
-
-                        // Luôn trả về để format, hàm formatOrder cần xử lý dữ liệu thiếu
-                        return [order.order_id, formatOrder(order, customer, motorcycle, staff, diagnosis)];
-                    }));
-
-                    // Lọc ra các kết quả thành công từ map chính
-                    const successfulEntries = results
-                        .filter(result => result.status === 'fulfilled')
-                        .map(result => result.value); // Lấy giá trị trả về [order_id, formattedOrder]
-
-                    const newOrderDisplay = Object.fromEntries(successfulEntries);
-
-                    // Ghi log các lỗi bị bắt bởi Promise.allSettled ở map chính (nếu có lỗi logic bên trong map không bị try...catch)
-                    results.forEach(result => {
-                        if (result.status === 'rejected') {
-                            console.error("Một promise xử lý đơn hàng đã thất bại hoàn toàn:", result.reason);
-                        }
-                    });
-
-                    // Object.entries(errors).forEach(([key, value]) => {
-                    //     console.log(`Errors for ${key}:`, value.filter(v => v !== null)); // Lọc ra các lỗi không null
-                    // });
-
-                    console.log('useEffect - Đơn hàng:', orderData);
-                    console.log('useEffect - Danh sách đơn hàng:', newOrderDisplay);
-
-                    setOrdersDisplay(newOrderDisplay);
-                })
-                .catch(error => {
-                    // Catch này chỉ bắt lỗi của fetchAndStoreData hoặc lỗi không mong muốn khác
-                    console.error('Lỗi nghiêm trọng khi lấy danh sách đơn hàng hoặc xử lý chung:', error);
-                    setLoading(false);
-                });
-                
-            setCurrentPage(1);
-            // setFilteredOrdersIds(getIds('orders'));
-            // setTotalPages(Math.ceil(getIds('orders').length / 10));
-            setLoading(false);
-        }
-
-        fetchData();
-    }, []);
+        setLocalLoading(true);
+        if (loading['orders'] === true || loading['customers'] === true || loading['motorcycles'] === true || loading['diagnosis'] === true || loading['staffs'] === true) return;
+        setLocalLoading(false);
+    }, [loading]);
 
     // TODO: Khi load dữ liệu xong
     useEffect(() => {
-        console.log('useEffect - Trạng thái của loading', loading);
+        console.log('useEffect - Trạng thái của loading', localLoading);
         console.log('Các dữ liệu lấy được', ordersById, ordersIds, getIds('orders'));
-        if (!loading) {
-            console.log('useEffect - Dữ liệu display', ordersDisplay);
+        if (!localLoading) {
             setFilteredOrdersIds(getIds('orders'));
             setTotalPages(Math.ceil(getIds('orders').length / 10));
             // console.log('useEffect - fillteredOrdersIds và totalPages', fileredOrdersIds, totalPages)
@@ -232,17 +123,11 @@ const OrderManagement = () => {
             setAssignedOrders(assingedOrders);
             setPendingOrders(pendingOrders);
         }
-    }, [loading, ordersById]);
+    }, [localLoading, ordersById, getIds]);
 
-    // Process orders for assignment view when orders data changes
-    useEffect(() => {
-        if (!loading && Object.keys(ordersDisplay).length > 0) {
-            // processingOrdersForAssignment();
-            // updateDashboardStats();
-        }
-    }, [ordersDisplay, loading]);
 
     const formatOrder = (order, customer, motorcycle, staff, diagnosis) => { 
+        console.log(order);
         const [ createdAtDate, createdAtTime ] = order?.created_at?.split('T') || ['', ''];
         return {
             orderId: order.order_id,
@@ -266,7 +151,7 @@ const OrderManagement = () => {
     
     // Xử lý filter
     const handleApplyFilter = () => {
-        let filtered = [...orders];
+        let filtered = [...fileredOrdersIds];
         
         // Filter by search term
         if (filters.search) {
@@ -307,8 +192,8 @@ const OrderManagement = () => {
             endDate: '',
         });
         // setFilteredOrders(orders);
-        setTotalPages(Math.ceil(orders.length / 10));
-        setCurrentPage(1);
+        // setTotalPages(Math.ceil(fileredOrdersIds.length / 10));
+        // setCurrentPage(1);
     };
     
     // Xử lý thay đổi filter
@@ -321,11 +206,18 @@ const OrderManagement = () => {
     };
     
     // Phân trang
-    const getCurrentItems = () => {
+    const getCurrentItems = useCallback(() => {
         const indexOfLastItem = currentPage * 10;
         const indexOfFirstItem = indexOfLastItem - 10;
-        return fileredOrdersIds.slice(indexOfFirstItem, indexOfLastItem).map(id => ordersDisplay[id]);
-    };
+        return fileredOrdersIds.slice(indexOfFirstItem, indexOfLastItem).map(id => {
+            const order = ordersById[id];
+            const motorcycle = motorcyclesById[order.motocycle_id];
+            const customer = customersById[motorcycle.customer_id];
+            const staff = staffsById[order.staff_id];
+            const diagnosis = diagnosisById[order.order_id];
+            return formatOrder(order, customer, motorcycle, staff, diagnosis);
+        });
+    }, [ordersById, customersById, motorcyclesById, diagnosisById, staffsById, currentPage, fileredOrdersIds]);
     
     // Xử lý modal xem chi tiết - using OrderDetailView component
     const handleShowDetailModal = (order) => {
@@ -365,18 +257,18 @@ const OrderManagement = () => {
         }
         
         // Update order in state
-        const updatedOrders = orders.map(order => {
-            if (order.orderId === currentOrder.orderId) {
-                return {
-                    ...order,
-                    status: formData.status,
-                    note: formData.note,
-                };
-            }
-            return order;
-        });
+        // const updatedOrders = orders.map(order => {
+        //     if (order.orderId === currentOrder.orderId) {
+        //         return {
+        //             ...order,
+        //             status: formData.status,
+        //             note: formData.note,
+        //         };
+        //     }
+        //     return order;
+        // });
         
-        setOrders(updatedOrders);
+        // setOrders(updatedOrders);
         // setFilteredOrders(updatedOrders);
         setShowEditModal(false);
     };
@@ -433,60 +325,60 @@ const OrderManagement = () => {
     };
 
     // Process orders for assignment view
-    const processingOrdersForAssignment = () => {
-        const pending = [];
-        const assigned = [];
+    // const processingOrdersForAssignment = () => {
+    //     const pending = [];
+    //     const assigned = [];
         
-        Object.values(ordersDisplay).forEach(order => {
-            // Only include orders that need assignment
-            if (['Đã tiếp nhận', 'Đang kiểm tra', 'Chờ xác nhận'].includes(order.status)) {
-                if (!order.technicianId || order.technicianId === '') {
-                    pending.push({
-                        ...order,
-                        motorcycleInfo: {
-                            id: order.motorcycleId || '',
-                            plate: order.plateNumber || '',
-                            model: order.motorcycleModel || ''
-                        }
-                    });
-                } else {
-                    assigned.push({
-                        ...order,
-                        motorcycleInfo: {
-                            id: order.motorcycleId || '',
-                            plate: order.plateNumber || '',
-                            model: order.motorcycleModel || ''
-                        },
-                        startTime: order.startTime || '08:00',
-                        estimatedEndTime: order.estimatedEndTime || '10:00'
-                    });
-                }
-            }
-        });
+    //     Object.values(ordersDisplay).forEach(order => {
+    //         // Only include orders that need assignment
+    //         if (['Đã tiếp nhận', 'Đang kiểm tra', 'Chờ xác nhận'].includes(order.status)) {
+    //             if (!order.technicianId || order.technicianId === '') {
+    //                 pending.push({
+    //                     ...order,
+    //                     motorcycleInfo: {
+    //                         id: order.motorcycleId || '',
+    //                         plate: order.plateNumber || '',
+    //                         model: order.motorcycleModel || ''
+    //                     }
+    //                 });
+    //             } else {
+    //                 assigned.push({
+    //                     ...order,
+    //                     motorcycleInfo: {
+    //                         id: order.motorcycleId || '',
+    //                         plate: order.plateNumber || '',
+    //                         model: order.motorcycleModel || ''
+    //                     },
+    //                     startTime: order.startTime || '08:00',
+    //                     estimatedEndTime: order.estimatedEndTime || '10:00'
+    //                 });
+    //             }
+    //         }
+    //     });
         
-        setPendingOrders(pending);
-        setAssignedOrders(assigned);
+    //     setPendingOrders(pending);
+    //     setAssignedOrders(assigned);
         
-        // Update technician availability based on assigned orders
-        calculateTechnicianAvailability(technicians, assigned);
-    };
+    //     // Update technician availability based on assigned orders
+    //     calculateTechnicianAvailability(technicians, assigned);
+    // };
     
     // Update dashboard statistics
-    const updateDashboardStats = () => {
-        const orders = Object.values(ordersDisplay);
-        const stats = {
-            pending: orders.filter(order => 
-                ['Đã tiếp nhận', 'Đang kiểm tra', 'Chờ xác nhận'].includes(order.status)).length,
-            inProgress: orders.filter(order => 
-                ['Đang sửa chữa'].includes(order.status)).length,
-            completed: orders.filter(order => 
-                ['Chờ giao xe', 'Đã giao xe'].includes(order.status)).length,
-            cancelled: orders.filter(order => 
-                ['Đã hủy'].includes(order.status)).length
-        };
+    // const updateDashboardStats = () => {
+    //     const orders = Object.values(ordersDisplay);
+    //     const stats = {
+    //         pending: orders.filter(order => 
+    //             ['Đã tiếp nhận', 'Đang kiểm tra', 'Chờ xác nhận'].includes(order.status)).length,
+    //         inProgress: orders.filter(order => 
+    //             ['Đang sửa chữa'].includes(order.status)).length,
+    //         completed: orders.filter(order => 
+    //             ['Chờ giao xe', 'Đã giao xe'].includes(order.status)).length,
+    //         cancelled: orders.filter(order => 
+    //             ['Đã hủy'].includes(order.status)).length
+    //     };
         
-        setDashboardStats(stats);
-    };
+    //     setDashboardStats(stats);
+    // };
     
     // Calculate technician availability
     const calculateTechnicianAvailability = (techList, assignedOrdersList) => {
@@ -551,12 +443,12 @@ const OrderManagement = () => {
         try {
             
             // Cập nhật ordersDisplay với thông tin mới
-            const motorcycle = motorcyclesById[order.motocycle_id];
-            const customer = customersById[motorcycle.customer_id];
-            const staff = staffsById[order.staff_id];
-            const diagnosis = diagnosisById[order.diagnosis_id];
+            // const motorcycle = motorcyclesById[order.motocycle_id];
+            // const customer = customersById[motorcycle.customer_id];
+            // const staff = staffsById[order.staff_id];
+            // const diagnosis = diagnosisById[order.diagnosis_id];
 
-            ordersDisplay[order.order_id] = formatOrder(order, customer, motorcycle, staff, diagnosis);
+            // ordersDisplay[order.order_id] = formatOrder(order, customer, motorcycle, staff, diagnosis);
 
             // // Find the order to update
             // const order = [...pendingOrders, ...assignedOrders].find(o => o.orderId === orderId);
@@ -625,15 +517,15 @@ const OrderManagement = () => {
             setPendingOrders([...pendingOrders, unassignedOrder]);
             
             // Also update in ordersDisplay
-            setOrdersDisplay(prev => ({
-                ...prev,
-                [orderId]: {
-                    ...prev[orderId],
-                    technicianId: '',
-                    technicianName: 'Chưa phân công',
-                    status: 'Đã tiếp nhận'
-                }
-            }));
+            // setOrdersDisplay(prev => ({
+            //     ...prev,
+            //     [orderId]: {
+            //         ...prev[orderId],
+            //         technicianId: '',
+            //         technicianName: 'Chưa phân công',
+            //         status: 'Đã tiếp nhận'
+            //     }
+            // }));
             
             // Update technician availability
             if (order.technicianId) {
@@ -778,7 +670,7 @@ const OrderManagement = () => {
         if (!orderToDeliver) return;
         
         try {
-            setLoading(true);
+            setLocalLoading(true);
             
             // Call API to update order status to "delivered"
             await repairService.order.updateOrderStatus(orderToDeliver.orderId, 'delivered');
@@ -791,13 +683,13 @@ const OrderManagement = () => {
             }
             
             // Update ordersDisplay
-            setOrdersDisplay(prev => ({
-                ...prev,
-                [orderToDeliver.orderId]: {
-                    ...prev[orderToDeliver.orderId],
-                    status: 'Đã giao xe'
-                }
-            }));
+            // setOrdersDisplay(prev => ({
+            //     ...prev,
+            //     [orderToDeliver.orderId]: {
+            //         ...prev[orderToDeliver.orderId],
+            //         status: 'Đã giao xe'
+            //     }
+            // }));
             
             setShowDeliveryModal(false);
             alert('Giao xe thành công!');
@@ -805,7 +697,7 @@ const OrderManagement = () => {
             console.error('Lỗi khi cập nhật trạng thái giao xe:', error);
             alert('Có lỗi xảy ra khi giao xe. Vui lòng thử lại!');
         } finally {
-            setLoading(false);
+            setLocalLoading(false);
         }
     };
 
@@ -939,9 +831,9 @@ const OrderManagement = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {loading ? (
+                                        {localLoading ? (
                                             <tr>
-                                                <td colSpan="6" className="text-center py-4">
+                                                <td colSpan="7" className="text-center py-4">
                                                     <div className="spinner-border text-primary" role="status">
                                                         <span className="visually-hidden">Loading...</span>
                                                     </div>
@@ -1007,7 +899,7 @@ const OrderManagement = () => {
                                             ))
                                         )}
 
-                                        {!loading && fileredOrdersIds.length === 0 && (
+                                        {!localLoading && fileredOrdersIds.length === 0 && (
                                             <tr>
                                                 <td colSpan="6" className="text-center py-4">
                                                     <div className="text-muted">
@@ -1028,7 +920,7 @@ const OrderManagement = () => {
             ) : (
                 // TODO: checkpoint for AssignmentManagement component
                 <AssignmentManagement
-                    ordersDisplay={ordersDisplay} 
+                    // ordersDisplay={ordersDisplay} 
                     pendingOrders={pendingOrders}
                     assignedOrders={assignedOrders}
                     technicianAvailability={technicianAvailability}
@@ -1036,7 +928,7 @@ const OrderManagement = () => {
                     onAssignOrder={handleAssignOrder}
                     onUnassignOrder={handleUnassignOrder}
                     loading={loading}
-                    setLoading={setLoading}
+                    setLocalLoading={setLocalLoading}
                 />
             )}
 

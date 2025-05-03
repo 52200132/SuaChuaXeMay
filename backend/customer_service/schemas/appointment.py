@@ -49,10 +49,20 @@ class AppointmentUpdate(BaseModel):
     @validator('appointment_date')
     def appointment_date_not_in_past(cls, v):
         if v is not None:
-            now = datetime.utcnow()
+            now = datetime.now()
             if v < now:
                 raise ValueError('Ngày giờ hẹn không thể là thời điểm trong quá khứ')
         return v
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "service_type_id": 2,
+                "appointment_date": (datetime.now().replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)),
+                "status": "pending",
+                "note": "Khách hàng yêu cầu kiểm tra xe",
+            }
+        }
 
 
 class AppointmentResponse(BaseModel):

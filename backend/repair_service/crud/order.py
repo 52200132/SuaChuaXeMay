@@ -32,7 +32,7 @@ async def create_order(db: AsyncSession, order: OrderCreate) -> Order:
     
 async def get_all(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[Order]:
     """Lấy danh sách đơn hàng với phân trang"""
-    result = await db.execute(select(Order).order_by(Order.order_id.asc()).offset(skip).limit(limit))
+    result = await db.execute(select(Order).order_by(Order.order_id.desc()).offset(skip).limit(limit))
     return result.scalars().all()
 
 async def get_order_by_id(db: AsyncSession, order_id: int) -> Order:
