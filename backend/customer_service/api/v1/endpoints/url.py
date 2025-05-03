@@ -30,7 +30,7 @@ URLS = {
     'RECEPTION': {
         'CREATE': '/reception/create', # completed
         'CREATE_WITHOUT_MOTORCYCLE_ID': '/reception/create/without-motorcycle-id', # completed
-        'CREATE_WITHOUT_CUSTOMER_ID_AND_WITHOUT_MOTORCYCLE_ID': '/reception/create/without-customer-id-and-with-motorcycle-id', # completed
+        'CREATE_WITHOUT_CUSTOMER_ID_AND_WITHOUT_MOTORCYCLE_ID': '/reception/create/without-customer-id-and-without-motorcycle-id', # completed
         'GET_ALL': '/receptions', # completed
         'GET_ALL_TODAY': '/receptions/today', # completed
         'GET_RECEPTION_BY_ID': '/reception/{form_id}', # completed

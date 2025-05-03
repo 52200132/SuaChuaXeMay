@@ -56,7 +56,6 @@ const OrderManagement = () => {
     
     // State cho modal
     const [showDetailModal, setShowDetailModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
     const [currentOrder, setCurrentOrder] = useState({});
     
     // State cho form chỉnh sửa
@@ -127,7 +126,7 @@ const OrderManagement = () => {
 
 
     const formatOrder = (order, customer, motorcycle, staff, diagnosis) => { 
-        console.log(order);
+        // console.log(order);
         const [ createdAtDate, createdAtTime ] = order?.created_at?.split('T') || ['', ''];
         return {
             orderId: order.order_id,
@@ -151,34 +150,44 @@ const OrderManagement = () => {
     
     // Xử lý filter
     const handleApplyFilter = () => {
-        let filtered = [...fileredOrdersIds];
+        let filtered = [...ordersIds];
         
+        const ordersDisplay = Object.values(ordersById).reduce((acc, order) => {
+            const motorcycle = motorcyclesById[order.motocycle_id];
+            const customer = customersById[motorcycle.customer_id];
+            const staff = staffsById[order.staff_id];
+            const diagnosis = diagnosisById[order.order_id];
+            acc[order.order_id] = formatOrder(order, customer, motorcycle, staff, diagnosis);
+            return acc;
+        }, {});
+
         // Filter by search term
         if (filters.search) {
             const searchTerm = filters.search.toLowerCase();
-            filtered = filtered.filter(order => 
-                order.orderId.toLowerCase().includes(searchTerm) ||
+            filtered = filtered.filter(id => {
+                const order = ordersDisplay[id];
+                return order.orderId.toString().toLowerCase().includes(searchTerm) ||
                 order.customerName.toLowerCase().includes(searchTerm) ||
                 order.customerPhone.includes(searchTerm) ||
                 order.technicianName.toLowerCase().includes(searchTerm)
-            );
+            });
         }
         
         // Filter by status
         if (filters.status) {
-            filtered = filtered.filter(order => order.status === filters.status);
+            filtered = filtered.filter(id => ordersDisplay[id].status === filters.status);
         }
         
         // Filter by date range
         if (filters.startDate) {
-            filtered = filtered.filter(order => order.createdDate >= filters.startDate);
+            filtered = filtered.filter(id => ordersDisplay[id].createdDate >= filters.startDate);
         }
         
         if (filters.endDate) {
-            filtered = filtered.filter(order => order.createdDate <= filters.endDate);
+            filtered = filtered.filter(id => ordersDisplay[id].createdDate <= filters.endDate);
         }
         
-        // setFilteredOrders(filtered);
+        setFilteredOrdersIds(filtered);
         setTotalPages(Math.ceil(filtered.length / 10));
         setCurrentPage(1);
     };
@@ -212,7 +221,7 @@ const OrderManagement = () => {
         return fileredOrdersIds.slice(indexOfFirstItem, indexOfLastItem).map(id => {
             const order = ordersById[id];
             const motorcycle = motorcyclesById[order.motocycle_id];
-            const customer = customersById[motorcycle.customer_id];
+            const customer = customersById[motorcycle?.customer_id];
             const staff = staffsById[order.staff_id];
             const diagnosis = diagnosisById[order.order_id];
             return formatOrder(order, customer, motorcycle, staff, diagnosis);
@@ -225,17 +234,6 @@ const OrderManagement = () => {
         setShowDetailModal(true);
     };
     
-    // Xử lý modal chỉnh sửa
-    const handleShowEditModal = (order) => {
-        setCurrentOrder(order);
-        setFormData({
-            status: order.status,
-            note: order.note,
-        });
-        setValidated(false);
-        setShowEditModal(true);
-    };
-    
     // Xử lý thay đổi form
     const handleFormChange = (e) => {
         const { name, value } = e.target;
@@ -244,35 +242,7 @@ const OrderManagement = () => {
             [name]: value
         }));
     };
-    
-    // Xử lý submit form chỉnh sửa
-    const handleEditSubmit = (e) => {
-        e.preventDefault();
-        const form = e.currentTarget;
         
-        if (form.checkValidity() === false) {
-            e.stopPropagation();
-            setValidated(true);
-            return;
-        }
-        
-        // Update order in state
-        // const updatedOrders = orders.map(order => {
-        //     if (order.orderId === currentOrder.orderId) {
-        //         return {
-        //             ...order,
-        //             status: formData.status,
-        //             note: formData.note,
-        //         };
-        //     }
-        //     return order;
-        // });
-        
-        // setOrders(updatedOrders);
-        // setFilteredOrders(updatedOrders);
-        setShowEditModal(false);
-    };
-    
     // Format currency
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -765,7 +735,7 @@ const OrderManagement = () => {
                                             onChange={handleFilterChange}
                                         >
                                             <option value="">Tất cả</option>
-                                            <option value="Đang xử lý">Đang xử lý</option>
+                                            <option value="Đã tiếp nhận">Đã tiếp nhận</option>
                                             <option value="Chờ thanh toán">Chờ thanh toán</option>
                                             <option value="Hoàn thành">Hoàn thành</option>
                                             <option value="Đã hủy">Đã hủy</option>
@@ -870,18 +840,7 @@ const OrderManagement = () => {
                                                                 title="Xem chi tiết"
                                                             >
                                                                 <i className="bi bi-eye"></i>
-                                                            </Button>
-                                                            <Button
-                                                                variant="outline-primary"
-                                                                size="sm"
-                                                                className="btn-edit"
-                                                                onClick={() => handleShowEditModal(order)}
-                                                                style={{ borderColor: '#d30000', color: '#d30000' }}
-                                                                title="Chỉnh sửa"
-                                                            >
-                                                                <i className="bi bi-pencil"></i>
-                                                            </Button>
-                                                            
+                                                            </Button>                                                            
                                                             {/* Add "Giao xe" button for orders with status "Chờ giao xe" */}
                                                             {order.status === 'Chờ giao xe' && (
                                                                 <Button
@@ -982,73 +941,7 @@ const OrderManagement = () => {
                     <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
                         Đóng
                     </Button>
-                    <Button
-                        variant="primary"
-                        style={{ backgroundColor: '#d30000', borderColor: '#d30000' }}
-                        onClick={() => {
-                            setShowDetailModal(false);
-                            handleShowEditModal(currentOrder);
-                        }}
-                    >
-                        Chỉnh sửa
-                    </Button>
                 </Modal.Footer>
-            </Modal>
-
-            {/* Modal chỉnh sửa */}
-            <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-                <Form noValidate validated={validated} onSubmit={handleEditSubmit}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Cập nhật đơn hàng</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        {currentOrder && (
-                            <>
-                                <div className="mb-3">
-                                    <p className="mb-1"><strong>Mã đơn:</strong> {currentOrder.orderId}</p>
-                                    <p className="mb-1"><strong>Khách hàng:</strong> {currentOrder.customerName}</p>
-                                </div>
-
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Trạng thái</Form.Label>
-                                    <Form.Select
-                                        name="status"
-                                        value={formData.status}
-                                        onChange={handleFormChange}
-                                        required
-                                    >
-                                        <option value="Đang xử lý">Đang xử lý</option>
-                                        <option value="Chờ thanh toán">Chờ thanh toán</option>
-                                        <option value="Hoàn thành">Hoàn thành</option>
-                                        <option value="Đã hủy">Đã hủy</option>
-                                    </Form.Select>
-                                </Form.Group>
-
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Ghi chú</Form.Label>
-                                    <Form.Control
-                                        as="textarea"
-                                        rows={3}
-                                        name="note"
-                                        value={formData.note}
-                                        onChange={handleFormChange}
-                                    />
-                                </Form.Group>
-                            </>
-                        )}
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-                            Hủy
-                        </Button>
-                        <Button
-                            type="submit"
-                            style={{ backgroundColor: '#d30000', borderColor: '#d30000' }}
-                        >
-                            Lưu thay đổi
-                        </Button>
-                    </Modal.Footer>
-                </Form>
             </Modal>
 
             {/* Delivery Confirmation Modal */}
