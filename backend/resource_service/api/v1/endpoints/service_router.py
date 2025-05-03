@@ -65,23 +65,23 @@ async def update_service(service_id: int, service: ServiceUpdate, db: AsyncSessi
         logger.error(f"Error while updating service type: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not update service type.")
     
-@router.delete(URLS['SERVICE']['DELETE_SERVICE'], status_code=status.HTTP_200_OK)
-async def delete_service(service_id: int, db: AsyncSession = Depends(get_db)):
-    """
-    Xóa một Service theo ID.
-    """
-    try:
-        # Gọi hàm CRUD để xóa Service
-        await service_crud.delete_service(db=db, service_id=service_id)
-        return {"detail": f"Service with ID {service_id} deleted successfully."}
-    except HTTPException as e:
-        # Nếu Service không tồn tại
-        logger.error(f"Error while deleting service: {e.detail}")
-        raise e
-    except Exception as e:
-        # Lỗi không xác định
-        logger.error(f"Error while deleting service: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Could not delete service due to an internal error."
-        )
+# @router.delete(URLS['SERVICE']['DELETE_SERVICE'], status_code=status.HTTP_200_OK)
+# async def delete_service(service_id: int, db: AsyncSession = Depends(get_db)):
+#     """
+#     Xóa một Service theo ID.
+#     """
+#     try:
+#         # Gọi hàm CRUD để xóa Service
+#         await service_crud.delete_service(db=db, service_id=service_id)
+#         return {"detail": f"Service with ID {service_id} deleted successfully."}
+#     except HTTPException as e:
+#         # Nếu Service không tồn tại
+#         logger.error(f"Error while deleting service: {e.detail}")
+#         raise e
+#     except Exception as e:
+#         # Lỗi không xác định
+#         logger.error(f"Error while deleting service: {str(e)}")
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail="Could not delete service due to an internal error."
+#         )
