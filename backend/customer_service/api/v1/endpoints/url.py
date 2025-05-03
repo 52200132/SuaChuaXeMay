@@ -34,6 +34,8 @@ URLS = {
         'GET_ALL': '/receptions', # completed
         'GET_ALL_TODAY': '/receptions/today', # completed
         'GET_RECEPTION_BY_ID': '/reception/{form_id}', # completed
+        'GET_RECEPTION_BY_CUSTOMER_ID': '/reception/customer/{customer_id}', 
+        'GET_RECEPTION_BY_MOTORCYCLE_ID': '/reception/motorcycle/{motocycle_id}', 
         'GET_RECEPTION_BY_DATE_RANGE': '/receptions/date-range', # completed
         'UPDATE': '/reception/update/{form_id}', # completed
         'UPDATE_RETURN': '/reception/{form_id}/return', # completed
