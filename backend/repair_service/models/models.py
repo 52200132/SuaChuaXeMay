@@ -27,7 +27,7 @@ class Order(Base):
     created_at = Column(DateTime, default=datetime.now)
     # staff_id = Column(Integer, ForeignKey('Staff.staff_id'))
     staff_id = Column(Integer) 
-    status = Column(Enum('received',  'checking',   'wait_confirm', 'repairing', 'wait_delivery', 'delivered', name='order_status'), default = 'received')
+    status = Column(Enum('received',  'checking',   'wait_confirm', 'cancelled', 'repairing', 'wait_delivery', 'delivered', name='order_status'), default = 'received')
     total_price = Column(Integer, default=0)
     
     # Relationships
