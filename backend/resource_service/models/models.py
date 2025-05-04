@@ -21,6 +21,7 @@ class Service(Base):
     service_id = Column(Integer, primary_key=True, autoincrement=True)
     service_type_id = Column(Integer, ForeignKey('ServiceType.service_type_id'))
     name = Column(Unicode(255), nullable=False)
+    is_deleted = Column(Boolean, default=False)
     
     # Relationships
     service_type = relationship("ServiceType", back_populates="services")
@@ -53,6 +54,7 @@ class Part(Base):
     URL = Column(String(255))
     unit = Column(Unicode(20), nullable=False)  # Đơn vị tính: "cái", "bộ", etc.
     stock = Column(Integer)
+    is_deleted = Column(Boolean, default=False)
     
     # Relationships
     part_moto_types = relationship("PartMotoType", back_populates="part")

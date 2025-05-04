@@ -16,6 +16,7 @@ URLS = {
         
     'STAFF': {
         'LOGIN' : '/staff/login',
+        'CREATE_NEW_STAFF' : '/staff/create',
         'GET_ALL_STAFF' : '/staffs',
         'FILTER': '/staffs/filter',
         'GET_STAFF_BY_ID' : '/staff/{staff_id}',

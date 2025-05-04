@@ -44,7 +44,7 @@ class InvoiceResponse(BaseModel):
         from_attributes = True
         json_schema_extra = {
             "example": {
-                "id": 1,
+                "invoice_id": 1,
                 "order_id": 1,
                 "staff_id": 1,
                 "create_at": "2023-10-01T12:00:00Z",

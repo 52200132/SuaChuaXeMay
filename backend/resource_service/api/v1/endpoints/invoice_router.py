@@ -29,65 +29,65 @@ async def create_invoice(invoice_data: InvoiceCreate, db: AsyncSession = Depends
         logger.error(f"Lỗi khi tạo hóa đơn: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+# @router.get(URLS['INVOICE']['GET_ALL_INVOICES'], response_model=List[InvoiceResponse])
+# async def get_all_invoices(
+#     skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
+#     limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     """
+#     Lấy danh sách tất cả hóa đơn.
+    
+#     - Trả về danh sách các hóa đơn trong cơ sở dữ liệu.
+#     """
+#     invoices = await invoice_crud.get_all_invoices(db, skip=skip, limit=limit)
+#     logger.info("Fetched all invoices successfully")
+    
+#     return invoices
+
+# @router.get(URLS['INVOICE']['GET_INVOICES_BY_DATE_RANGE'], response_model=List[InvoiceResponse])
+# async def get_invoices_by_date_range(
+#     start_date: datetime = Query(..., description="Ngày bắt đầu"),
+#     end_date: datetime = Query(..., description="Ngày kết thúc"),
+#     skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
+#     limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     """
+#     Lấy danh sách hóa đơn trong khoảng thời gian từ start_date đến end_date.
+    
+#     - **start_date**: Ngày bắt đầu (bao gồm)
+#     - **end_date**: Ngày kết thúc (bao gồm)
+#     """
+#     if start_date >= end_date:
+#         logger.error("Ngày bắt đầu phải trước ngày kết thúc")
+#         raise HTTPException(status_code=400, detail="Ngày bắt đầu phải trước ngày kết thúc")
+    
+#     invoices = await invoice_crud.get_invoices_by_date_range(db, start_date, end_date, skip=skip, limit=limit)
+#     logger.info(f"Fetched {len(invoices)} invoices in date range successfully")
+    
+#     return invoices
+
+# @router.get(URLS['INVOICE']['GET_ALL_TODAY'], response_model=List[InvoiceResponse])
+# async def get_invoices_today(
+#     skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
+#     limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     """
+#     Lấy danh sách hóa đơn được tạo trong ngày hôm nay.
+#     """
+#     today = datetime.now().date()
+#     tomorrow = today + timedelta(days=1)
+#     today_start = datetime.combine(today, datetime.min.time())
+#     today_end = datetime.combine(tomorrow, datetime.min.time())
+    
+#     invoices = await invoice_crud.get_invoices_by_date_range(db, today_start, today_end, skip=skip, limit=limit)
+#     logger.info(f"Fetched {len(invoices)} invoices for today successfully")
+    
+#     return invoices
+
 @router.get(URLS['INVOICE']['GET_ALL_INVOICES'], response_model=List[InvoiceResponse])
-async def get_all_invoices(
-    skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
-    limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Lấy danh sách tất cả hóa đơn.
-    
-    - Trả về danh sách các hóa đơn trong cơ sở dữ liệu.
-    """
-    invoices = await invoice_crud.get_all_invoices(db, skip=skip, limit=limit)
-    logger.info("Fetched all invoices successfully")
-    
-    return invoices
-
-@router.get(URLS['INVOICE']['GET_INVOICES_BY_DATE_RANGE'], response_model=List[InvoiceResponse])
-async def get_invoices_by_date_range(
-    start_date: datetime = Query(..., description="Ngày bắt đầu"),
-    end_date: datetime = Query(..., description="Ngày kết thúc"),
-    skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
-    limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Lấy danh sách hóa đơn trong khoảng thời gian từ start_date đến end_date.
-    
-    - **start_date**: Ngày bắt đầu (bao gồm)
-    - **end_date**: Ngày kết thúc (bao gồm)
-    """
-    if start_date >= end_date:
-        logger.error("Ngày bắt đầu phải trước ngày kết thúc")
-        raise HTTPException(status_code=400, detail="Ngày bắt đầu phải trước ngày kết thúc")
-    
-    invoices = await invoice_crud.get_invoices_by_date_range(db, start_date, end_date, skip=skip, limit=limit)
-    logger.info(f"Fetched {len(invoices)} invoices in date range successfully")
-    
-    return invoices
-
-@router.get(URLS['INVOICE']['GET_ALL_TODAY'], response_model=List[InvoiceResponse])
-async def get_invoices_today(
-    skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
-    limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Lấy danh sách hóa đơn được tạo trong ngày hôm nay.
-    """
-    today = datetime.now().date()
-    tomorrow = today + timedelta(days=1)
-    today_start = datetime.combine(today, datetime.min.time())
-    today_end = datetime.combine(tomorrow, datetime.min.time())
-    
-    invoices = await invoice_crud.get_invoices_by_date_range(db, today_start, today_end, skip=skip, limit=limit)
-    logger.info(f"Fetched {len(invoices)} invoices for today successfully")
-    
-    return invoices
-
-@router.get(URLS['INVOICE']['FILTER'], response_model=List[InvoiceResponse])
 async def filter_invoices(
     skip: int = Query(0, ge=0, description="Số bản ghi bỏ qua"),
     limit: int = Query(100, ge=1, le=100, description="Số bản ghi lấy tối đa"),

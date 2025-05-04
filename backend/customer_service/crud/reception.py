@@ -247,31 +247,24 @@ async def get_all_reception_forms(
 ) -> List[ReceptionForm]:
     """Lấy tất cả biểu mẫu tiếp nhận"""
     try:
-        query = select(ReceptionForm).options(selectinload(ReceptionForm.reception_images))
-
+        conditions = []
         if staff_id:
-            query = select(ReceptionForm).where(ReceptionForm.staff_id == staff_id)
+            conditions.append(ReceptionForm.staff_id == staff_id)
         if motocycle_id:
-            query = select(ReceptionForm).where(ReceptionForm.motocycle_id == motocycle_id)
+            conditions.append(ReceptionForm.motocycle_id == motocycle_id)
         if is_returned is not None:
-            query = select(ReceptionForm).where(ReceptionForm.is_returned == is_returned)
-        
+            conditions.append(ReceptionForm.is_returned == is_returned)
         if start_date:
             start_date = datetime.combine(start_date, datetime.min.time())
+            conditions.append(ReceptionForm.created_at >= start_date)
         if end_date:
             end_date = datetime.combine(end_date, datetime.max.time())
+            conditions.append(ReceptionForm.created_at <= end_date)
 
-        if start_date and end_date:
-            query = select(ReceptionForm).where(
-                and_(
-                    ReceptionForm.created_at >= start_date,
-                    ReceptionForm.created_at <= end_date
-                )
-            )
-        elif start_date:
-            query = select(ReceptionForm).where(ReceptionForm.created_at >= start_date)
-        elif end_date:
-            query = select(ReceptionForm).where(ReceptionForm.created_at <= end_date)
+        query = select(ReceptionForm).options(selectinload(ReceptionForm.reception_images))
+        if conditions:
+            query = query.where(and_(*conditions))
+
         result = await db.execute(
             query.order_by(ReceptionForm.created_at.desc()).offset(skip).limit(limit)
         )
@@ -284,7 +277,6 @@ async def get_all_reception_forms(
         logger.error(f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
     return result.scalars().all()
-
 async def update_reception_form(
     db: AsyncSession,
     form_id: int,
