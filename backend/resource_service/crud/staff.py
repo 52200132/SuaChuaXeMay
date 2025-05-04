@@ -156,7 +156,7 @@ async def authenticate_staff(db: AsyncSession, email: str, password: str) -> Opt
     """Xác thực thông tin đăng nhập của nhân viên"""
     staff = await get_staff_by_email(db, email)
 
-    if staff.status == StaffStatusEnum.OFF:
+    if staff.status == StaffStatusEnum.INACTIVE:
         logger.warning(f"Tài khoản {email} đã bị khóa")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
