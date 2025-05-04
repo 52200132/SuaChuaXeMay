@@ -120,9 +120,11 @@ const resourceService = {
     },
 
     part: {
-        getAllParts: async () => {
+        getAllParts: async (query) => {
             try {
-                const response = await apiResourceService.get(URLS.PART.GET_ALL_PARTS);
+                const response = await apiResourceService.get(URLS.PART.GET_ALL_PARTS, {
+                    params: query
+            });
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi lấy danh sách phụ tùng:', error);
@@ -164,6 +166,17 @@ const resourceService = {
     },
 
     partMotoType: {
+        getAllPartMotoTypes: async (query) => {
+            try {
+                const response = await apiResourceService.get(URLS.PART_MOTO_TYPE.GET_ALL_PART_MOTO_TYPES, {
+                    params: query
+                });
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách phụ tùng:', error);
+                throw error;
+            }
+        },
         getAllPartMotoTypesByMotoTypeId: async (motoTypeId) => {
             try {
                 const response = await apiResourceService.get(URLS.PART_MOTO_TYPE.GET_ALL_PART_MOTO_TYPES_BY_MOTOTYPE_ID.replace('{moto_type_id}', motoTypeId));
@@ -186,6 +199,17 @@ const resourceService = {
     },
 
     serviceMotoType: {
+        getAllServiceMotoTypes: async (query) => {
+            try {
+                const response = await apiResourceService.get(URLS.SERVICE_MOTO_TYPE.GET_ALL_SERVICE_MOTO_TYPES, {
+                    params: query
+            });
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách dịch vụ:', error);
+                throw error;
+            }
+        },
         getAllServiceMotoTypesByMotoTypeId: async (motoTypeId) => {
             try {
                 const response = await apiResourceService.get(URLS.SERVICE_MOTO_TYPE.GET_ALL_SERVICE_MOTO_TYPES_BY_MOTOTYPE_ID.replace('{moto_type_id}', motoTypeId));
@@ -277,7 +301,7 @@ const customerService = {
             const response = await apiCustomerService.post(URLS.CUSTOMER.CREATE_CUSTOMER, customerData);
             return response;
         } catch (error) {
-            console.error('Lỗi khi tạo khách hàng mới:', error);
+            console.error('api - Lỗi khi tạo khách hàng mới:', error);
             // return false; // Trả về false nếu có lỗi xảy ra
             throw error;
         }
@@ -294,6 +318,16 @@ const customerService = {
     },
 
     customer: {
+        createCustomer: async (data) => {
+            try {
+                const response = await apiCustomerService.post(URLS.CUSTOMER.CREATE_CUSTOMER, data);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo khách hàng mới:', error);
+                throw error;
+            }
+        },
+
         getCustomerById: async (id) => {
             try {
                 const response = await apiCustomerService.get(URLS.CUSTOMER.GET_CUSTOMER_BY_ID.replace('{customer_id}', id));
@@ -326,6 +360,16 @@ const customerService = {
     },
 
     motorcycle: {
+        createMotorcycle: async (data) => {
+            try {
+                const response = await apiCustomerService.post(URLS.MOTORCYCLE.CREATE_MOTORCYCLE, data);
+                return response;
+            }
+            catch (error) {
+                console.error('api - Lỗi khi tạo xe máy mới:', error);
+                throw error;
+            }
+        },
         getAllServiceTypes: async () => {
             try {
                 const response = await apiCustomerService.get(URLS.MOTORCYCLE.GET_ALL_MOTORCYCLE_TYPES);
@@ -540,6 +584,16 @@ const repairService = {
                         motocycle_id: formData.motocycleId,
                     };
                 const response = await apiRepairService.post(URLS.ORDER.CREATE_ORDER, orderData);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo đơn hàng:', error);
+                throw error;
+            }
+        },
+
+        createOrder2: async (data) => {
+            try {
+                const response = await apiRepairService.post(URLS.ORDER.CREATE_ORDER, data);
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi tạo đơn hàng:', error);

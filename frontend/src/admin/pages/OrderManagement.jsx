@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Button, Pagination, Modal, Form, Row, Col, InputGroup, Badge, Tabs, Tab, Dropdown } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Card, Table, Button, Pagination, Modal, Form, Row, Col, InputGroup, Badge } from 'react-bootstrap';
+import { debounce, get, set } from 'lodash';
 
 import AssignmentManagement from './AssignmentManagement';
 import StatusBadge from '../components/StatusBadge';
@@ -13,7 +13,7 @@ import OrderDetailView from '../components/OrderDetailView';
 // Register Chart.js components
 const OrderManagement = () => {
     // TODO: Lấy từ context
-    const { getData, getIds, setData, loading } = useAppData();
+    const { getData, getIds, setData, loading, dataStore, setMultipleData } = useAppData();
     const ordersById = getData('orders');
     const ordersIds = getData('ordersIds');
     const customersById = getData('customers');
@@ -21,8 +21,10 @@ const OrderManagement = () => {
     const diagnosisById = getData('diagnosis');
     const staffsById = getData('staffs');
 
+    const [newOrderId, setNewOrderId] = useState(null);
+
     // State quản lý danh sách đơn hàng
-    const [fileredOrdersIds, setFilteredOrdersIds] = useState([]);
+    const [filteredOrdersIds, setFilteredOrdersIds] = useState([]);
     
     // State cho filter và phân trang
     const [filters, setFilters] = useState({
@@ -58,12 +60,6 @@ const OrderManagement = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [currentOrder, setCurrentOrder] = useState({});
     
-    // State cho form chỉnh sửa
-    const [formData, setFormData] = useState({
-        status: '',
-        note: '',
-    });
-    
     const [validated, setValidated] = useState(false);
     const [localLoading, setLocalLoading] = useState(false);
     
@@ -93,6 +89,32 @@ const OrderManagement = () => {
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
     const [orderToDeliver, setOrderToDeliver] = useState(null);
 
+    // State for create order modal
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [currentCustomerWithMotorcycle, setCurrentCustomerWithMotorcycle] = useState({});
+    const [customerNotFound, setCustomerNotFound] = useState(false);
+    
+    // Form data for new order
+    const [formData, setFormData] = useState({
+        customerName: '',
+        phone: '',
+        email: '',
+        plateNumber: '',
+        plateNumberManual: '',
+        brand: '',
+        motorcycleModel: '',
+        staffId: '',
+        customerId: '',
+        motocycleId: '',
+        motoTypeId: '',
+    });
+    
+    // Motorcycle types
+    const motoTypes = [
+        { id: 1, name: 'Xe tay ga' },
+        { id: 2, name: 'Xe số' },
+    ];
+
     useEffect(() => {
         setLocalLoading(true);
         if (loading['orders'] === true || loading['customers'] === true || loading['motorcycles'] === true || loading['diagnosis'] === true || loading['staffs'] === true) return;
@@ -101,17 +123,19 @@ const OrderManagement = () => {
 
     // TODO: Khi load dữ liệu xong
     useEffect(() => {
-        console.log('useEffect - Trạng thái của loading', localLoading);
-        console.log('Các dữ liệu lấy được', ordersById, ordersIds, getIds('orders'));
+        // console.log('useEffect - Trạng thái của loading', localLoading);
+        // console.log('Các dữ liệu lấy được', ordersById, ordersIds, getIds('orders'));
         if (!localLoading) {
+            if (newOrderId) { dataStore['ordersIds'] = new Set([newOrderId?.toString(), ...dataStore['ordersIds']]); }
             setFilteredOrdersIds(getIds('orders'));
             setTotalPages(Math.ceil(getIds('orders').length / 10));
-            // console.log('useEffect - fillteredOrdersIds và totalPages', fileredOrdersIds, totalPages)
+            // console.log('useEffect - fillteredOrdersIds và totalPages', filteredOrdersIds, totalPages)
 
             // Phân loại đơn hàng thành đã phân công và chưa phân công
             const assingedOrders = []
             const pendingOrders = []
-            Object.values(ordersById).map(order => {
+            getIds('orders').map(id => {
+                const order = ordersById[id];
                 if (order.staff_id && order.status !== 'delivered') {
                     assingedOrders.push(order.order_id);
                 } else if (order.status !== 'delivered') {
@@ -122,7 +146,7 @@ const OrderManagement = () => {
             setAssignedOrders(assingedOrders);
             setPendingOrders(pendingOrders);
         }
-    }, [localLoading, ordersById, getIds]);
+    }, [newOrderId, localLoading, ordersById/*, getIds*/]); 
 
 
     const formatOrder = (order, customer, motorcycle, staff, diagnosis) => { 
@@ -201,7 +225,7 @@ const OrderManagement = () => {
             endDate: '',
         });
         // setFilteredOrders(orders);
-        // setTotalPages(Math.ceil(fileredOrdersIds.length / 10));
+        // setTotalPages(Math.ceil(filteredOrdersIds.length / 10));
         // setCurrentPage(1);
     };
     
@@ -218,7 +242,7 @@ const OrderManagement = () => {
     const getCurrentItems = useCallback(() => {
         const indexOfLastItem = currentPage * 10;
         const indexOfFirstItem = indexOfLastItem - 10;
-        return fileredOrdersIds.slice(indexOfFirstItem, indexOfLastItem).map(id => {
+        return filteredOrdersIds.slice(indexOfFirstItem, indexOfLastItem).map(id => {
             const order = ordersById[id];
             const motorcycle = motorcyclesById[order.motocycle_id];
             const customer = customersById[motorcycle?.customer_id];
@@ -226,21 +250,12 @@ const OrderManagement = () => {
             const diagnosis = diagnosisById[order.order_id];
             return formatOrder(order, customer, motorcycle, staff, diagnosis);
         });
-    }, [ordersById, customersById, motorcyclesById, diagnosisById, staffsById, currentPage, fileredOrdersIds]);
+    }, [ordersById, customersById, motorcyclesById, diagnosisById, staffsById, currentPage, filteredOrdersIds]);
     
     // Xử lý modal xem chi tiết - using OrderDetailView component
     const handleShowDetailModal = (order) => {
         setCurrentOrder(order);
         setShowDetailModal(true);
-    };
-    
-    // Xử lý thay đổi form
-    const handleFormChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
     };
         
     // Format currency
@@ -671,6 +686,227 @@ const OrderManagement = () => {
         }
     };
 
+    // Find customer by phone (debounced)
+    const debouncedFindCustomer = useCallback(
+        debounce((phone) => {
+            setFormData(prev => ({
+                ...prev, brand: '', motorcycleModel: '',
+            }));
+            customerService.customer.getCustomerWithMotorcyclesByPhone(phone)
+                .then(response => {
+                    const customer = response.data || response;
+                    if (customer && customer.fullname) {
+                        setCurrentCustomerWithMotorcycle(customer);
+                        setMultipleData('motorcycles', customer.motocycles, 'motocycle_id');
+                        setData('customers', customer, customer.customer_id);
+                        setFormData(prev => ({
+                            ...prev,
+                            customerId: customer.customer_id || '',
+                            customerName: customer.fullname || '',
+                            email: customer.email || ''
+                        }));
+                        setCustomerNotFound(false);
+                    } else {
+                        setFormData(prev => ({
+                            ...prev,
+                            customerName: '',
+                            email: ''
+                        }));
+                        setCustomerNotFound(phone.length > 0);
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi khi tìm khách hàng với xe:', error);
+                    setFormData(prev => ({
+                        ...prev,
+                        customerName: '',
+                        email: ''
+                    }));
+                    setCurrentCustomerWithMotorcycle({});
+                    setCustomerNotFound(phone.length > 0);
+                });
+        }, 500),
+        []
+    );
+    
+    // Reset customerId when customer not found
+    useEffect(() => {
+        if (customerNotFound) {
+            setFormData(prevForm => ({
+                ...prevForm,
+                customerId: ''
+            }));
+        }
+    }, [customerNotFound]);
+    
+    // Clean up debounce on unmount
+    useEffect(() => {
+        return () => {
+            debouncedFindCustomer.cancel();
+        };
+    }, [debouncedFindCustomer]);
+    
+    // Form handlers
+    const handlePhoneChange = (e) => {
+        const phone = e.target.value;
+        setFormData(prev => ({
+            ...prev,
+            phone
+        }));
+        debouncedFindCustomer(phone);
+    };
+    
+    const handleSelectPlate = (e) => {    
+        const motorcycleId = e.target.value;
+        
+        // Find motorcycle by plate number
+        const motorcycle = currentCustomerWithMotorcycle.motocycles?.find(m => m.motocycle_id == motorcycleId);
+        if (motorcycle) {
+            setFormData(prev => ({
+                ...prev,
+                brand: motorcycle.brand || '',
+                motorcycleModel: motorcycle.model || '',
+                motocycleId: motorcycle.motocycle_id || '',
+                motoTypeId: motorcycle.moto_type_id || ''
+            }));
+        } else { // không có thì dùng '__manual__'
+            setFormData(prev => ({
+                ...prev,
+                brand: '',
+                motorcycleModel: '',
+                plateNumber: motorcycleId,
+                motocycleId: motorcycleId,
+                motoTypeId: ''
+            }));
+        }
+    };
+    
+    // Xử lý khi thay đổi thông tin trong form
+    const handleFormChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        if (name === 'phone') {
+            handlePhoneChange(e);
+        } else if (name === 'motocycleId') {
+            handleSelectPlate(e);
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            }));
+        }
+    };
+    
+    const handleShowCreateModal = () => {
+        setFormData({
+            customerName: '',
+            phone: '',
+            email: '',
+            plateNumber: '',
+            brand: '',
+            motorcycleModel: '',
+            staffId: '',
+            customerId: '',
+            motocycleId: '',
+            motoTypeId: '',
+        });
+        setValidated(false);
+        setShowCreateModal(true);
+    };
+
+    const createNewOrder = async () => {
+        try {
+            let orderData = null;
+            let customerId = formData.customerId;
+            let motorcycleId = formData.motocycleId;
+            
+            // Tạo khách hàng nếu cần
+            if (customerId === '') {
+                try {
+                    const response = await customerService.customer.createCustomer({
+                        fullname: formData.customerName,
+                        phone_num: formData.phone,
+                        is_guest: false,
+                        ...(formData.email ? { email: formData.email } : {}),
+                    });
+                    const customer = response.data || response;
+                    setData('customers', customer, customer.customer_id);
+                    customerId = customer.customer_id;
+                } catch (error) {
+                    console.error('Lỗi khi tạo khách hàng:', error);
+                    throw new Error(error.response?.data?.detail || 'Không thể tạo thông tin khách hàng');
+                }
+            }
+            
+            // Tạo thông tin xe nếu cần
+            if ((motorcycleId === '__manual__' || motorcycleId === '') && customerId !== '') {
+                try {
+                    console.log('data moto', formData);
+                    const motorcycle = await customerService.motorcycle.createMotorcycle({
+                        license_plate: formData.plateNumberManual || formData.plateNumber,
+                        brand: formData.brand,
+                        model: formData.motorcycleModel,
+                        customer_id: customerId,
+                        moto_type_id: formData.motoTypeId,
+                    });
+                    setData('motorcycles', motorcycle.data, motorcycle.data.motocycle_id);
+                    motorcycleId = motorcycle.data.motocycle_id;
+                } catch (error) {
+                    console.error('Lỗi khi tạo thông tin xe:', error);
+                    throw new Error(error.response?.data?.detail || 'Không thể tạo thông tin xe');
+                }
+            }
+
+            // Tạo đơn hàng
+            if (motorcycleId !== '' && motorcycleId !== '__manual__') {
+                try {
+                    const response = await repairService.order.createOrder2({
+                        motocycle_id: motorcycleId,
+                    });
+                    orderData = response.data;
+                } catch (error) {
+                    console.error('Lỗi khi tạo đơn hàng:', error);
+                    throw new Error('Không thể tạo đơn hàng');
+                }
+            }
+            
+            return orderData;
+        } catch (error) {
+            console.error('Lỗi trong quá trình tạo đơn hàng:', error);
+            throw error; // Ném lỗi để hàm gọi xử lý
+        }
+    }
+    
+    const handleCreateSubmit = async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        
+        if (form.checkValidity() === false) {
+            e.stopPropagation();
+            setValidated(true);
+            return;
+        }
+        
+        try {
+            setLocalLoading(true);
+            
+            // Create new order
+            const order = await createNewOrder();
+            console.log('Đơn hàng mới:', order);
+            
+            // Add new order to store
+            setData('orders', order, order.order_id);
+            setNewOrderId(order.order_id);
+            
+            alert('Tạo đơn hàng mới thành công!');
+        } catch (error) {
+            const errorMessage = error.response?.data?.detail || 'Tạo đơn hàng thất bại. Vui lòng thử lại sau.';
+            alert(errorMessage);
+            console.error("Lỗi khi tạo đơn hàng:", error);
+        }
+        setLocalLoading(false);
+        setShowCreateModal(false);
+    };
+
     return (
         <>
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -693,8 +929,7 @@ const OrderManagement = () => {
                         Phân công công việc
                     </Button>
                     <Button
-                        as={Link}
-                        to="/admin/orders/create"
+                        onClick={handleShowCreateModal}
                         style={{ backgroundColor: '#d30000', borderColor: '#d30000' }}
                     >
                         <i className="bi bi-plus-circle me-1"></i>
@@ -736,9 +971,11 @@ const OrderManagement = () => {
                                         >
                                             <option value="">Tất cả</option>
                                             <option value="Đã tiếp nhận">Đã tiếp nhận</option>
-                                            <option value="Chờ thanh toán">Chờ thanh toán</option>
-                                            <option value="Hoàn thành">Hoàn thành</option>
-                                            <option value="Đã hủy">Đã hủy</option>
+                                            <option value="Đang kiểm tra">Đang kiểm tra</option>
+                                            <option value="Chờ xác nhận">Chờ xác nhận</option>
+                                            <option value="Đang sửa chữa">Đang sửa chữa</option>
+                                            <option value="Chờ giao xe">Chờ giao xe</option>
+                                            <option value="Đã giao xe">Đã giao xe</option>
                                         </Form.Select>
                                     </Form.Group>
                                 </Col>
@@ -858,9 +1095,9 @@ const OrderManagement = () => {
                                             ))
                                         )}
 
-                                        {!localLoading && fileredOrdersIds.length === 0 && (
+                                        {!localLoading && filteredOrdersIds.length === 0 && (
                                             <tr>
-                                                <td colSpan="6" className="text-center py-4">
+                                                <td colSpan="7" className="text-center py-4">
                                                     <div className="text-muted">
                                                         <i className="bi bi-inbox fs-4 d-block mb-2"></i>
                                                         Không tìm thấy đơn hàng nào
@@ -879,15 +1116,13 @@ const OrderManagement = () => {
             ) : (
                 // TODO: checkpoint for AssignmentManagement component
                 <AssignmentManagement
-                    // ordersDisplay={ordersDisplay} 
                     pendingOrders={pendingOrders}
                     assignedOrders={assignedOrders}
-                    technicianAvailability={technicianAvailability}
                     dashboardStats={dashboardStats}
                     onAssignOrder={handleAssignOrder}
-                    onUnassignOrder={handleUnassignOrder}
-                    loading={loading}
+                    localLoading={localLoading}
                     setLocalLoading={setLocalLoading}
+                    formatOrder={formatOrder}
                 />
             )}
 
@@ -966,6 +1201,173 @@ const OrderManagement = () => {
                 onConfirm={handleDeliverOrder}
                 cancelButtonText="Hủy"
             />
+
+            {/* Modal tạo đơn hàng mới */}
+            <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} size="lg">
+                <Form noValidate validated={validated} onSubmit={handleCreateSubmit}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Tạo đơn hàng mới</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Row>
+                            <Col md={6}>
+                                <h6 className="mb-3">Thông tin khách hàng</h6>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Số điện thoại *</Form.Label>
+                                    <Form.Control
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        pattern="^0[0-9]{9,10}$"
+                                        onChange={handleFormChange}
+                                        required
+                                        maxLength={10}
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        Vui lòng nhập số điện thoại hợp lệ
+                                    </Form.Control.Feedback>
+                                    {customerNotFound && (
+                                        <div className="text-warning mt-1" style={{ fontSize: '0.95em' }}>
+                                            Khách hàng chưa có tài khoản!
+                                        </div>
+                                    )}
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Họ và tên khách hàng *</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="customerName"
+                                        value={formData.customerName}
+                                        onChange={handleFormChange}
+                                        required
+                                        readOnly={!customerNotFound}
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        Vui lòng nhập họ tên khách hàng
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Email</Form.Label>
+                                    <Form.Control
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleFormChange}
+                                        readOnly={!customerNotFound}
+                                        placeholder="Email khách hàng (nếu có)"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <h6 className="mb-3">Thông tin xe</h6>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Biển số xe *</Form.Label>
+                                    {Array.isArray(currentCustomerWithMotorcycle.motocycles) && currentCustomerWithMotorcycle.motocycles.length > 0 ? (
+                                        <Form.Select
+                                            name="motocycleId"
+                                            value={formData.motocycleId}
+                                            onChange={handleFormChange}
+                                            required
+                                        >
+                                            <option value="">-- Chọn biển số xe --</option>
+                                            {currentCustomerWithMotorcycle.motocycles.map(m => (
+                                                <option key={m.motocycle_id} value={m.motocycle_id}>
+                                                    {m.license_plate} 
+                                                </option>
+                                            ))} 
+                                            <option value="__manual__">Nhập biển số mới...</option>
+                                        </Form.Select>
+                                    ) : (
+                                        <Form.Control
+                                            type="text"
+                                            name="plateNumber"
+                                            value={formData.plateNumber}
+                                            onChange={handleFormChange}
+                                            required
+                                            disabled={!formData.phone}
+                                            placeholder="Ví dụ: 59X1-12345"
+                                        />
+                                    )}
+                                    {Array.isArray(currentCustomerWithMotorcycle.motocycles) 
+                                    && currentCustomerWithMotorcycle.motocycles.length > 0 
+                                    && formData.motocycleId === "__manual__" && (
+                                        <Form.Control
+                                            className="mt-2"
+                                            type="text"
+                                            name="plateNumberManual"
+                                            value={formData.plateNumberManual || ""}
+                                            onChange={handleFormChange}
+                                            required
+                                            placeholder="Nhập biển số mới"
+                                        />
+                                    )}
+                                    <Form.Control.Feedback type="invalid">
+                                        Vui lòng nhập biển số xe
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                                <Row>
+                                    <Col md={6}>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Hãng xe</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="brand"
+                                                onChange={handleFormChange}
+                                                value={formData.brand}
+                                                readOnly={!formData.phone}
+                                                required
+                                                placeholder="Hãng xe (tự động điền nếu có)"
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={6}>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Loại xe *</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="motorcycleModel"
+                                                value={formData.motorcycleModel}
+                                                onChange={handleFormChange}
+                                                readOnly={!formData.phone}
+                                                required
+                                                placeholder="Ví dụ: Honda Wave, Yamaha Exciter..."
+                                            />
+                                            <Form.Control.Feedback type="invalid">
+                                                Vui lòng nhập loại xe
+                                            </Form.Control.Feedback>
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Chọn loại xe *</Form.Label>
+                                    <Form.Select
+                                        name="motoTypeId"
+                                        value={formData.motoTypeId}
+                                        onChange={handleFormChange}
+                                        required
+                                    >
+                                        <option value="">-- Chọn loại xe --</option>
+                                        {motoTypes.map(type => (
+                                            <option key={type.id} value={type.id}>{type.name}</option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
+                            Hủy
+                        </Button>
+                        <Button
+                            type="submit"
+                            style={{ backgroundColor: '#d30000', borderColor: '#d30000' }}
+                        >
+                            Tạo đơn hàng
+                        </Button>
+                    </Modal.Footer>
+                </Form>
+            </Modal>
         </>
     );
 };

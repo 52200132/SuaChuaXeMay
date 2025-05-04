@@ -47,38 +47,24 @@ const getProgressPercentage = (status) => {
     return progressMap[status] || 0;
 };
 
-const getPriorityFromDate = (dateString) => {
-    if (!dateString) return 'normal';
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const orderDate = new Date(dateString);
-    orderDate.setHours(0, 0, 0, 0);
-
-    const diffTime = today - orderDate;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays > 3) return 'high';
-    if (diffDays > 1) return 'medium';
-    return 'normal';
-};
-
 const TechnicianDashboard = () => {
     // Context and data state
     const { currentStaff } = useStaffAuth();
-    const { getData, setData } = useAppData();
-    const ordersById = getData('orders') || {};
-    const customersById = getData('customers') || {};
-    const motorcyclesById = getData('motorcycles') || {};
-    const diagnosisById = getData('diagnosis') || {};
-    const receiptsById = getData('receiptions');
+    const { getData, setData, loading, getIds } = useAppData();
+    const ordersById = getData('orders');
+    const customersById = getData('customers');
+    const motorcyclesById = getData('motorcycles');
+    const diagnosisById = getData('diagnosis');
+    const receptionsById = getData('receptions');
+
+    const parts = getData('parts');
+    const services = getData('services');
+    const partsMotoType = getData('partsMotoType');
+    const servicesMotoType = getData('servicesMotoType');
 
     // Orders state
-    const [loading, setLoading] = useState(true);
-    const [myOrdersIds, setMyOrdersIds] = useState(new Set());
-    const [myOrdersIdsArray, setMyOrdersIdsArray] = useState([]);
-    const [myOrdersDisplay, setMyOrdersDisplay] = useState({});
+    const [localLoading, setLocalLoading] = useState(true);
+
     const [filteredOrdersIds, setFilteredOrdersIds] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('all');
@@ -91,6 +77,7 @@ const TechnicianDashboard = () => {
     const [activeModalTab, setActiveModalTab] = useState('status');
     const [activeCatalogTab, setActiveCatalogTab] = useState('services');
     const [isAcceptingOrder, setIsAcceptingOrder] = useState(false); // Add loading state for accepting orders
+    const [showCompleteRepairModal, setShowCompleteRepairModal] = useState(false); // Add state for complete repair modal
 
     // Update state form state
     const [updateData, setUpdateData] = useState({
@@ -100,28 +87,14 @@ const TechnicianDashboard = () => {
     });
 
     // Parts state
-    const [parts, setParts] = useState([]);
     const [selectedParts, setSelectedParts] = useState([]);
     const [partQuantities, setPartQuantities] = useState({});
     const [partSearchTerm, setPartSearchTerm] = useState('');
-    const [partLoading, setPartLoading] = useState(false);
     const [partsByMotoType, setPartsByMotoType] = useState([]);
-    const [partMotoTypesLoading, setPartMotoTypesLoading] = useState(false);
-
-    // Parts cache
-    const [partMotoTypeCache, setPartMotoTypeCache] = useState({});
-    const [partsCache, setPartsCache] = useState({});
 
     // Services state
-    const [services, setServices] = useState([]);
     const [selectedServices, setSelectedServices] = useState([]);
-    const [serviceLoading, setServiceLoading] = useState(false);
     const [servicesByMotoType, setServicesByMotoType] = useState([]);
-    const [serviceMotoTypesLoading, setServiceMotoTypesLoading] = useState(false);
-
-    // Services cache
-    const [serviceMotoTypeCache, setServiceMotoTypeCache] = useState({});
-    const [servicesCache, setServicesCache] = useState({});
 
     // Motorcycle state
     const [motoTypeId, setMotoTypeId] = useState(null);
@@ -151,7 +124,7 @@ const TechnicianDashboard = () => {
         return {
             initialConditon: reception?.initial_conditon || 'Không có thông tin',
             motorcycleId: order.motocycle_id,
-            motorTypeId: motorcycle.moto_type_id,
+            motorTypeId: motorcycle?.moto_type_id,
             orderId: order.order_id,
             originalData: order,
             customerName: customer?.fullname || 'Không có thông tin',
@@ -164,282 +137,112 @@ const TechnicianDashboard = () => {
             createdDate: createdAtDate || '',
             createdTime: createdAtTime?.substring(0, 5) || '',
             diagnosisProblem: diagnosis?.problem || '',
-            priority: getPriorityFromDate(createdAtDate),
             progressPercentage: getProgressPercentage(order.status),
             note: reception?.note || 'Không có ghi chú',
             estimatedCost: diagnosis?.estimated_cost || 0,
+            hasDiagnosis: diagnosis?.diagnosis_id ? true : false,
         };
     };
 
+    const formatServiceData = (service, servicesMotoType) => {
+        return {
+            serviceId: service.service_id,
+            serviceMotoTypeId: servicesMotoType.service_mototype_id,
+            serviceName: service.name || 'Không có thông tin',
+            serviceDescription: service.description,
+            servicePrice: servicesMotoType.price || 0,
+        };
+    }
+
+    const formatPartData = (part, partMotoType) => {
+        return {
+            partId: part.part_id,
+            partMotoTypeId: partMotoType.part_mototype_id,
+            partName: part.name || 'Không có thông tin',
+            partCode: part.code,
+            partUnit: part.unit || 'Cái',
+            partPrice: partMotoType.price || 0,
+        };
+    }
+
+    const createOrderDisplay = (orderId) => {
+        const order = ordersById[orderId];
+        const motorcycle = motorcyclesById[order.motocycle_id];
+        const customer = customersById[motorcycle?.customer_id];
+        const diagnosis = diagnosisById[orderId];
+        const reception = receptionsById[diagnosis?.form_id];
+
+        return formatOrderData(order, customer, motorcycle, diagnosis, reception);
+    }
+
     // Initial data loading
     useEffect(() => {
-        fetchInitialData();
+        // fetchInitialData();
     }, [currentStaff]);
+
     // TODO: check points for loading data
     useEffect(() => {
-        if (!loading) {
-            console.log('Orders loaded:', myOrdersDisplay, customersById, motorcyclesById, diagnosisById, receiptsById);
-        }
+        setLocalLoading(true);
+        if (loading['orders'] || loading['customers'] || loading['motorcycles'] || loading['diagnosis'] || loading['receiptions']) return;
+        setFilteredOrdersIds(getIds('orders'));
+        updateStats(getData('ordersIds'))
+        setLocalLoading(false);
     }, [loading]);
 
-    const fetchInitialData = async () => {
-        try {
-            await Promise.all([
-                fetchMyOrders(),
-                fetchParts(),
-                fetchServices()
-            ]);
-        } catch (error) {
-            console.error('Error loading initial data:', error);
+    // TODO: Khi load dữ liệu xong
+    useEffect(() => {
+        if (!localLoading) {
+            // setFilteredOrdersIds(getIds('orders'));
         }
-    };
-
-    // Fetch orders assigned to the technician
-    const fetchMyOrders = async () => {
-        if (!currentStaff?.staff_id) {
-            setLoading(false);
-            return;
-        }
-
-        try {
-            setLoading(true);
-            // Mock staff ID for testing
-            const staffId = 4;
-
-            const response = await repairService.order.getAllOrdersByStaffIdToday(staffId);
-            const ordersData = response.data || [];
-
-            const newOrdersIds = new Set();
-            const newOrdersDisplay = {};
-
-            await Promise.all(ordersData.map(async (order) => {
-                // Get motorcycle, customer, diagnosis and reception data
-                const { motorcycle, customer, diagnosis, reception } = await fetchOrderRelatedData(order);
-
-                // Add order to display data
-                newOrdersIds.add(order.order_id);
-                newOrdersDisplay[order.order_id] = formatOrderData(order, customer, motorcycle, diagnosis, reception);
-            }));
-
-            // Update state
-            setMyOrdersIds(newOrdersIds);
-            setMyOrdersIdsArray(Array.from(newOrdersIds));
-            setMyOrdersDisplay(newOrdersDisplay);
-            setFilteredOrdersIds(Array.from(newOrdersIds));
-            updateStats(newOrdersIds, newOrdersDisplay);
-        } catch (error) {
-            console.error('Error fetching technician orders:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Fetch all related data for an order
-    const fetchOrderRelatedData = async (order) => {
-        let motorcycle = motorcyclesById[order.motocycle_id];
-        let customer = null;
-        let diagnosis = diagnosisById[order.order_id];
-        let reception = null;
-
-        // Fetch motorcycle data if needed
-        if (!motorcycle) {
-            motorcycle = await fetchMotorcycleData(order.motocycle_id);
-        }
-
-        // Fetch customer data if needed
-        if (motorcycle?.customer_id && !customersById[motorcycle.customer_id]) {
-            customer = await fetchCustomerData(motorcycle.customer_id);
-        } else {
-            customer = customersById[motorcycle?.customer_id];
-        }
-
-        // Fetch diagnosis data if needed
-        if (!diagnosis) {
-            diagnosis = await fetchDiagnosisData(order.order_id);
-        }
-
-        // Fetch reception data if needed
-        if (diagnosis?.form_id) {
-            reception = receiptsById[diagnosis.form_id] || await fetchReceptionData(diagnosis.form_id);
-        }
-
-        return { motorcycle, customer, diagnosis, reception };
-    };
-
-    // Fetch motorcycle data
-    const fetchMotorcycleData = async (motorcycleId) => {
-        try {
-            const response = await customerService.motorcycle.getMotorcycleById(motorcycleId);
-            const motorcycle = response.data;
-            setData('motorcycles', motorcycle, motorcycleId);
-            return motorcycle;
-        } catch (error) {
-            console.error('Error fetching motorcycle data:', error);
-            return { license_plate: 'Không có thông tin', brand: '', model: '' };
-        }
-    };
-
-    // Fetch customer data
-    const fetchCustomerData = async (customerId) => {
-        try {
-            const response = await customerService.customer.getCustomerById(customerId);
-            const customer = response.data;
-            setData('customers', customer, customerId);
-            return customer;
-        } catch (error) {
-            console.error('Error fetching customer data:', error);
-            return { fullname: 'Không có thông tin', phone_num: '' };
-        }
-    };
-
-    // Fetch diagnosis data
-    const fetchDiagnosisData = async (orderId) => {
-        try {
-            const response = await repairService.diagnosis.getDiagnosisByOrderId(orderId);
-            const diagnosis = response.data;
-            setData('diagnosis', diagnosis, orderId);
-            return diagnosis;
-        } catch (error) {
-            console.error('Error fetching diagnosis data:', error);
-            return { problem: '' };
-        }
-    };
-
-    // Fetch reception data
-    const fetchReceptionData = async (formId) => {
-        try {
-            const response = await customerService.reception.getReceptionById(formId);
-            const reception = response.data;
-            setData('receiptions', reception, formId);
-            return reception;
-        } catch (error) {
-            console.error('Error fetching reception data:', error);
-            return { note: 'Không có ghi chú' };
-        }
-    };
-
-    // Fetch parts data
-    const fetchParts = async () => {
-        // Use cached parts if available
-        if (Object.keys(partsCache).length > 0) {
-            setParts(Object.values(partsCache));
-            return;
-        }
-
-        try {
-            setPartLoading(true);
-            const response = await resourceService.part.getAllParts();
-            const partsData = response.data || [];
-
-            // Update cache and state
-            const newPartsCache = {};
-            partsData.forEach(part => {
-                newPartsCache[part.part_id] = part;
-            });
-
-            setPartsCache(newPartsCache);
-            setParts(partsData);
-        } catch (error) {
-            console.error('Error fetching parts:', error);
-            // Add mock parts for testing
-            const mockParts = getMockPartsData();
-            setParts(mockParts);
-        } finally {
-            setPartLoading(false);
-        }
-    };
-
-    // Get mock parts data for testing
-    const getMockPartsData = () => [
-        { part_id: 1, name: 'Bugi NGK', code: 'BG001', unit: 'Cái' },
-        { part_id: 2, name: 'Dầu nhớt Motul 4T 10W40', code: 'DN001', unit: 'Chai' },
-        { part_id: 3, name: 'Lốc máy Honda Wave', code: 'LM001', unit: 'Bộ' },
-        { part_id: 4, name: 'Xích đĩa DID', code: 'XD001', unit: 'Bộ' },
-        { part_id: 5, name: 'Phanh đĩa Brembo', code: 'PD001', unit: 'Bộ' },
-        { part_id: 6, name: 'Lọc gió K&N', code: 'LG001', unit: 'Cái' },
-        { part_id: 7, name: 'Má phanh Nissin', code: 'MP001', unit: 'Bộ' },
-        { part_id: 8, name: 'Ắc quy GS', code: 'AQ001', unit: 'Cái' },
-    ];
-
-    // Fetch services data
-    const fetchServices = async () => {
-        // Use cached services if available
-        if (Object.keys(servicesCache).length > 0) {
-            setServices(Object.values(servicesCache));
-            return;
-        }
-
-        try {
-            setServiceLoading(true);
-            const response = await resourceService.service.getAllServices();
-            const servicesData = response.data || [];
-
-            // Update cache and state
-            const newServicesCache = {};
-            servicesData.forEach(service => {
-                newServicesCache[service.service_id] = service;
-            });
-
-            setServicesCache(newServicesCache);
-            setServices(servicesData);
-        } catch (error) {
-            console.error('Error fetching services:', error);
-            // Add mock services for testing
-            const mockServices = getMockServicesData();
-            setServices(mockServices);
-        } finally {
-            setServiceLoading(false);
-        }
-    };
-
-    // Get mock services data for testing
-    const getMockServicesData = () => [
-        { service_id: 1, name: 'Thay dầu máy', description: 'Thay dầu nhớt cho xe' },
-        { service_id: 2, name: 'Thay bugi', description: 'Thay bugi mới' },
-        { service_id: 3, name: 'Bảo dưỡng định kỳ', description: 'Bảo dưỡng toàn bộ xe' },
-        { service_id: 4, name: 'Thay lốc máy', description: 'Thay lốc máy mới' },
-        { service_id: 5, name: 'Thay xích đĩa', description: 'Thay thế bộ xích và đĩa' },
-        { service_id: 6, name: 'Thay phanh', description: 'Thay phanh mới' },
-        { service_id: 7, name: 'Thay nhớt hộp số', description: 'Thay nhớt hộp số' },
-        { service_id: 8, name: 'Vệ sinh kim phun xăng', description: 'Vệ sinh hệ thống phun xăng' },
-    ];
+    }, [localLoading, ordersById]);
 
     // Update statistics
-    const updateStats = (orderIds, ordersDisplay) => {
+    const updateStats = (orderIds = new Set()) => {
         const today = new Date().toISOString().split('T')[0];
-        const ordersArray = Array.from(orderIds).map(id => ordersDisplay[id]);
+        const setIdsIterator = orderIds.entries();
+        const tempStats = {
+            totalOrders: 0,
+            inProgress: 0,
+            pendingConfirmation: 0,
+            completed: 0,
+            todayOrders: 0
+        };
+        setIdsIterator.forEach(([key, value]) => {
+            const order = ordersById[value];
+            if (order) {    
+                tempStats.totalOrders += 1;
+                if (order.status === 'repairing') tempStats.inProgress += 1;
+                if (order.status === 'wait_confirm') tempStats.pendingConfirmation += 1;
+                if (['wait_delivery', 'delivered'].includes(order.status)) tempStats.completed += 1;
+                if (order.created_at.split('T')[0] === today) tempStats.todayOrders += 1;
+            }
+        })
 
-        setStats({
-            totalOrders: orderIds.size,
-            inProgress: ordersArray.filter(order => order.rawStatus === 'repairing').length,
-            pendingConfirmation: ordersArray.filter(order => order.rawStatus === 'wait_confirm').length,
-            completed: ordersArray.filter(order => ['wait_delivery', 'delivered'].includes(order.rawStatus)).length,
-            todayOrders: ordersArray.filter(order => order.createdDate === today).length
-        });
+        setStats(tempStats);
     };
 
     // Filter orders based on tab and search term
     const filterOrders = (tab, term) => {
-        let filtered = [...myOrdersIdsArray];
+        let filtered = getIds('orders');
 
         // Filter by tab
         if (tab !== 'all') {
             switch (tab) {
                 case 'new':
                     filtered = filtered.filter(id =>
-                        ['received', 'checking'].includes(myOrdersDisplay[id].rawStatus));
+                        ['received', 'checking'].includes(createOrderDisplay(id).rawStatus));
                     break;
                 case 'in-progress':
                     filtered = filtered.filter(id =>
-                        myOrdersDisplay[id].rawStatus === 'repairing');
+                        createOrderDisplay(id).rawStatus === 'repairing');
                     break;
                 case 'pending-confirmation':
                     filtered = filtered.filter(id =>
-                        myOrdersDisplay[id].rawStatus === 'wait_confirm');
+                        createOrderDisplay(id).rawStatus === 'wait_confirm');
                     break;
                 case 'completed':
                     filtered = filtered.filter(id =>
-                        ['wait_delivery', 'delivered'].includes(myOrdersDisplay[id].rawStatus));
+                        ['wait_delivery', 'delivered'].includes(createOrderDisplay(id).rawStatus));
                     break;
                 default:
                     break;
@@ -449,7 +252,7 @@ const TechnicianDashboard = () => {
         // Filter by search term
         if (term) {
             filtered = filtered.filter(id => {
-                const order = myOrdersDisplay[id];
+                const order = createOrderDisplay(id);
                 return order.orderId.toString().toLowerCase().includes(term) ||
                     order.customerName.toLowerCase().includes(term) ||
                     order.customerPhone.includes(term) ||
@@ -478,7 +281,7 @@ const TechnicianDashboard = () => {
     const handleAcceptOrder = async (orderId) => {
         if (!orderId) return;
         
-        const order = myOrdersDisplay[orderId];
+        const order = createOrderDisplay(orderId);
         setCurrentOrder(order);
         setShowAcceptModal(true);
     };
@@ -489,40 +292,13 @@ const TechnicianDashboard = () => {
 
         try {
             setIsAcceptingOrder(true);
-            
             // Call API to update order status to "checking"
-            await repairService.order.updateOrderStatus(currentOrder.orderId, 'checking');
-            
+            const response = await repairService.order.updateOrderStatus(currentOrder.orderId, 'checking');
+            setData('orders', response.data, response.data.order_id);
             console.log(`Technician accepted order #${currentOrder.orderId}`);
-            
-            // Update local state
-            const updatedOrder = {
-                ...currentOrder,
-                originalData: { 
-                    ...currentOrder.originalData,
-                    status: 'checking'
-                },
-                status: STATUS_MAPPING['checking'],
-                rawStatus: 'checking',
-                progressPercentage: getProgressPercentage('checking')
-            };
-            
-            const updatedOrdersDisplay = {
-                ...myOrdersDisplay,
-                [currentOrder.orderId]: updatedOrder
-            };
-            
-            setMyOrdersDisplay(updatedOrdersDisplay);
-            
             // Close modal
             setShowAcceptModal(false);
-            
-            // Show success message
             alert('Đã nhận đơn hàng thành công!');
-            
-            // Refresh orders list
-            // await fetchMyOrders();
-            
         } catch (error) {
             console.error('Error accepting order:', error);
             alert('Có lỗi xảy ra khi nhận đơn. Vui lòng thử lại sau.');
@@ -533,7 +309,7 @@ const TechnicianDashboard = () => {
 
     // Open vehicle inspection modal (renamed from handleShowUpdateModal)
     const handleShowInspectionModal = (orderId) => {
-        const order = myOrdersDisplay[orderId];
+        const order = createOrderDisplay(orderId);
         
         // Check if order is in received status and prevent editing
         if (order.rawStatus === 'received') {
@@ -556,13 +332,10 @@ const TechnicianDashboard = () => {
             const motorcycle = motorcyclesById[order.originalData.motocycle_id];
             if (motorcycle?.moto_type_id) {
                 setMotoTypeId(motorcycle.moto_type_id);
-                fetchPartsByMotoType(motorcycle.moto_type_id);
-                fetchServicesByMotoType(motorcycle.moto_type_id);
-            } else {
-                resetMotoTypeData();
-            }
+                switchPartsByMotoType(motorcycle.moto_type_id);
+                // fetchServicesByMotoType(motorcycle.moto_type_id);
+            } 
         }
-
         setShowUpdateModal(true);
     };
 
@@ -576,203 +349,46 @@ const TechnicianDashboard = () => {
     };
 
     // Reset motorcycle type related data
-    const resetMotoTypeData = () => {
-        setPartsByMotoType([]);
-        setServicesByMotoType([]);
-        setMotoTypeId(null);
-    };
+    // const resetMotoTypeData = () => {
+    //     setPartsByMotoType([]);
+    //     setServicesByMotoType([]);
+    //     setMotoTypeId(null);
+    // };
 
     // Fetch parts by motorcycle type
-    const fetchPartsByMotoType = async (motoTypeId) => {
+    const switchPartsByMotoType = (motoTypeId) => {
         if (!motoTypeId) return;
 
-        // Use cached data if available
-        if (partMotoTypeCache[motoTypeId]) {
-            setPartsByMotoType(partMotoTypeCache[motoTypeId]);
+        if (partsMotoType[motoTypeId]) {
+            setPartsByMotoType(Object.values(partsMotoType[motoTypeId]).map(partMotoType => {
+                const partDisplay = formatPartData(parts[partMotoType.part_id], partMotoType);
+                return {
+                    ...partDisplay,
+                    part_mototype_id: partMotoType.part_mototype_id,
+                    part_id: partMotoType.part_id,
+                    price: partMotoType.price || 0
+                };
+            }));
             return;
-        }
-
-        try {
-            setPartMotoTypesLoading(true);
-            const response = await resourceService.partMotoType.getAllPartMotoTypesByMotoTypeId(motoTypeId);
-            const partMotoTypeData = response.data || [];
-
-            // Enhance part data with full information
-            const enhancedPartData = await Promise.all(
-                partMotoTypeData.map(partMotoType => getEnhancedPartData(partMotoType))
-            );
-
-            // Update cache and state
-            setPartMotoTypeCache(prev => ({
-                ...prev,
-                [motoTypeId]: enhancedPartData
-            }));
-
-            setPartsByMotoType(enhancedPartData);
-        } catch (error) {
-            console.error('Error fetching parts by motorcycle type:', error);
-            setPartsByMotoType([]);
-        } finally {
-            setPartMotoTypesLoading(false);
-        }
-    };
-
-    // Get enhanced part data with full information
-    const getEnhancedPartData = async (partMotoType) => {
-        // Check cache first
-        if (partsCache[partMotoType.part_id]) {
-            return {
-                ...partMotoType,
-                ...partsCache[partMotoType.part_id],
-                part_id: partMotoType.part_id
-            };
-        }
-
-        // Check in current parts list
-        const partInfo = parts.find(p => p.part_id === partMotoType.part_id);
-        if (partInfo) {
-            // Update cache
-            setPartsCache(prev => ({
-                ...prev,
-                [partInfo.part_id]: partInfo
-            }));
-
-            return {
-                ...partMotoType,
-                ...partInfo,
-                part_id: partMotoType.part_id
-            };
-        }
-
-        // Fetch from API if not found
-        try {
-            const response = await resourceService.part.getPartById(partMotoType.part_id);
-            const partData = response.data;
-
-            // Update cache
-            setPartsCache(prev => ({
-                ...prev,
-                [partData.part_id]: partData
-            }));
-
-            return {
-                ...partMotoType,
-                ...partData
-            };
-        } catch (error) {
-            console.error(`Error fetching part details id=${partMotoType.part_id}:`, error);
-            return {
-                ...partMotoType,
-                name: `Phụ tùng ID ${partMotoType.part_id}`,
-                code: 'Unknown',
-                unit: 'Cái'
-            };
-        }
-    };
-
-    // Fetch services by motorcycle type
-    const fetchServicesByMotoType = async (motoTypeId) => {
-        if (!motoTypeId) return;
-
-        // Use cached data if available
-        if (serviceMotoTypeCache[motoTypeId]) {
-            setServicesByMotoType(serviceMotoTypeCache[motoTypeId]);
-            return;
-        }
-
-        try {
-            setServiceMotoTypesLoading(true);
-            const response = await resourceService.serviceMotoType.getAllServiceMotoTypesByMotoTypeId(motoTypeId);
-            const serviceMotoTypeData = response.data || [];
-
-            // Enhance service data with full information
-            const enhancedServiceData = await Promise.all(
-                serviceMotoTypeData.map(serviceMotoType => getEnhancedServiceData(serviceMotoType))
-            );
-
-            // Update cache and state
-            setServiceMotoTypeCache(prev => ({
-                ...prev,
-                [motoTypeId]: enhancedServiceData
-            }));
-
-            setServicesByMotoType(enhancedServiceData);
-        } catch (error) {
-            console.error('Error fetching services by motorcycle type:', error);
-            setServicesByMotoType([]);
-        } finally {
-            setServiceMotoTypesLoading(false);
-        }
-    };
-
-    // Get enhanced service data with full information
-    const getEnhancedServiceData = async (serviceMotoType) => {
-        // Check cache first
-        if (servicesCache[serviceMotoType.service_id]) {
-            return {
-                ...serviceMotoType,
-                ...servicesCache[serviceMotoType.service_id],
-                service_id: serviceMotoType.service_id
-            };
-        }
-
-        // Check in current services list
-        const serviceInfo = services.find(s => s.service_id === serviceMotoType.service_id);
-        if (serviceInfo) {
-            // Update cache
-            setServicesCache(prev => ({
-                ...prev,
-                [serviceInfo.service_id]: serviceInfo
-            }));
-
-            return {
-                ...serviceMotoType,
-                ...serviceInfo,
-                service_id: serviceMotoType.service_id
-            };
-        }
-
-        // Fetch from API if not found
-        try {
-            const response = await resourceService.service.getServiceById(serviceMotoType.service_id);
-            const serviceData = response.data;
-
-            // Update cache
-            setServicesCache(prev => ({
-                ...prev,
-                [serviceData.service_id]: serviceData
-            }));
-
-            return {
-                ...serviceMotoType,
-                ...serviceData
-            };
-        } catch (error) {
-            console.error(`Error fetching service details id=${serviceMotoType.service_id}:`, error);
-            return {
-                ...serviceMotoType,
-                name: `Dịch vụ ID ${serviceMotoType.service_id}`,
-                description: 'Không có mô tả'
-            };
         }
     };
 
     // Filter parts based on search term
     const getFilteredParts = () => {
-        const partsToFilter = partsByMotoType.length > 0 ? partsByMotoType : parts;
+        const partsToFilter = partsByMotoType;
 
         if (!partSearchTerm) return partsToFilter;
 
         const searchTerm = partSearchTerm.toLowerCase();
         return partsToFilter.filter(part =>
-            part.name?.toLowerCase().includes(searchTerm) ||
-            part.code?.toLowerCase().includes(searchTerm)
+            part.partName?.toLowerCase().includes(searchTerm) ||
+            part.partCode?.toLowerCase().includes(searchTerm)
         );
     };
 
     // Toggle part selection
-    const togglePartSelection = (partId, partMotoTypeId = null) => {
-        const selectionId = partMotoTypeId || partId;
+    const togglePartSelection = (partId) => {
+        const selectionId = partId;
 
         if (selectedParts.includes(selectionId)) {
             // Remove part
@@ -793,8 +409,8 @@ const TechnicianDashboard = () => {
     };
 
     // Toggle service selection
-    const toggleServiceSelection = (serviceId, serviceMotoTypeId = null) => {
-        const selectionId = serviceMotoTypeId || serviceId;
+    const toggleServiceSelection = (serviceId) => {
+        const selectionId = serviceId;
 
         if (selectedServices.includes(selectionId)) {
             setSelectedServices(prev => prev.filter(id => id !== selectionId));
@@ -818,7 +434,7 @@ const TechnicianDashboard = () => {
     const calculateTotalAmount = () => {
         // Calculate parts total
         const partsTotal = selectedParts.reduce((total, partId) => {
-            const part = findPartById(partId);
+            const part = partsMotoType[motoTypeId][partId];
             if (!part) return total;
 
             const quantity = partQuantities[partId] || 1;
@@ -829,7 +445,7 @@ const TechnicianDashboard = () => {
 
         // Calculate services total
         const servicesTotal = selectedServices.reduce((total, serviceId) => {
-            const service = findServiceById(serviceId);
+            const service = servicesMotoType[motoTypeId][serviceId];
             if (!service) return total;
 
             const price = service.price || 0;
@@ -840,75 +456,30 @@ const TechnicianDashboard = () => {
         return partsTotal + servicesTotal;
     };
 
-    // Find part by ID (from both sources)
-    const findPartById = (partId) => {
-        const partFromMotoType = partsByMotoType.find(p =>
-            p.part_mototype_id === partId || p.part_id === partId
-        );
-        return partFromMotoType || parts.find(p => p.part_id === partId);
-    };
-
-    // Find service by ID (from both sources)
-    const findServiceById = (serviceId) => {
-        const serviceFromMotoType = servicesByMotoType.find(s =>
-            s.service_mototype_id === serviceId || s.service_id === serviceId
-        );
-        return serviceFromMotoType || services.find(s => s.service_id === serviceId);
-    };
-
     // Prepare order data for API
-    const calculateTotalPrice = async (partsData, servicesData, motorcycleId, orderId) => {
+    const calculateTotalPrice = (partsData, servicesData, motoTypeId, orderId) => {
         let totalPrice = 0;
 
         // Process parts
-        const partOrderDetails = await Promise.all(partsData.map(async (part) => {
-            try {
-                const partId = part.part_id;
-                const response = await resourceService.partMotoType
-                    .getPartMotoTypeByPartIdAndMototypeId(partId, motorcycleId);
-                const partMotoType = response.data;
-
-                part.price = partMotoType ? partMotoType.price : 0;
-
-                return {
-                    is_selected: false,
-                    order_id: orderId,
-                    part_id: partId,
-                    quantity: part.quantity,
-                    price: parseInt(part.price) * parseInt(part.quantity),
-                };
-            } catch (error) {
-                console.error('Error fetching part price:', error);
-                return null;
-            }
-        }));
+        const partOrderDetails = partsData.map((part) => {
+            return {
+                is_selected: false,
+                order_id: orderId,
+                part_id: part.part_id,
+                quantity: part.quantity,
+                price: parseInt(part.price) * parseInt(part.quantity),
+            };
+        });
 
         // Process services
-        const serviceOrderDetails = await Promise.all(servicesData.map(async (service) => {
-            try {
-                const serviceId = service.service_id;
-                const response = await resourceService.serviceMotoType
-                    .getServiceMotoTypeByServiceIdAndMototypeId(serviceId, motorcycleId);
-                const serviceMotoType = response.data;
-
-                service.price = serviceMotoType ? serviceMotoType.price : (service.price || 0);
-
-                return {
-                    is_selected: false,
-                    order_id: orderId,
-                    service_id: serviceId,
-                    price: parseInt(service.price)
-                };
-            } catch (error) {
-                console.error(`Error fetching service price id=${service.service_id}:`, error);
-                return {
-                    is_selected: false,
-                    order_id: orderId,
-                    service_id: service.service_id,
-                    price: parseInt(service.price || 0)
-                };
-            }
-        }));
+        const serviceOrderDetails = servicesData.map((service) => {
+            return {
+                is_selected: false,
+                order_id: orderId,
+                service_id: service.service_id,
+                price: parseInt(service.price)
+            };
+        });
 
         // Calculate total price
         partOrderDetails.forEach(item => {
@@ -933,47 +504,49 @@ const TechnicianDashboard = () => {
         if (!currentOrder) return;
 
         try {
-            setLoading(true);
-
             // Prepare parts data
             const partsData = selectedParts.map(partId => {
-                const part = findPartById(partId);
+                const motorcycle = motorcyclesById[currentOrder.originalData.motocycle_id];
+                const part = formatPartData(parts[partId], partsMotoType[motorcycle.moto_type_id][partId]);
                 if (!part) return null;
 
                 return {
-                    part_id: part.part_id,
-                    part_mototype_id: part.part_mototype_id,
+                    part_id: part.partId,
+                    part_mototype_id: part.partMotoTypeId,
                     quantity: partQuantities[partId] || 1,
-                    name: part.name || '',
-                    unit: part.unit || '',
-                    price: part.price || 0
+                    name: part.partName || '',
+                    unit: part.partUnit || '',
+                    price: part.partPrice || 0
                 };
             }).filter(Boolean);
 
             // Prepare services data
             const servicesData = selectedServices.map(serviceId => {
-                const service = findServiceById(serviceId);
+                const motorcycle = motorcyclesById[currentOrder.originalData.motocycle_id];
+                const service = formatServiceData(services[serviceId], servicesMotoType[motorcycle.moto_type_id][serviceId]);
                 if (!service) return null;
 
                 return {
-                    service_id: service.service_id,
-                    service_mototype_id: service.service_mototype_id,
-                    name: service.name || '',
-                    price: service.price || 0
+                    service_id: service.serviceId,
+                    service_mototype_id: service.serviceMotoTypeId,
+                    name: service.serviceName || '',
+                    price: service.servicePrice || 0
                 };
             }).filter(Boolean);
 
             // Calculate total price and prepare order details
-            const motorcycleTypeId = motorcyclesById[currentOrder.motorcycleId].moto_type_id;
+            const motoTypeId = motorcyclesById[currentOrder.motorcycleId].moto_type_id;
             const { totalPrice, partOrderDetails, serviceOrderDetails } =
-                await calculateTotalPrice(partsData, servicesData, motorcycleTypeId, currentOrder.orderId);
+                calculateTotalPrice(partsData, servicesData, motoTypeId, currentOrder.orderId);
 
             // Update diagnosis with new problem description and estimated cost
-            await repairService.diagnosis.updateDiagnosis(
-                diagnosisById[currentOrder.orderId]?.diagnosis_id, 
-                updateData.diagnosisProblem, 
-                totalPrice
-            );
+            if (currentOrder.hasDiagnosis === true) {
+                await repairService.diagnosis.updateDiagnosis(
+                    diagnosisById[currentOrder.orderId]?.diagnosis_id, 
+                    updateData.diagnosisProblem, 
+                    totalPrice
+                );
+            }
             
             // Create part and service order details
             await Promise.all([
@@ -983,7 +556,8 @@ const TechnicianDashboard = () => {
 
             // Set status to waiting for confirmation after inspection is complete
             if (currentOrder.rawStatus === 'checking') {
-                await repairService.order.updateOrderStatus(currentOrder.orderId, 'wait_confirm');
+                const response = await repairService.order.updateOrderStatus(currentOrder.orderId, 'wait_confirm');
+                setData('orders', response.data, response.data.order_id);
             }
 
             console.log('Inspection update data:', {
@@ -995,32 +569,17 @@ const TechnicianDashboard = () => {
             });
 
             // Update local state
-            diagnosisById[currentOrder.orderId].problem = updateData.diagnosisProblem;
-            const estimatedCost = diagnosisById[currentOrder.orderId].estimated_cost || 0;
-            diagnosisById[currentOrder.orderId].estimated_cost = estimatedCost + totalPrice;
+            if (currentOrder.hasDiagnosis === true) {
+                diagnosisById[currentOrder.orderId].problem = updateData.diagnosisProblem;
+                const estimatedCost = diagnosisById[currentOrder.orderId].estimated_cost || 0;
+                diagnosisById[currentOrder.orderId].estimated_cost = estimatedCost + totalPrice;
+            }
             
-            // Update display data
-            const newStatus = currentOrder.rawStatus === 'checking' ? 'wait_confirm' : currentOrder.rawStatus;
-            
-            setMyOrdersDisplay(prev => ({
-                ...prev,
-                [currentOrder.orderId]: {
-                    ...prev[currentOrder.orderId],
-                    diagnosisProblem: updateData.diagnosisProblem,
-                    status: STATUS_MAPPING[newStatus],
-                    rawStatus: newStatus,
-                    progressPercentage: getProgressPercentage(newStatus),
-                    estimatedCost: diagnosisById[currentOrder.orderId].estimated_cost,
-                }
-            }));
-
-            alert('Cập nhật kiểm tra xe thành công!');
             setShowUpdateModal(false);
+            alert('Cập nhật kiểm tra xe thành công!');
         } catch (error) {
             console.error('Error updating inspection:', error);
             alert('Cập nhật thất bại. Vui lòng thử lại sau!');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -1028,46 +587,6 @@ const TechnicianDashboard = () => {
     const handlePartSearch = (e) => {
         const term = e.target.value;
         setPartSearchTerm(term);
-
-        if (term.length >= 2) {
-            if (partsByMotoType.length > 0) {
-                // Local search within motorcycle type parts
-            } else {
-                // API search
-                searchPartsFromAPI(term);
-            }
-        }
-    };
-
-    // Search parts from API
-    const searchPartsFromAPI = async (searchTerm) => {
-        if (!searchTerm || searchTerm.length < 2) return;
-
-        try {
-            setPartLoading(true);
-
-            const response = await resourceService.part.searchParts(searchTerm);
-
-            if (response?.data) {
-                const searchResults = response.data;
-
-                // Update cache
-                const newPartsCache = { ...partsCache };
-                searchResults.forEach(part => {
-                    newPartsCache[part.part_id] = part;
-                });
-                setPartsCache(newPartsCache);
-
-                // Update state if not filtered by motorcycle type
-                if (!motoTypeId) {
-                    setParts(searchResults);
-                }
-            }
-        } catch (error) {
-            console.error('Error searching parts:', error);
-        } finally {
-            setPartLoading(false);
-        }
     };
 
     // Render statistics cards
@@ -1093,12 +612,12 @@ const TechnicianDashboard = () => {
                     <Card className="shadow-sm dashboard-card">
                         <Card.Body>
                             <div className="stat-item">
-                                <div className="stat-icon bg-info-subtle">
-                                    <i className="bi bi-tools text-info"></i>
+                                <div className="stat-icon bg-warning-subtle">
+                                    <i className="bi bi-clock-history text-warning"></i>
                                 </div>
                                 <div className="stat-details">
-                                    <h3>{stats.inProgress}</h3>
-                                    <p>Đang sửa chữa</p>
+                                    <h3>{stats.pendingConfirmation}</h3>
+                                    <p>Chờ xác nhận</p>
                                 </div>
                             </div>
                         </Card.Body>
@@ -1108,12 +627,12 @@ const TechnicianDashboard = () => {
                     <Card className="shadow-sm dashboard-card">
                         <Card.Body>
                             <div className="stat-item">
-                                <div className="stat-icon bg-warning-subtle">
-                                    <i className="bi bi-clock-history text-warning"></i>
+                                <div className="stat-icon bg-info-subtle">
+                                    <i className="bi bi-tools text-info"></i>
                                 </div>
                                 <div className="stat-details">
-                                    <h3>{stats.pendingConfirmation}</h3>
-                                    <p>Chờ xác nhận</p>
+                                    <h3>{stats.inProgress}</h3>
+                                    <p>Đang sửa chữa</p>
                                 </div>
                             </div>
                         </Card.Body>
@@ -1153,7 +672,7 @@ const TechnicianDashboard = () => {
                             className="mb-3"
                         >
                             <Tab eventKey="services" title={<span><i className="bi bi-tools me-1"></i>Dịch vụ</span>}>
-                                {serviceMotoTypesLoading || serviceLoading ? (
+                                {loading['services'] || loading['servicesMotoType'] ? (
                                     <div className="text-center py-2">
                                         <div className="spinner-border spinner-border-sm" role="status">
                                             <span className="visually-hidden">Đang tải...</span>
@@ -1171,60 +690,64 @@ const TechnicianDashboard = () => {
                                         )}
 
                                         <div className="service-list-container p-2 border rounded">
-                                            {servicesByMotoType.length > 0 ? (
+                                            {Object.keys(servicesMotoType[motoTypeId] || {}).length > 0 ? (
                                                 <ListGroup variant="flush">
-                                                    {servicesByMotoType.map(service => (
-                                                        <ListGroup.Item
-                                                            key={service.service_mototype_id || service.service_id}
-                                                            as="div"
-                                                            className={`d-flex justify-content-between align-items-center service-item ${selectedServices.includes(service.service_mototype_id || service.service_id) ? 'selected' : ''}`}
-                                                            action
-                                                            onClick={() => toggleServiceSelection(service.service_id, service.service_mototype_id)}
-                                                        >
-                                                            <div className="service-info">
-                                                                <div>{service.name}</div>
-                                                                {service.description && (
-                                                                    <small className="text-muted d-block">{service.description}</small>
-                                                                )}
-                                                                {service.price && (
-                                                                    <small className="text-primary">
-                                                                        {formatCurrency(service.price)}
-                                                                    </small>
-                                                                )}
-                                                            </div>
-                                                            <div className="service-actions">
-                                                                <Form.Check
-                                                                    type="checkbox"
-                                                                    className="m-0"
-                                                                    checked={selectedServices.includes(service.service_mototype_id || service.service_id)}
-                                                                    onChange={() => { }} // Controlled component
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                />
-                                                            </div>
-                                                        </ListGroup.Item>
-                                                    ))}
-                                                </ListGroup>
-                                            ) : (
-                                                <Form.Group className="service-list-container">
-                                                    {services.map(service => (
-                                                        <Form.Check
-                                                            key={service.service_id}
-                                                            type="checkbox"
-                                                            id={`service-${service.service_id}`}
-                                                            label={
-                                                                <div>
-                                                                    {service.name}
-                                                                    {service.description && (
-                                                                        <small className="text-muted d-block">{service.description}</small>
+                                                    {Object.values(servicesMotoType[motoTypeId]).map(s => {
+                                                        const service = formatServiceData(services[s.service_id], s);
+                                                        return <>
+                                                            <ListGroup.Item
+                                                                key={service.serviceId}
+                                                                as="div"
+                                                                className={`d-flex justify-content-between align-items-center service-item ${selectedServices.includes(service.serviceId) ? 'selected' : ''}`}
+                                                                action
+                                                                onClick={() => toggleServiceSelection(service.serviceId)}
+                                                            >
+                                                                <div className="service-info">
+                                                                    <div>{service.serviceName}</div>
+                                                                    {service.serviceDescription && (
+                                                                        <small className="text-muted d-block">{service.serviceDescription}</small>
+                                                                    )}
+                                                                    {service.servicePrice && (
+                                                                        <small className="text-primary">
+                                                                            {formatCurrency(service.servicePrice)}
+                                                                        </small>
                                                                     )}
                                                                 </div>
-                                                            }
-                                                            checked={selectedServices.includes(service.service_id)}
-                                                            onChange={() => toggleServiceSelection(service.service_id)}
-                                                            className="mb-2"
-                                                        />
-                                                    ))}
-                                                </Form.Group>
+                                                                <div className="service-actions">
+                                                                    <Form.Check
+                                                                        type="checkbox"
+                                                                        className="m-0"
+                                                                        checked={selectedServices.includes(service.serviceId)}
+                                                                        onChange={() => toggleServiceSelection(service.serviceId)}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    />
+                                                                </div>
+                                                            </ListGroup.Item>
+                                                        </>
+                                                    })}
+                                                </ListGroup>
+                                            ) : (
+                                                <></>
+                                                // <Form.Group className="service-list-container">
+                                                //     {Object.values(services).map(service => (
+                                                //         <Form.Check
+                                                //             key={service.service_id}
+                                                //             type="checkbox"
+                                                //             id={`service-${service.service_id}`}
+                                                //             label={
+                                                //                 <div>
+                                                //                     {service.name}
+                                                //                     {service.description && (
+                                                //                         <small className="text-muted d-block">{service.description}</small>
+                                                //                     )}
+                                                //                 </div>
+                                                //             }
+                                                //             checked={selectedServices.includes(service.service_id)}
+                                                //             onChange={() => toggleServiceSelection(service.service_id)}
+                                                //             className="mb-2"
+                                                //         />
+                                                //     ))}
+                                                // </Form.Group>
                                             )}
                                         </div>
                                     </>
@@ -1238,40 +761,19 @@ const TechnicianDashboard = () => {
                                         <Form.Control
                                             placeholder="Nhập tên hoặc mã phụ tùng..."
                                             value={partSearchTerm}
-                                            onChange={handlePartSearch}
-                                            onKeyDown={(e) => {
-                                                // Bắt sự kiện nhấn Enter để tìm kiếm
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    if (partSearchTerm.length >= 2) {
-                                                        searchPartsFromAPI(partSearchTerm);
-                                                    }
+                                            onChange={(e) => setPartSearchTerm(e.target.value)}
+                                            onKeyUp={(e) => {
+                                                if (e.key === 'Enter' && partSearchTerm.length >= 2) {
+                                                    switchPartsByMotoType(motoTypeId);
                                                 }
                                             }}
                                         />
-                                        <Button
-                                            variant="outline-secondary"
-                                            onClick={() => {
-                                                if (partSearchTerm.length >= 2) {
-                                                    searchPartsFromAPI(partSearchTerm);
-                                                }
-                                            }}
-                                            disabled={partSearchTerm.length < 2}
-                                        >
-                                            <i className="bi bi-search"></i>
-                                        </Button>
                                         {partSearchTerm && (
                                             <Button
                                                 variant="outline-secondary"
                                                 onClick={() => {
                                                     setPartSearchTerm('');
-                                                    // Nếu đang hiển thị theo loại xe, quay lại danh sách ban đầu
-                                                    if (motoTypeId) {
-                                                        fetchPartsByMotoType(motoTypeId);
-                                                    } else {
-                                                        // Nếu không, tải lại danh sách phụ tùng
-                                                        fetchParts();
-                                                    }
+                                                    switchPartsByMotoType(motoTypeId);
                                                 }}
                                             >
                                                 <i className="bi bi-x"></i>
@@ -1283,7 +785,7 @@ const TechnicianDashboard = () => {
                                     )}
                                 </Form.Group>
 
-                                {partMotoTypesLoading || partLoading ? (
+                                {loading['partsMotoType'] || loading['parts'] ? (
                                     <div className="text-center py-3">
                                         <div className="spinner-border spinner-border-sm" role="status">
                                             <span className="visually-hidden">Đang tải...</span>
@@ -1314,13 +816,7 @@ const TechnicianDashboard = () => {
                                                             size="sm"
                                                             onClick={() => {
                                                                 setPartSearchTerm('');
-                                                                // Nếu đang hiển thị theo loại xe, quay lại danh sách ban đầu
-                                                                if (motoTypeId) {
-                                                                    fetchPartsByMotoType(motoTypeId);
-                                                                } else {
-                                                                    // Nếu không, tải lại danh sách phụ tùng
-                                                                    fetchParts();
-                                                                }
+                                                                switchPartsByMotoType(motoTypeId);
                                                             }}
                                                         >
                                                             <small>Xóa bộ lọc</small>
@@ -1330,40 +826,40 @@ const TechnicianDashboard = () => {
                                                 <ListGroup className="parts-list">
                                                     {filteredParts.map(part => (
                                                         <ListGroup.Item
-                                                            key={part.part_mototype_id || part.part_id}
+                                                            key={part.partId}
                                                             as="div" // Đảm bảo render thành div thay vì button
-                                                            className={`d-flex justify-content-between align-items-center part-item ${selectedParts.includes(part.part_mototype_id || part.part_id) ? 'selected' : ''}`}
-                                                            onClick={() => togglePartSelection(part.part_id, part.part_mototype_id)}
+                                                            className={`d-flex justify-content-between align-items-center part-item ${selectedParts.includes(part.partId) ? 'selected' : ''}`}
+                                                            onClick={() => togglePartSelection(part.partId)}
                                                         >
                                                             <div className="part-info">
-                                                                <div>{part.name}</div>
-                                                                {part.price && (
+                                                                <div>{part.partName}</div>
+                                                                {part.partPrice && (
                                                                     <small className="text-primary">
-                                                                        {formatCurrency(part.price)}
+                                                                        {formatCurrency(part.partPrice)}
                                                                     </small>
                                                                 )}
                                                             </div>
                                                             <div className="part-quantity">
-                                                                {selectedParts.includes(part.part_mototype_id || part.part_id) ? (
+                                                                {selectedParts.includes(part.partId) ? (
                                                                     <div className="quantity-input">
                                                                         <span
                                                                             className="quantity-btn"
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
-                                                                                const id = part.part_mototype_id || part.part_id;
+                                                                                const id = part.partId;
                                                                                 handleQuantityChange(id, (partQuantities[id] || 1) - 1);
                                                                             }}
                                                                         >
                                                                             -
                                                                         </span>
                                                                         <span className="quantity-value">
-                                                                            {partQuantities[part.part_mototype_id || part.part_id] || 1}
+                                                                            {partQuantities[part.partId] || 1}
                                                                         </span>
                                                                         <span
                                                                             className="quantity-btn"
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
-                                                                                const id = part.part_mototype_id || part.part_id;
+                                                                                const id = part.partId;
                                                                                 handleQuantityChange(id, (partQuantities[id] || 1) + 1);
                                                                             }}
                                                                         >
@@ -1420,16 +916,10 @@ const TechnicianDashboard = () => {
                                             <h6 className="border-bottom pb-2">Dịch vụ đã chọn</h6>
                                             <ListGroup variant="flush">
                                                 {selectedServices.map(serviceId => {
-                                                    // Tìm thông tin dịch vụ từ cả hai nguồn
-                                                    const serviceFromMotoType = servicesByMotoType.find(s =>
-                                                        s.service_mototype_id === serviceId || s.service_id === serviceId
-                                                    );
-                                                    const service = serviceFromMotoType || services.find(s => s.service_id === serviceId);
-
+                                                    const serviceFromMotoType = servicesMotoType[motoTypeId]?.[serviceId];
+                                                    const service = formatServiceData(services[serviceId], serviceFromMotoType);
                                                     if (!service) return null;
-
-                                                    const price = service.price || 0;
-
+                                                    const price = service.servicePrice || 0;
                                                     return (
                                                         <ListGroup.Item
                                                             key={serviceId}
@@ -1437,7 +927,7 @@ const TechnicianDashboard = () => {
                                                             style={{ backgroundColor: 'transparent' }}
                                                         >
                                                             <div>
-                                                                <div>{service.name}</div>
+                                                                <div>{service.serviceName}</div>
                                                                 {price > 0 && (
                                                                     <small className="text-primary">
                                                                         {formatCurrency(price)}
@@ -1447,7 +937,7 @@ const TechnicianDashboard = () => {
                                                             <Button
                                                                 variant="link"
                                                                 className="text-danger p-0"
-                                                                onClick={() => toggleServiceSelection(service.service_id, service.service_mototype_id)}
+                                                                onClick={() => toggleServiceSelection(service.serviceId)}
                                                             >
                                                                 <i className="bi bi-x-circle"></i>
                                                             </Button>
@@ -1459,55 +949,49 @@ const TechnicianDashboard = () => {
                                     )}
 
                                     {selectedParts.length > 0 && (
-                                        <div>
-                                            <h6 className="border-bottom pb-2">Phụ tùng đã chọn</h6>
-                                            <ListGroup variant="flush">
-                                                {selectedParts.map(partId => {
-                                                    // Tìm thông tin phụ tùng từ cả hai nguồn
-                                                    const partFromMotoType = partsByMotoType.find(p =>
-                                                        p.part_mototype_id === partId || p.part_id === partId
-                                                    );
-                                                    const part = partFromMotoType || parts.find(p => p.part_id === partId);
-
-                                                    if (!part) return null;
-
-                                                    const quantity = partQuantities[partId] || 1;
-                                                    const price = part.price || 0;
-
-                                                    return (
-                                                        <ListGroup.Item
-                                                            key={partId}
-                                                            className="px-0 py-2 d-flex justify-content-between align-items-center"
-                                                            style={{ backgroundColor: 'transparent' }}
-                                                        >
-                                                            <div>
-                                                                <div>{part.name}</div>
-                                                                <div className="d-flex align-items-center">
-                                                                    <small className="text-muted me-2">{part.unit} x{quantity}</small>
-                                                                    {price > 0 && (
-                                                                        <small className="text-primary">
-                                                                            {formatCurrency(price * quantity)}
-                                                                        </small>
-                                                                    )}
-                                                                </div>
+                                        <>
+                                        <h6 className="border-bottom pb-2">Phụ tùng đã chọn</h6>
+                                        <ListGroup variant="flush">
+                                            {selectedParts.map(partId => {
+                                                const part = formatPartData(parts[partId], partsMotoType[motoTypeId][partId]);
+                                                const quantity = partQuantities[partId] || 1;
+                                                const price = part.partPrice || 0;
+                                                return (
+                                                    <ListGroup.Item
+                                                        key={partId}
+                                                        className="px-0 py-2 d-flex justify-content-between align-items-center"
+                                                        style={{ backgroundColor: 'transparent' }}
+                                                    >
+                                                        <div>
+                                                            <div>{part.partName}</div>
+                                                            <div className="d-flex align-items-center">
+                                                                <small className="text-muted me-2">{part.partUnit} x{quantity}</small>
+                                                                {price > 0 && (
+                                                                    <small className="text-primary">
+                                                                        {formatCurrency(price * quantity)}
+                                                                    </small>
+                                                                )}
                                                             </div>
-                                                            <Button
-                                                                variant="link"
-                                                                className="text-danger p-0"
-                                                                onClick={() => togglePartSelection(part.part_id, part.part_mototype_id)}
-                                                            >
-                                                                <i className="bi bi-x-circle"></i>
-                                                            </Button>
-                                                        </ListGroup.Item>
-                                                    );
-                                                })}
-                                            </ListGroup>
+                                                        </div>
+                                                        <Button
+                                                            variant="link"
+                                                            className="text-danger p-0"
+                                                            onClick={() => togglePartSelection(part.partId)}
+                                                        >
+                                                            <i className="bi bi-x-circle"></i>
+                                                        </Button>
+                                                    </ListGroup.Item>
+                                                );
+                                            })}
+                                        </ListGroup>
+                                        </>
+                                    )}
 
-                                            {/* Hiển thị tổng tiền */}
-                                            <div className="mt-3 pt-2 border-top d-flex justify-content-between">
-                                                <span className="fw-medium">Tổng cộng:</span>
-                                                <span className="fw-bold">{formatCurrency(calculateTotalAmount())}</span>
-                                            </div>
+                                    {(selectedParts.length > 0 || selectedServices.length > 0)&& (
+                                        // Hiển thị tổng tiền
+                                        <div className="mt-3 pt-2 border-top d-flex justify-content-between">
+                                            <span className="fw-medium">Tổng cộng:</span>
+                                            <span className="fw-bold">{formatCurrency(calculateTotalAmount())}</span>
                                         </div>
                                     )}
                                 </>
@@ -1533,13 +1017,15 @@ const TechnicianDashboard = () => {
 
     // Open order detail modal
     const handleViewDetail = (orderId) => {
-        setCurrentOrder(myOrdersDisplay[orderId]);
+        const order = createOrderDisplay(orderId);
+        setMotoTypeId(order.motorTypeId);
+        setCurrentOrder(order);
         setShowDetailModal(true);
     };
 
     // Add a new function to handle showing the update details modal
     const handleShowUpdateDetailsModal = async (orderId) => {
-        const order = myOrdersDisplay[orderId];
+        const order = createOrderDisplay(orderId);
         
         // Only allow updating details for orders in "wait_confirm" status
         if (order.rawStatus !== 'wait_confirm') {
@@ -1686,23 +1172,11 @@ const TechnicianDashboard = () => {
             
             // Update order status to repairing if not already
             if (currentOrder.rawStatus === 'wait_confirm') {
-                // await repairService.order.updateOrderStatus(currentOrder.orderId, 'repairing');
-                await repairService.order.updateOrder(currentOrder.orderId, {
+                const response = await repairService.order.updateOrder(currentOrder.orderId, {
                     status: 'repairing',
                     total_price: totalSelectedAmount
                 });
-                
-                // Update local state
-                setMyOrdersDisplay(prev => ({
-                    ...prev,
-                    [currentOrder.orderId]: {
-                        ...prev[currentOrder.orderId],
-                        status: STATUS_MAPPING['repairing'],
-                        rawStatus: 'repairing',
-                        progressPercentage: getProgressPercentage('repairing'),
-                        totalAmount: totalSelectedAmount
-                    }
-                }));
+                setData('orders', response.data, response.data.order_id);
             }
             
             alert('Cập nhật chi tiết đơn hàng thành công!');
@@ -1714,40 +1188,6 @@ const TechnicianDashboard = () => {
             setDetailsLoading(false);
         }
     };
-
-    const handleSubmitCompleteRepairing = async (orderId) => {
-        setCompleteLoading(true);
-        setCurrentOrder(myOrdersDisplay[orderId]);
-
-        try {
-            // TODO: Gọi api cập nhật trạng thái và tạo hóa đơn
-            console.log(myOrdersDisplay[orderId]);
-            await Promise.all([
-                resourceService.invoice.createInvoice({
-                    order_id: orderId,
-                    total_price: myOrdersDisplay[orderId].totalAmount
-                }),
-                repairService.order.updateOrderStatus(orderId, 'wait_delivery')
-            ]);
-
-            // 
-            setMyOrdersDisplay(prev => ({
-                ...prev,
-                [currentOrder.orderId]: {
-                    ...prev[currentOrder.orderId],
-                    status: STATUS_MAPPING['wait_delivery'],
-                    rawStatus: 'wait_delivery',
-                    progressPercentage: getProgressPercentage('wait_delivery'),
-                }
-            }));
-
-            setCompleteLoading(false);
-        } catch (error) {
-            console.log('Lỗi khi cập nhật hoàn thành', error);
-            setCompleteLoading(false);
-        }
-        setCurrentOrder({});
-    }
 
     // Fetch part order details
     const fetchPartOrderDetails = async (orderId) => {
@@ -1771,6 +1211,42 @@ const TechnicianDashboard = () => {
         }
     };
 
+    // Modify this function to show the confirmation modal first
+    const handleCompleteRepairClick = (orderId) => {
+        const order = createOrderDisplay(orderId);
+        setCurrentOrder(order);
+        setShowCompleteRepairModal(true);
+    };
+
+    // Keep the existing function but rename it to confirmCompleteRepairing
+    const confirmCompleteRepairing = async () => {
+        if (!currentOrder) return;
+        
+        setCompleteLoading(true);
+        
+        try {
+            // TODO: Gọi api cập nhật trạng thái và tạo hóa đơn
+            console.log(currentOrder);
+            const [_, __] = await Promise.all([
+                resourceService.invoice.createInvoice({
+                    order_id: currentOrder.orderId,
+                    total_price: currentOrder.totalAmount
+                }),
+                repairService.order.updateOrderStatus(currentOrder.orderId, 'wait_delivery')
+            ]);
+            setData('orders', __.data, __.data.order_id);
+
+            // Close the modal after successful completion
+            setShowCompleteRepairModal(false);
+            alert('Đã hoàn thành sửa chữa thành công!');
+        } catch (error) {
+            console.log('Lỗi khi cập nhật hoàn thành', error);
+            alert('Có lỗi xảy ra khi hoàn thành sửa chữa. Vui lòng thử lại sau.');
+        } finally {
+            setCompleteLoading(false);
+        }
+    };
+
     return (
         <>
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -1786,9 +1262,7 @@ const TechnicianDashboard = () => {
                     </Badge>
                 </div>
             </div>
-
             {renderStatCards()}
-
             <Card className="shadow-sm mb-4">
                 <Card.Header className="bg-white d-flex justify-content-between align-items-center">
                     <Tabs
@@ -1798,8 +1272,9 @@ const TechnicianDashboard = () => {
                     >
                         <Tab eventKey="all" title={<span><i className="bi bi-grid-3x3-gap me-1"></i>Tất cả</span>} />
                         <Tab eventKey="new" title={<span><i className="bi bi-lightning me-1"></i>Mới tiếp nhận</span>} />
-                        <Tab eventKey="in-progress" title={<span><i className="bi bi-gear-wide-connected me-1"></i>Đang sửa chữa</span>} />
                         <Tab eventKey="pending-confirmation" title={<span><i className="bi bi-hourglass-split me-1"></i>Chờ xác nhận</span>} />
+                        <Tab eventKey="in-progress" title={<span><i className="bi bi-gear-wide-connected me-1"></i>Đang sửa chữa</span>} />
+                        {/* <Tab eventKey="wait_delivery" title={<span><i className="bi bi-truck me-1"></i>Chờ giao xe</span>} /> */}
                         <Tab eventKey="completed" title={<span><i className="bi bi-check2-all me-1"></i>Hoàn thành</span>} />
                     </Tabs>
                     <Form.Group className="search-box">
@@ -1831,7 +1306,7 @@ const TechnicianDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {loading ? (
+                                {localLoading ? (
                                     <tr>
                                         <td colSpan="7" className="text-center py-4">
                                             <div className="spinner-border text-primary" role="status">
@@ -1842,9 +1317,9 @@ const TechnicianDashboard = () => {
                                     </tr>
                                 ) : filteredOrdersIds.length > 0 ? (
                                     filteredOrdersIds.map(id => {
-                                        const order = myOrdersDisplay[id];
+                                        const order = createOrderDisplay(id);
                                         return (
-                                            <tr key={order.orderId} className={`priority-${order.priority}`}>
+                                            <tr key={order.orderId}>
                                                 <td>{order.orderId}</td>
                                                 <td>
                                                     <div className="fw-semibold">{order.customerName}</div>
@@ -1898,7 +1373,7 @@ const TechnicianDashboard = () => {
                                                                 <Button
                                                                     variant="outline-warning"
                                                                     size="sm"
-                                                                    onClick={() => handleShowInspectionModal(order.orderId)}
+                                                                    onClick={() => handleModalInspectionClick(order.orderId)}
                                                                     title="Cập nhật kiểm tra xe"
                                                                 >
                                                                     <i className="bi bi-tools"></i>
@@ -1909,7 +1384,7 @@ const TechnicianDashboard = () => {
                                                                 <Button
                                                                     variant="outline-warning"
                                                                     size="sm"
-                                                                    onClick={() => handleShowInspectionModal(order.orderId)}
+                                                                    onClick={() => handleModalInspectionClick(order.orderId)}
                                                                     title="Cập nhật kiểm tra xe"
                                                                 >
                                                                     <i className="bi bi-tools"></i>
@@ -1929,10 +1404,7 @@ const TechnicianDashboard = () => {
                                                                     variant="outline-success"
                                                                     disabled={completeLoading}
                                                                     size="sm"
-                                                                    onClick={() => {
-                                                                        setCurrentOrder(myOrdersDisplay[order.orderId])
-                                                                        handleSubmitCompleteRepairing(order.orderId)
-                                                                    }}
+                                                                    onClick={() => handleCompleteRepairClick(order.orderId)}
                                                                     title="Hoàn thành sửa chửa"
                                                                 >
                                                                     <i className="bi bi-check2-circle"></i>
@@ -2073,8 +1545,7 @@ const TechnicianDashboard = () => {
                             variant="success"
                             onClick={() => {
                                 setShowDetailModal(false);
-                                setCurrentOrder(myOrdersDisplay[currentOrder.orderId]);
-                                handleSubmitCompleteRepairing(currentOrder.orderId);
+                                handleCompleteRepairClick(currentOrder.orderId);
                             }}
                         >
                             <i className="bi bi-check2-circle me-1"></i>
@@ -2113,6 +1584,7 @@ const TechnicianDashboard = () => {
                                     <Form.Group className="mb-3">
                                         <Form.Label>Chuẩn đoán / Vấn đề phát hiện</Form.Label>
                                         <Form.Control
+                                            disabled={!currentOrder.hasDiagnosis}
                                             as="textarea"
                                             rows={5}
                                             value={updateData.diagnosisProblem}
@@ -2139,39 +1611,19 @@ const TechnicianDashboard = () => {
                     </Button>
                     <Button
                         variant="warning"
-                        // style={{ backgroundColor: '#d30000', borderColor: '#d30000' }}
                         onClick={handleSubmitInspection}
-                        disabled={loading}
+                        disabled={localLoading}
                     >
-                        {loading ? 'Đang xử lý...' : 'Hoàn thành kiểm tra'}
+                        {localLoading ? 'Đang xử lý...' : 'Hoàn thành kiểm tra'}
                     </Button>
                 </Modal.Footer>
             </Modal>
-
-            {/* Modal xác nhận nhận đơn - Add this new modal */}
-            <CustomModal
-                show={showAcceptModal}
-                onHide={() => setShowAcceptModal(false)}
-                title="Xác nhận nhận đơn"
-                message={
-                    currentOrder ? 
-                    `Bạn có chắc chắn muốn nhận đơn hàng #${currentOrder.orderId} của khách hàng ${currentOrder.customerName} không?
-                    Sau khi nhận đơn, bạn sẽ có trách nhiệm xử lý yêu cầu sửa chữa này.` :
-                    'Bạn có chắc chắn muốn nhận đơn hàng này không?'
-                }
-                confirmButtonText={isAcceptingOrder ? "Đang xử lý..." : "Xác nhận nhận đơn"}
-                confirmButtonVariant="success"
-                onConfirm={confirmAcceptOrder}
-                cancelButtonText="Hủy"
-                backdrop="static"
-                keyboard={!isAcceptingOrder}
-            />
 
             {/* Modal cập nhật chi tiết đơn hàng */}
             <Modal
                 show={showUpdateDetailsModal}
                 onHide={() => setShowUpdateDetailsModal(false)}
-                size="xl"
+                size="lg"
                 backdrop="static"
             >
                 <Modal.Header closeButton>
@@ -2278,7 +1730,7 @@ const TechnicianDashboard = () => {
                                                 {formatCurrency(
                                                     partOrderDetailsData
                                                         .filter(part => selectedItems.parts.has(part.part_detail_ID))
-                                                        .reduce((sum, part) => sum + (part.price * part.quantity), 0)
+                                                        .reduce((sum, part) => sum + (part.price), 0)
                                                 )}
                                             </td>
                                         </tr>
@@ -2395,6 +1847,44 @@ const TechnicianDashboard = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            {/* Modal xác nhận nhận đơn */}
+            <CustomModal
+                show={showAcceptModal}
+                onHide={() => setShowAcceptModal(false)}
+                title="Xác nhận nhận đơn"
+                message={
+                    currentOrder ? 
+                    `Bạn có chắc chắn muốn nhận đơn hàng #${currentOrder.orderId} của khách hàng ${currentOrder.customerName} không?
+                    Sau khi nhận đơn, bạn sẽ có trách nhiệm xử lý yêu cầu sửa chữa này.` :
+                    'Bạn có chắc chắn muốn nhận đơn hàng này không?'
+                }
+                confirmButtonText={isAcceptingOrder ? "Đang xử lý..." : "Xác nhận nhận đơn"}
+                confirmButtonVariant="success"
+                onConfirm={confirmAcceptOrder}
+                cancelButtonText="Hủy"
+                backdrop="static"
+                keyboard={!isAcceptingOrder}
+            />
+
+            {/* Modal xác nhận hoàn thành sửa chửa */}
+            <CustomModal
+                show={showCompleteRepairModal}
+                onHide={() => setShowCompleteRepairModal(false)}
+                title="Xác nhận hoàn thành sửa chữa"
+                message={
+                    currentOrder ? 
+                    `Bạn có chắc chắn muốn hoàn thành sửa chữa đơn hàng #${currentOrder.orderId} của khách hàng ${currentOrder.customerName} không?
+                    Sau khi hoàn thành, đơn hàng sẽ chuyển sang trạng thái "Chờ giao xe" và hóa đơn sẽ được tạo.` :
+                    'Bạn có chắc chắn muốn hoàn thành sửa chữa đơn hàng này không?'
+                }
+                confirmButtonText={completeLoading ? "Đang xử lý..." : "Xác nhận hoàn thành"}
+                confirmButtonVariant="success"
+                onConfirm={confirmCompleteRepairing}
+                cancelButtonText="Hủy"
+                backdrop="static"
+                keyboard={!completeLoading}
+            />
         </>
     );
 };
