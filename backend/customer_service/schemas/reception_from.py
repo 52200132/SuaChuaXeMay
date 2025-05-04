@@ -7,7 +7,7 @@ from schemas.reception_image import ReceptionImageCreate, ReceptionImageResponse
 class ReceptionFormBase(BaseModel):
     """Schema cơ bản cho ReceptionForm"""
     motocycle_id: int = Field(..., description="ID của xe máy")
-    customer_id: int = Field(..., description="ID của khách hàng")
+    # customer_id: int = Field(..., description="ID của khách hàng")
     staff_id: int = Field(..., description="ID của nhân viên tiếp nhận")
     initial_conditon: str = Field(..., description="Tình trạng ban đầu do khách mô tả")
     note: Optional[str] = Field(..., description="Ghi chú thêm từ nhân viên tiếp nhận")
@@ -22,7 +22,7 @@ class ReceptionFormCreate(ReceptionFormBase):
         json_schema_extra = {
             "example": {
                 "motocycle_id": 1,
-                "customer_id": 1,
+                # "customer_id": 1,
                 "staff_id": 1,
                 "initial_conditon": "Xe bị hư hệ thống phanh, tiếng máy kêu to",
                 "note": "Khách hàng đã đồng ý sửa chữa",
@@ -51,7 +51,7 @@ class ReceptionFormResponse(BaseModel):
     """Schema để trả về thông tin ReceptionForm"""
     form_id: int
     motocycle_id: int
-    customer_id: int
+    # customer_id: int
     staff_id: int
     created_at: datetime
     initial_conditon: str
@@ -67,7 +67,7 @@ class ReceptionFormResponse(BaseModel):
                 "form_id": 1,
                 "motocycle_id": 1,
                 "moto_type_id": 1,
-                "customer_id": 1,
+                # "customer_id": 1,
                 "staff_id": 1,
                 "created_at": datetime.now(),
                 "initial_conditon": "Xe bị hư hệ thống phanh, tiếng máy kêu to",

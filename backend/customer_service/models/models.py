@@ -17,7 +17,7 @@ class Customer(Base):
     # Relationships
     motocycles = relationship("Motocycle", back_populates="customer") # checked
     appointments = relationship("Appointment", back_populates="customer") # checked
-    reception_forms = relationship("ReceptionForm", back_populates="customer")
+    # reception_forms = relationship("ReceptionForm", back_populates="customer")
 
 class MotocycleType(Base):
     __tablename__ = 'MotocycleType'
@@ -79,7 +79,7 @@ class ReceptionForm(Base):
     
     form_id = Column(Integer, primary_key=True, autoincrement=True)
     motocycle_id = Column(Integer, ForeignKey('Motocycle.motocycle_id'))
-    customer_id = Column(Integer, ForeignKey('Customer.customer_id'))
+    # customer_id = Column(Integer, ForeignKey('Customer.customer_id'))
     # staff_id = Column(Integer, ForeignKey('Staff.staff_id'))
     staff_id = Column(Integer)
     created_at = Column(DateTime, default=datetime.now)
@@ -90,7 +90,7 @@ class ReceptionForm(Base):
 
     # Relationships
     motocycle = relationship("Motocycle", back_populates="reception_forms") # checked
-    customer = relationship("Customer", back_populates="reception_forms") # checked
+    # customer = relationship("Customer", back_populates="reception_forms") # checked
     # staff = relationship("Staff", back_populates="reception_forms") 
     reception_images = relationship("ReceptionImage", back_populates="form") # checked
     # diagnoses = relationship("Diagnosis", back_populates="form")

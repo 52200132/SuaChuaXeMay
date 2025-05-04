@@ -17,7 +17,7 @@ class Customer(Base):
     # Relationships
     motocycles = relationship("Motocycle", back_populates="customer") # checked
     appointments = relationship("Appointment", back_populates="customer")
-    reception_forms = relationship("ReceptionForm", back_populates="customer")
+    # reception_forms = relationship("ReceptionForm", back_populates="customer")
 
 class MotocycleType(Base):
     __tablename__ = 'MotocycleType'
@@ -163,14 +163,14 @@ class ReceptionForm(Base):
     
     form_id = Column(Integer, primary_key=True, autoincrement=True)
     motocycle_id = Column(Integer, ForeignKey('Motocycle.motocycle_id'))
-    customer_id = Column(Integer, ForeignKey('Customer.customer_id'))
+    # customer_id = Column(Integer, ForeignKey('Customer.customer_id'))
     staff_id = Column(Integer, ForeignKey('Staff.staff_id'))
     created_at = Column(DateTime, default=datetime.utcnow)
     initial_conditon = Column(Unicode(255))  # Tình trạng ban đầu do khách mô tả
     
     # Relationships
     motocycle = relationship("Motocycle", back_populates="reception_forms")
-    customer = relationship("Customer", back_populates="reception_forms")
+    # customer = relationship("Customer", back_populates="reception_forms")
     staff = relationship("Staff", back_populates="reception_forms")
     reception_images = relationship("ReceptionImage", back_populates="form")
     diagnoses = relationship("Diagnosis", back_populates="form")

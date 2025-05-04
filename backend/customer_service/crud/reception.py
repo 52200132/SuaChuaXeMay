@@ -26,7 +26,7 @@ async def create_reception_form(db: AsyncSession, reception_form: ReceptionFormC
         # Tạo đối tượng biểu mẫu tiếp nhận
         db_reception_form = ReceptionForm(
             motocycle_id=reception_form.motocycle_id,
-            customer_id=reception_form.customer_id,
+            # customer_id=reception_form.customer_id,
             staff_id=reception_form.staff_id,
             is_returned=reception_form.is_returned,
             initial_conditon=reception_form.initial_conditon,
@@ -86,7 +86,7 @@ async def create_reception_form_without_motorcycle_id(
         # ...existing code...
         
         db_reception_form = ReceptionForm(
-            customer_id=reception_form.customer_id,
+            # customer_id=reception_form.customer_id,
             motocycle_id=motocycle_id,
             staff_id=reception_form.staff_id,
             is_returned=reception_form.is_returned,
@@ -277,6 +277,7 @@ async def get_all_reception_forms(
         logger.error(f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Lỗi khi lấy danh sách biểu mẫu tiếp nhận: {str(e)}")
     return result.scalars().all()
+
 async def update_reception_form(
     db: AsyncSession,
     form_id: int,
