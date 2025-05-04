@@ -665,11 +665,6 @@ tr.priority-medium td:first-child {
     cursor: pointer;
 }
 
-.service-item .form-check-input:checked {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-}
-
 /* Cập nhật container danh sách dịch vụ */
 .service-list-container {
     max-height: 400px;

@@ -5,10 +5,10 @@ import { Card, Table, Button, Modal, Form, Row, Col, InputGroup, Badge, Tabs, Ta
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 
+import StatusBadge from '../components/StatusBadge'; // Import your StatusBadge component
 import './AssignmentManagement.css'; // Import your CSS file for styling
 import { useAppData } from '../contexts/AppDataContext';
 import { repairService, resourceService } from '../../services/api';
-import { set } from 'date-fns';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -22,16 +22,16 @@ const AssignmentManagement = ({
         completed: 0,
         cancelled: 0
     },
-    onAssignOrder, // Cha truyền callback để cập nhật lại danh sách đơn hàng
-    onUnassignOrder,
-    loading = false,
-    setLoading,
-    ordersDisplay = {},
+    localLoading = false,
+    setLocalLoading,
+    formatOrder,
 }) => {
     // TODO: khai báo
     const { setData, getData, getIds, setMultipleData } = useAppData();
     const ordersById = getData('orders'); // Lấy danh sách đơn hàng từ context
-    // const staffsById = getData('staffs');
+    const staffsById = getData('staffs');
+    const customersById = getData('customers');
+    const motorcyclesById = getData('motorcycles');
     const [technicians, setTechnicians] = useState([]);
 
     // Local state
@@ -44,6 +44,7 @@ const AssignmentManagement = ({
     const [validated, setValidated] = useState(false);
     
     // Technician search state
+    const [technicianLoadidng, setTechnicianLoading] = useState(false);
     const [technicianSearch, setTechnicianSearch] = useState('');
     const [filteredTechnicians, setFilteredTechnicians] = useState([]);
     
@@ -57,7 +58,7 @@ const AssignmentManagement = ({
     // TODO: fetch dữ liệu thợ sửa chữa từ API
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true);
+            setTechnicianLoading(true);
 
             try {
                 await resourceService.staff.getAllTechnicians()
@@ -68,11 +69,9 @@ const AssignmentManagement = ({
                     console.log('useEffect - danh sách thợ sửa:', data);
                 });
             } catch (error) {
-                setLoading(false);
                 console.error('useEffect - Lỗi khi tải dữ liệu thợ sửa chữa:', error);
             }
-
-            setLoading(false);
+            setTechnicianLoading(false);
         };
         
         fetchData();
@@ -198,10 +197,7 @@ const AssignmentManagement = ({
         }
         
         try {
-            setLoading(true);
-            // Gọi api
-            // console.log('Phân công đơn hàng:', currentOrder, technicianId);
-            setLoading(true);
+            setLocalLoading(true);
             // Gọi API phân công
             const response = await repairService.order.asignStaffToOrder(currentOrderId, selectedTechnician);
             const orderData = response.data;
@@ -209,30 +205,13 @@ const AssignmentManagement = ({
             // TODO: Thông báo cho nhân viên được phân công
             handleSendNotification(`staff-${selectedTechnician}`, `Phân công`,`Đơn hàng #${currentOrderId} đã được phân công cho bạn`, `info`);
             setData('orders', orderData, orderData.order_id);
-            if (onAssignOrder) {
-                await onAssignOrder(orderData);
-            }
             setShowAssignModal(false);
-            alert('Phân công đơn hàng thành công!');            
-            // Close modal
-            
+            alert('Phân công đơn hàng thành công!');                        
         } catch (error) {
             console.error('Lỗi khi phân công đơn hàng:', error);
             alert('Có lỗi xảy ra khi phân công đơn hàng. Vui lòng thử lại!');
         } finally {
-            setLoading(false);
-        }
-    };
-    
-    // Handle unassign order
-    const handleUnassignOrder = (order) => {
-        // Confirm before unassigning
-        if (!window.confirm(`Bạn có chắc muốn hủy phân công đơn hàng ${order.orderId}?`)) {
-            return;
-        }
-        
-        if (onUnassignOrder) {
-            onUnassignOrder(order.orderId);
+            setLocalLoading(false);
         }
     };
     
@@ -356,7 +335,7 @@ const AssignmentManagement = ({
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {loading ? (
+                                            {localLoading ? (
                                                 <tr>
                                                     <td colSpan="5" className="text-center py-4">
                                                         <div className="spinner-border text-primary" role="status">
@@ -367,7 +346,10 @@ const AssignmentManagement = ({
                                                 </tr>
                                             ) : (
                                                 pendingOrders.map(id => {
-                                                    const order = ordersDisplay[id];
+                                                    const o = ordersById[id];
+                                                    const motorcycle = motorcyclesById[o?.motocycle_id];
+                                                    const customer = customersById[motorcycle?.customer_id];
+                                                    const order = formatOrder(o, customer, motorcycle);
                                                     return (
                                                         <tr key={order.orderId}>
                                                             <td>{order.orderId}</td>
@@ -385,7 +367,7 @@ const AssignmentManagement = ({
                                                             </td>
                                                             <td>
                                                                 <Button
-                                                                    variant="outline-primary"
+                                                                    variant="outline-danger"
                                                                     size="sm"
                                                                     onClick={() => handleShowAssignModal(order.orderId)}
                                                                     className="btn-assign"
@@ -399,7 +381,7 @@ const AssignmentManagement = ({
                                                 })
                                             )}
 
-                                            {!loading && pendingOrders.length === 0 && (
+                                            {!localLoading && pendingOrders.length === 0 && (
                                                 <tr>
                                                     <td colSpan="5" className="text-center py-4">
                                                         <div className="text-muted">
@@ -432,7 +414,7 @@ const AssignmentManagement = ({
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {loading ? (
+                                            {localLoading ? (
                                                 <tr>
                                                     <td colSpan="6" className="text-center py-4">
                                                         <div className="spinner-border text-primary" role="status">
@@ -443,7 +425,11 @@ const AssignmentManagement = ({
                                                 </tr>
                                             ) : (
                                                 assignedOrders.map(id => {
-                                                    const order = ordersDisplay[id];
+                                                    const o = ordersById[id];
+                                                    const motorcycle = motorcyclesById[o?.motocycle_id];
+                                                    const customer = customersById[motorcycle?.customer_id];
+                                                    const staff = staffsById[o?.staff_id];
+                                                    const order = formatOrder(o, customer, motorcycle, staff);
                                                     return (
                                                         <tr key={order.orderId}>
                                                             <td>{order.orderId}</td>
@@ -457,43 +443,26 @@ const AssignmentManagement = ({
                                                             </td>
                                                             <td>{order.technicianName}</td>
                                                             <td>
-                                                                <Badge bg={
-                                                                    order.status === 'Đang sửa chữa' ? 'info' :
-                                                                        order.status === 'Chờ giao xe' ? 'warning' : 'primary'
-                                                                }>
-                                                                    {order.status}
-                                                                </Badge>
+                                                                <StatusBadge status={order.status} />
                                                             </td>
                                                             <td>
-                                                                <div className="d-flex gap-2">
-                                                                    <Dropdown>
-                                                                        <Dropdown.Toggle variant="outline-secondary" size="sm" id={`dropdown-${order.orderId}`}>
-                                                                            <i className="bi bi-tools"></i>
-                                                                        </Dropdown.Toggle>
-                                                                        <Dropdown.Menu>
-                                                                            <Dropdown.Item onClick={() => handleShowAssignModal(order.orderId)}>
-                                                                                <i className="bi bi-arrow-repeat me-2"></i>
-                                                                                Phân công lại
-                                                                            </Dropdown.Item>
-                                                                            <Dropdown.Item onClick={() => handleUnassignOrder(order)}>
-                                                                                <i className="bi bi-x-circle me-2"></i>
-                                                                                Hủy phân công
-                                                                            </Dropdown.Item>
-                                                                            <Dropdown.Divider />
-                                                                            <Dropdown.Item>
-                                                                                <i className="bi bi-check-circle me-2"></i>
-                                                                                Đánh dấu hoàn thành
-                                                                            </Dropdown.Item>
-                                                                        </Dropdown.Menu>
-                                                                    </Dropdown>
-                                                                </div>
+                                                                {order.status === 'Đã tiếp nhận' && (
+                                                                <Button
+                                                                    title='Phân công lại'
+                                                                    variant="outline-secondary"
+                                                                    size="sm"
+                                                                    onClick={() => handleShowAssignModal(order.orderId)}
+                                                                >
+                                                                    <i className="bi bi-arrow-repeat me-1"></i>
+                                                                </Button>
+                                                                )}
                                                             </td>
                                                         </tr>
                                                     )
                                                 })
                                             )}
 
-                                            {!loading && assignedOrders.length === 0 && (
+                                            {!localLoading && assignedOrders.length === 0 && (
                                                 <tr>
                                                     <td colSpan="6" className="text-center py-4">
                                                         <div className="text-muted">
@@ -534,7 +503,7 @@ const AssignmentManagement = ({
                     </InputGroup>
                 </div>
                 <Card.Body className="technician-cards-container">
-                    {loading ? (
+                    {technicianLoadidng ? (
                         <div className="text-center py-4">
                             <div className="spinner-border text-primary" role="status">
                                 <span className="visually-hidden">Đang tải...</span>
@@ -764,7 +733,10 @@ const AssignmentManagement = ({
                     </Modal.Header>
                     <Modal.Body>
                         {currentOrderId && (() => {
-                            const currentOrder = ordersDisplay[currentOrderId];
+                            const o = ordersById[currentOrderId];
+                            const motorcycle = motorcyclesById[o?.motocycle_id];
+                            const customer = customersById[motorcycle?.customer_id];
+                            const currentOrder = formatOrder(o, customer, motorcycle);
                             if (!currentOrder) return null;
                             return (
                                 <>
@@ -772,7 +744,8 @@ const AssignmentManagement = ({
                                         <h6>Thông tin đơn hàng:</h6>
                                         <p className="mb-1"><strong>Mã đơn:</strong> {currentOrder.orderId}</p>
                                         <p className='mb-1'><strong>Khách hàng:</strong> {currentOrder.customerName} - {currentOrder.customerPhone}</p>
-                                        <p className="mb-1"><strong>Xe:</strong> {currentOrder.motorcycleModel} - {currentOrder.plateNumber}</p>
+                                        <p className="mb-1"><strong>Xe:</strong> {currentOrder.motorcycleModel}</p>
+                                        <p className="mb-1"><strong>Biển số:</strong> {currentOrder.plateNumber}</p>
                                         <p className="mb-1"><strong>Ngày tạo:</strong> {currentOrder.createdDate} {currentOrder.createdTime}</p>
                                     </div>
 
@@ -802,7 +775,7 @@ const AssignmentManagement = ({
                         <Button variant="secondary" onClick={() => setShowAssignModal(false)}>
                             Hủy
                         </Button>
-                        <Button type="submit" style={{ backgroundColor: '#d30000', borderColor: '#d30000' }}>
+                        <Button type="submit" variant='danger'>
                             Xác nhận phân công
                         </Button>
                     </Modal.Footer>
@@ -820,7 +793,6 @@ const AssignmentManagement = ({
                             <div className="mb-4">
                                 <h5>{selectedTechnicianDetail.fullname}</h5>
                                 <p className="mb-1"><strong>Mã nhân viên:</strong> {selectedTechnicianDetail.staff_id}</p>
-                                <p className="mb-1"><strong>Chuyên môn:</strong> {selectedTechnicianDetail.expertise || 'Tổng hợp'}</p>
                                 <p className="mb-0">
                                     <strong>Trạng thái:</strong> {' '}
                                     <Badge bg={

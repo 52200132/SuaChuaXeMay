@@ -41,6 +41,11 @@ export const AppDataProvider = ({ children }) => {
 
         motorcycles: {},     // Motorcycle data by ID
         motorcyclesIds: new Set(),  // IDs of motorcycles
+
+        parts : {},     // Part data by ID
+        partsMotoType : {},     
+        services : {},     // Service data by ID
+        servicesMotoType : {},
     });
 
     // State to track loading status for different categories
@@ -48,11 +53,14 @@ export const AppDataProvider = ({ children }) => {
         customers: false,
         appointments: false,
         receptions: false,
+        staffs: false,
+        orders: false,
+        diagnosis: false,
+        motorcycles: false,
+        parts: false,
+        partsMotoType: false, // { "moto_type_id": { part_id: {} } }
         services: false,
-        products: false,
-        employees: false,
-        settings: false,
-        stats: false,
+        servicesMotoType: false,
     });
 
     // State to track errors
@@ -100,6 +108,165 @@ export const AppDataProvider = ({ children }) => {
         setLoadingState('motorcycles', false);
     }
 
+    const fetchPartsMotoType = async () => {
+        setLoadingState('partsMotoType', true);
+        try {
+            const response = await resourceService.partMotoType.getAllPartMotoTypes({
+                skip: 0,
+                limit: 1000,
+            });
+            const data = response?.data;
+            const dataObject = Array.isArray(data) 
+                ? data.reduce((obj, item) => {
+                    const motoTypeId = item.moto_type_id.toString();
+                    const partId = item.part_id.toString();
+                    obj[motoTypeId] = obj[motoTypeId] || {}; // Tạo một object con nếu chưa có
+                    obj[motoTypeId][partId] = item; // Lưu item vào object với moto_type_id là key
+                    return obj;
+                }, {})
+                : data;
+            console.log('Dữ liệu partMotoType pass', dataObject);
+            setDataStore(prevStore => ({
+                ...prevStore,
+                partsMotoType: dataObject
+            }));
+        } catch (error) {
+            console.error('Lỗi khi lấy partMotoTypes:', error);
+        }
+        setLoadingState('partsMotoType', false);
+    }
+
+    const fetchServicesMotoType = async () => {
+        setLoadingState('servicesMotoType', true);
+        try {
+            const response = await resourceService.serviceMotoType.getAllServiceMotoTypes({
+                skip: 0,
+                limit: 1000,
+            });
+            const data = response?.data;
+            const dataObject = Array.isArray(data) 
+                ? data.reduce((obj, item) => {
+                    const motoTypeId = item.moto_type_id.toString();
+                    const serviceId = item.service_id.toString();
+                    obj[motoTypeId] = obj[motoTypeId] || {}; // Tạo một object con nếu chưa có
+                    obj[motoTypeId][serviceId] = item; // Lưu item vào object với moto_type_id là key
+                    return obj;
+                }, {})
+                : data;
+            console.log('Dữ liệu serviceMotoType pass', dataObject);
+            setDataStore(prevStore => ({
+                ...prevStore,
+                servicesMotoType: dataObject
+            }));
+        } catch (error) {
+            console.error('Lỗi khi lấy serviceMotoTypes:', error);
+        }
+        setLoadingState('servicesMotoType', false);
+    }
+
+    const fetchParts = async () => {
+        setLoadingState('parts', true);
+        try {
+            const response = await resourceService.part.getAllParts({
+                skip: 0,
+                limit: 1000,
+            });
+            const data = response?.data;
+            const dataObject = Array.isArray(data) 
+                ? data.reduce((obj, item) => {
+                    obj[item.part_id] = item; // Lưu item vào object với part_id là key
+                    return obj;
+                }, {})
+                : data;
+            console.log('Dữ liệu part', dataObject);
+            setDataStore(prevStore => ({
+                ...prevStore,
+                parts: dataObject
+            }));
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách part:', error);
+        }
+        setLoadingState('parts', false);
+    }
+
+    const fetchServices = async () => {
+        setLoadingState('services', true);
+        try {
+            const response = await resourceService.service.getAllServices({
+                skip: 0,
+                limit: 1000,
+            });
+            const data = response?.data;
+            const dataObject = Array.isArray(data) 
+                ? data.reduce((obj, item) => {
+                    obj[item.service_id] = item; // Lưu item vào object với service_id là key
+                    return obj;
+                }, {})
+                : data;
+            setDataStore(prevStore => ({
+                ...prevStore,
+                services: dataObject
+            }));
+            console.log('Dữ liệu service', dataObject);
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách service:', error);
+        }
+        setLoadingState('services', false);
+    }
+
+    const fetchOrderForTechnician = async () => {
+        setLoadingState('orders', true);
+        try {
+            const response = await repairService.order.getAllOrdersByStaffIdToday(currentStaff.staff_id);
+            const data = response?.data || [];
+            
+            const motorcyclesIds = idsNeeded.current['motorcyclesIds'];
+            
+            setMultipleData('orders', data, 'order_id'); // Lưu tất cả orders vào dataStore
+            // Sử dụng Promise.allSettled để xử lý tất cả các request song song
+            await Promise.allSettled(
+                data.map(async (order) => {
+                    try {
+                        // Thêm motorcycle_id vào danh sách cần fetch
+                        if (order?.motocycle_id) {
+                            motorcyclesIds.add(order.motocycle_id.toString());
+                        }
+                        
+                        // Lấy thông tin diagnosis
+                        try {
+                            const diagnosisResponse = await repairService.diagnosis.getDiagnosisByOrderId(order.order_id);
+                            const diagnosisData = diagnosisResponse?.data;
+                            if (diagnosisData) {
+                                setData('diagnosis', diagnosisData, order.order_id);
+                                
+                                // Lấy thông tin reception nếu có form_id
+                                if (diagnosisData?.form_id) {
+                                    try {
+                                        const receptionResponse = await customerService.reception.getReceptionById(diagnosisData.form_id);
+                                        const receptionData = receptionResponse?.data;
+                                        if (receptionData) {
+                                            setData('receptions', receptionData, diagnosisData.form_id);
+                                        }
+                                    } catch (receptionError) {
+                                        console.error(`Lỗi khi lấy reception cho form_id ${diagnosisData.form_id}:`, receptionError);
+                                    }
+                                }
+                            }
+                        } catch (diagnosisError) {
+                            console.error(`Lỗi khi lấy diagnosis cho order_id ${order.order_id}:`, diagnosisError);
+                        }
+                    } catch (orderError) {
+                        console.error(`Lỗi xử lý cho order ${order.order_id}:`, orderError);
+                    }
+                })
+            );
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách order:', error);
+        } finally {
+            setLoadingState('orders', false);
+        }
+    }
+
     useEffect(() => {        
         if (!currentStaff || hasDataLoaded.current) return;
         hasDataLoaded.current = true; // Set the flag to true after loading data
@@ -112,8 +279,6 @@ export const AppDataProvider = ({ children }) => {
                 const endDate = new Date().toISOString().split('T')[0];
                 // TODO: Đặt kiều kiện
                 const response = await customerService.appointment.getAllAppointments({
-                    // start_date: startDate,
-                    // end_date: endDate,
                     skip: 0,
                     limit: 1000,
                 });
@@ -230,10 +395,13 @@ export const AppDataProvider = ({ children }) => {
             fetchOrders();
             fetchDiagnosis();
             fetchStaffs();
-            // fetchAndStoreData('customers', fetchCustomers);
-            // fetchAndStoreData('appointments', () => fetchAppointments(), 'appointment_id');
-            // fetchAndStoreData('services', fetchServices);
-            // fetchAndStoreData('products', fetchProducts);
+        } else if (currentStaff.role === 'technician') {
+            console.log('Đang là nhân viên kỹ thuật');
+            fetchPartsMotoType();
+            fetchServicesMotoType();
+            fetchParts();
+            fetchServices();
+            fetchOrderForTechnician();
         }
     }, [currentStaff]);
 
@@ -257,7 +425,9 @@ export const AppDataProvider = ({ children }) => {
         
     }, [loading['appointments'], loading['receptions'], loading['orders']]);
 
-    
+    // useEffect(() => {
+    //     console.log(dataStore['customers'], dataStore['motorcycles'], dataStore['orders'], dataStore['diagnosis'], dataStore['receptions']);
+    // }, [dataStore['customers'], dataStore['motorcycles'], dataStore['orders'], dataStore['diagnosis'], dataStore['receptions']]);
 
     // Set data for a specific category
     const setData = useCallback((category, data, id = null) => {
@@ -434,10 +604,6 @@ export const AppDataProvider = ({ children }) => {
             productsIds: new Set(),
             employees: {},
             employeesIds: new Set(),
-            settings: {},
-            settingsIds: new Set(),
-            stats: {},
-            statsIds: new Set(),
         });
     }, []);
 
