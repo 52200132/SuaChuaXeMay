@@ -136,6 +136,7 @@ const OrderManagement = () => {
             const pendingOrders = []
             getIds('orders').map(id => {
                 const order = ordersById[id];
+                console.log('order', order);
                 if (order.staff_id && order.status !== 'delivered') {
                     assingedOrders.push(order.order_id);
                 } else if (order.status !== 'delivered') {
