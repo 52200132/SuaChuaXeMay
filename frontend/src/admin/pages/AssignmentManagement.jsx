@@ -9,6 +9,7 @@ import StatusBadge from '../components/StatusBadge'; // Import your StatusBadge 
 import './AssignmentManagement.css'; // Import your CSS file for styling
 import { useAppData } from '../contexts/AppDataContext';
 import { repairService, resourceService } from '../../services/api';
+import pusher from '../../services/pusher';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -156,7 +157,7 @@ const AssignmentManagement = ({
 
             socket.onopen = () => {
                 const payload = {
-                    event: 'notification',
+                    event: 'client-notification',
                     channel: channel,
                     data: {
                         title: title,
@@ -203,7 +204,15 @@ const AssignmentManagement = ({
             const orderData = response.data;
             // console.log('order Data mới', orderData);
             // TODO: Thông báo cho nhân viên được phân công
-            handleSendNotification(`staff-${selectedTechnician}`, `Phân công`,`Đơn hàng #${currentOrderId} đã được phân công cho bạn`, `info`);
+            // handleSendNotification(`staff-${selectedTechnician}`, `Phân công`,`Đơn hàng #${currentOrderId} đã được phân công cho bạn`, `info`);
+            const channel = pusher.subscribe(`staff-${selectedTechnician}`);
+            channel.trigger('client-notification', {
+                title: 'Phân công đơn hàng',
+                message: `Đơn hàng #${currentOrderId} đã được phân công cho bạn`,
+                type: 'info',
+                timestamp: new Date().toISOString(),
+                id: Date.now().toString()
+            });
             setData('orders', orderData, orderData.order_id);
             setShowAssignModal(false);
             alert('Phân công đơn hàng thành công!');                        

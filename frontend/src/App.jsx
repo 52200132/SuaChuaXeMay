@@ -21,6 +21,7 @@ import { DataProvider } from './contexts/DataContext';
 import AppDataProvider from './admin/contexts/AppDataContext';
 import { StaffAuthProvider } from './admin/contexts/StaffAuthContext';
 import { PusherProvider } from './contexts/PusherContext';
+import { UserDataProvider } from './contexts/UserDataContext';
 
 // Admin imports
 import AdminLayout from './admin/components/AdminLayout';
@@ -58,22 +59,22 @@ function App() {
                                 <Routes>
                                     {/* Staff Login Route - No Header/Footer */}
                                     <Route path="/admin/login" element={
-                                        <StaffAuthProvider>
+                                        //<StaffAuthProvider>
                                             <StaffLogin />
-                                        </StaffAuthProvider>
+                                        // </StaffAuthProvider>
                                     } />
 
                                     {/* Admin Routes - No Header/Footer */}
                                     <Route
                                         path="/admin"
                                         element={
-                                            <StaffAuthProvider>
+                                            // <StaffAuthProvider>
                                                 <PrivateRoute>
                                                     <AppDataProvider>
                                                         <AdminLayout />
                                                     </AppDataProvider>
                                                 </PrivateRoute>
-                                            </StaffAuthProvider>
+                                            // </StaffAuthProvider>
                                         }
                                     >
                                         <Route index element={<Dashboard />} />
@@ -115,7 +116,9 @@ function App() {
                                                         path="/profile"
                                                         element={
                                                             <UserPrivateRoute>
-                                                                <Profile />
+                                                                <UserDataProvider>
+                                                                    <Profile />
+                                                                </UserDataProvider>
                                                             </UserPrivateRoute>
                                                         }
                                                     />

@@ -11,6 +11,7 @@ import StatusBadge from '../components/StatusBadge';
 import CustomModal from '../components/CustomModal';
 import OrderDetailView from '../components/OrderDetailView';
 import './TechnicianDashboard.css';
+import pusher, {} from '../../services/pusher';
 
 // Constants
 const STATUS_MAPPING = {
@@ -50,7 +51,7 @@ const getProgressPercentage = (status) => {
 const TechnicianDashboard = () => {
     // Context and data state
     const { currentStaff } = useStaffAuth();
-    const { getData, setData, loading, getIds } = useAppData();
+    const { getData, setData, loading, getIds, channel } = useAppData();
     const ordersById = getData('orders');
     const customersById = getData('customers');
     const motorcyclesById = getData('motorcycles');
@@ -175,10 +176,12 @@ const TechnicianDashboard = () => {
         return formatOrderData(order, customer, motorcycle, diagnosis, reception);
     }
 
-    // Initial data loading
+    // Đăng ký kênh Pusher cho kỹ thuật viên
     useEffect(() => {
-        // fetchInitialData();
-    }, [currentStaff]);
+        const channel = pusher.subscribe(`technician`);
+        return () => {
+        };
+    }, []);
 
     // TODO: check points for loading data
     useEffect(() => {
@@ -554,10 +557,12 @@ const TechnicianDashboard = () => {
                 repairService.serviceOrderDetail.createServiceOrderDetail(serviceOrderDetails)
             ]);
 
+            const orderU = null;
             // Set status to waiting for confirmation after inspection is complete
             if (currentOrder.rawStatus === 'checking') {
                 const response = await repairService.order.updateOrderStatus(currentOrder.orderId, 'wait_confirm');
                 setData('orders', response.data, response.data.order_id);
+                orderU = response.data;
             }
 
             console.log('Inspection update data:', {
@@ -573,6 +578,22 @@ const TechnicianDashboard = () => {
                 diagnosisById[currentOrder.orderId].problem = updateData.diagnosisProblem;
                 const estimatedCost = diagnosisById[currentOrder.orderId].estimated_cost || 0;
                 diagnosisById[currentOrder.orderId].estimated_cost = estimatedCost + totalPrice;
+            }
+
+            if (channel['order']) {
+                console.log('Triggering order update event on Pusher channel');
+                channel['order'].trigger('client-sendOrder', {
+                    order_id: orderU?.order_id,
+                    data: orderU,
+                });
+                const customerId = motorcyclesById[currentOrder.originalData.motocycle_id].customer_id;
+                pusher.subscribe(`customer-${customerId}`).trigger('client-notification', {
+                    title: 'Đã kiểm tra xe',
+                    message: `Đơn hàng #${currentOrder.orderId} đã được kiểm tra. Vui lòng kiểm tra lại!`,
+                    type: 'info',
+                    timestamp: new Date().toISOString(),
+                    id: Date.now().toString()
+                });
             }
             
             setShowUpdateModal(false);

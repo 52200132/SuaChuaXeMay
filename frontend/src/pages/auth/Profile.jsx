@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Alert, Card, Tab, Nav, Spinner, Badge, Modal, Table } from 'react-bootstrap';
+
+import StatusBadge from '../../admin/components/StatusBadge';
 import { useAuth } from '../../contexts/AuthContext';
 import { customerService, resourceService, repairService } from '../../services/api';
 import { formatDate, formatCurrency } from '../../utils/formatters';
+import AppointmentList from '../../components/AppointmentList';
+import ReceptionFormList from '../../components/ReceptionFormList';
+import MyOrderList from '../../components/MyOrderList';
 
 const Profile = () => {
     const { currentUser, updateProfile } = useAuth();
@@ -41,52 +46,43 @@ const Profile = () => {
     const [loadingMotorcycles, setLoadingMotorcycles] = useState(false);
     const [motorcycleError, setMotorcycleError] = useState('');
     
-    // New states for order details modal
-    const [showOrderModal, setShowOrderModal] = useState(false);
-    const [currentOrder, setCurrentOrder] = useState(null);
-    const [orderModalLoading, setOrderModalLoading] = useState(false);
-    const [partOrderDetails, setPartOrderDetails] = useState([]);
-    const [serviceOrderDetails, setServiceOrderDetails] = useState([]);
-    const [diagnosis, setDiagnosis] = useState(null);
-    const [motorcycle, setMotorcycle] = useState(null);
-
-    useEffect(() => {
-        // Kiểm tra xem người dùng có phải là nhân viên không
-        if (currentUser && currentUser.role) {
-            // Chuyển đổi vai trò sang tiếng Việt
-            switch(currentUser.role) {
-                case 'manager':
-                case 'admin':
-                case 'owner':
-                    setUserRole('Quản lý');
-                    break;
-                case 'receptionist':
-                    setUserRole('Tiếp tân');
-                    break;
-                case 'technician':
-                    setUserRole('Kỹ thuật viên');
-                    break;
-                case 'cashier':
-                    setUserRole('Thu ngân');
-                    break;
-                default:
-                    setUserRole('Khách hàng');
-            }
-        } else {
-            setUserRole('Khách hàng');
-        }
+    // useEffect(() => {
+    //     // Kiểm tra xem người dùng có phải là nhân viên không
+    //     if (currentUser && currentUser.role) {
+    //         // Chuyển đổi vai trò sang tiếng Việt
+    //         switch(currentUser.role) {
+    //             case 'manager':
+    //             case 'admin':
+    //             case 'owner':
+    //                 setUserRole('Quản lý');
+    //                 break;
+    //             case 'receptionist':
+    //                 setUserRole('Tiếp tân');
+    //                 break;
+    //             case 'technician':
+    //                 setUserRole('Kỹ thuật viên');
+    //                 break;
+    //             case 'cashier':
+    //                 setUserRole('Thu ngân');
+    //                 break;
+    //             default:
+    //                 setUserRole('Khách hàng');
+    //         }
+    //     } else {
+    //         setUserRole('Khách hàng');
+    //     }
         
-        // Fetch orders and invoices when user navigates to the orders tab
-        if (activeTab === 'orders' && currentUser) {
-            fetchCustomerOrders();
-            // fetchCustomerInvoices();
-        }
+    //     // Fetch orders and invoices when user navigates to the orders tab
+    //     if (activeTab === 'orders' && currentUser) {
+    //         fetchCustomerOrders();
+    //         // fetchCustomerInvoices();
+    //     }
         
-        // Fetch motorcycles and their orders when user navigates to motorcycles tab
-        if (activeTab === 'motorcycles' && currentUser) {
-            fetchCustomerMotorcycles();
-        }
-    }, [activeTab, currentUser]);
+    //     // Fetch motorcycles and their orders when user navigates to motorcycles tab
+    //     if (activeTab === 'motorcycles' && currentUser) {
+    //         fetchCustomerMotorcycles();
+    //     }
+    // }, [activeTab, currentUser]);
 
     // Function to fetch motorcycles and their orders
     const fetchCustomerMotorcycles = async () => {
@@ -248,106 +244,6 @@ const Profile = () => {
         }
     };
 
-    // Function to handle showing order details
-    const handleShowOrderDetails = async (orderId, motorcycleId) => {
-        setShowOrderModal(true);
-        setOrderModalLoading(true);
-        setCurrentOrder(null);
-        setPartOrderDetails([]);
-        setServiceOrderDetails([]);
-        setDiagnosis(null);
-        
-        try {
-            // Find the order in existing data or fetch it
-            let order = null;
-            
-            if (motorcycleOrders[motorcycleId]) {
-                order = motorcycleOrders[motorcycleId].find(o => o.order_id === orderId);
-            }
-            
-            if (!order) {
-                // If not found in state, fetch it directly
-                const orderResponse = await repairService.order.getAllOrdersByMotorcycleId(motorcycleId);
-                if (orderResponse.data && Array.isArray(orderResponse.data)) {
-                    order = orderResponse.data.find(o => o.order_id === orderId);
-                }
-            }
-            
-            if (!order) {
-                throw new Error("Không tìm thấy thông tin đơn hàng");
-            }
-            
-            setCurrentOrder(order);
-            
-            // Find motorcycle in existing data or fetch it
-            let moto = motorcycles.find(m => m.motocycle_id === motorcycleId);
-            if (!moto) {
-                const motoResponse = await customerService.motorcycle.getMotorcycleById(motorcycleId);
-                moto = motoResponse.data;
-            }
-            setMotorcycle(moto);
-            
-            // Fetch diagnosis, parts, and services in parallel
-            const [diagnosisRes, partDetailsRes, serviceDetailsRes] = await Promise.all([
-                repairService.diagnosis.getDiagnosisByOrderId(orderId),
-                repairService.partOrderDetail.getAllPartOrderDetailsByOrderId(orderId),
-                repairService.serviceOrderDetail.getAllServiceOrderDetailsByOrderId(orderId)
-            ]);
-            
-            setDiagnosis(diagnosisRes.data);
-            
-            // Filter selected parts and services
-            const selectedParts = (partDetailsRes.data || []).filter(part => part.is_selected);
-            const selectedServices = (serviceDetailsRes.data || []).filter(service => service.is_selected);
-            
-            // Fetch details for all parts and services
-            const [allPartsRes, allServicesRes] = await Promise.all([
-                resourceService.part.getAllParts(),
-                resourceService.service.getAllServices()
-            ]);
-            
-            // Create maps for parts and services
-            const partsMap = {};
-            (allPartsRes.data || []).forEach(part => {
-                partsMap[part.part_id] = part;
-            });
-            
-            const servicesMap = {};
-            (allServicesRes.data || []).forEach(service => {
-                servicesMap[service.service_id] = service;
-            });
-            
-            // Enrich parts and services with names and other details
-            const enrichedParts = selectedParts.map(part => {
-                const partDetail = partsMap[part.part_id];
-                return {
-                    ...part,
-                    partDetail,
-                    part_name: partDetail?.name || part.part_name || "Phụ tùng không xác định",
-                    part_code: partDetail?.code || part.part_code || "Không có mã"
-                };
-            });
-            
-            const enrichedServices = selectedServices.map(service => {
-                const serviceDetail = servicesMap[service.service_id];
-                return {
-                    ...service,
-                    serviceDetail,
-                    service_name: serviceDetail?.name || service.service_name || "Dịch vụ không xác định",
-                    service_code: serviceDetail?.code || service.service_code || "Không có mã"
-                };
-            });
-            
-            setPartOrderDetails(enrichedParts);
-            setServiceOrderDetails(enrichedServices);
-            
-        } catch (error) {
-            console.error("Lỗi khi tải chi tiết đơn hàng:", error);
-        } finally {
-            setOrderModalLoading(false);
-        }
-    };
-
     // Mock data cho lịch sử đặt lịch
     const bookingHistory = [
         {
@@ -401,7 +297,6 @@ const Profile = () => {
                                 </div>
                                 <h5>{currentUser.displayName || 'Người dùng'}</h5>
                                 <p className="text-muted mb-0">{currentUser.email}</p>
-                                {userRole && <p className="text-muted mb-0">{userRole}</p>}
                             </div>
 
                             <hr />
@@ -413,24 +308,44 @@ const Profile = () => {
                                     </Nav.Link>
                                 </Nav.Item>
                                 <Nav.Item>
+                                    <Nav.Link eventKey="appointments" className="d-flex align-items-center">
+                                        <i className="bi bi-calendar2-check me-2"></i> Lịch hẹn của tôi
+                                    </Nav.Link>
+                                </Nav.Item>
+                                <Nav.Item>
+                                    <Nav.Link eventKey="receptions" className="d-flex align-items-center">
+                                        <i className="bi bi-file-earmark-text me-2"></i> Phiếu tiếp nhận
+                                    </Nav.Link>
+                                </Nav.Item>
+                                {/* <Nav.Item>
                                     <Nav.Link eventKey="bookings" className="d-flex align-items-center">
                                         <i className="bi bi-calendar-check me-2"></i> Lịch sử đặt lịch
+                                    </Nav.Link>
+                                </Nav.Item> */}
+                                {/* <Nav.Item>
+                                    <Nav.Link eventKey="orders" className="d-flex align-items-center">
+                                        <i className="bi bi-cart-check me-2"></i> Đơn hàng & Hóa đơn
+                                    </Nav.Link>
+                                </Nav.Item> */}
+                                {/* Add new tab for motorcycles */}
+                                {/* <Nav.Item>
+                                    <Nav.Link eventKey="motorcycles" className="d-flex align-items-center">
+                                        <i className="bi bi-bicycle me-2"></i> Xe máy của tôi
+                                    </Nav.Link>
+                                </Nav.Item> */}
+                                <Nav.Item>
+                                    <Nav.Link eventKey="password" className="d-flex align-items-center">
+                                        <i className="bi bi-key me-2"></i> Đổi mật khẩu
+                                    </Nav.Link>
+                                </Nav.Item>
+                                <Nav.Item>
+                                    <Nav.Link eventKey="myorders" className="d-flex align-items-center">
+                                        <i className="bi bi-cart-check me-2"></i> Đơn hàng của tôi
                                     </Nav.Link>
                                 </Nav.Item>
                                 <Nav.Item>
                                     <Nav.Link eventKey="orders" className="d-flex align-items-center">
-                                        <i className="bi bi-cart-check me-2"></i> Đơn hàng & Hóa đơn
-                                    </Nav.Link>
-                                </Nav.Item>
-                                {/* Add new tab for motorcycles */}
-                                <Nav.Item>
-                                    <Nav.Link eventKey="motorcycles" className="d-flex align-items-center">
-                                        <i className="bi bi-bicycle me-2"></i> Xe máy của tôi
-                                    </Nav.Link>
-                                </Nav.Item>
-                                <Nav.Item>
-                                    <Nav.Link eventKey="password" className="d-flex align-items-center">
-                                        <i className="bi bi-key me-2"></i> Đổi mật khẩu
+                                        <i className="bi bi-receipt me-2"></i> Hóa đơn của tôi
                                     </Nav.Link>
                                 </Nav.Item>
                             </Nav>
@@ -526,6 +441,18 @@ const Profile = () => {
                                     </Form>
                                 </Tab.Pane>
 
+                                {/* Tab quản lý lịch hẹn của tôi */}
+                                <Tab.Pane eventKey="appointments" active={activeTab === 'appointments'}>
+                                    <h4 className="mb-4">Quản lý lịch hẹn</h4>
+                                    <AppointmentList />
+                                </Tab.Pane>
+
+                                {/* Tab mới cho phiếu tiếp nhận */}
+                                <Tab.Pane eventKey="receptions" active={activeTab === 'receptions'}>
+                                    <h4 className="mb-4">Phiếu tiếp nhận xe</h4>
+                                    <ReceptionFormList />
+                                </Tab.Pane>
+
                                 <Tab.Pane eventKey="bookings" active={activeTab === 'bookings'}>
                                     <h4 className="mb-4">Lịch sử đặt lịch</h4>
 
@@ -572,62 +499,7 @@ const Profile = () => {
                                 </Tab.Pane>
 
                                 <Tab.Pane eventKey="orders" active={activeTab === 'orders'}>
-                                    <h4 className="mb-4">Đơn hàng và hóa đơn</h4>
-                                    
-                                    {/* Orders Section */}
-                                    <h5 className="mt-4 mb-3">Đơn hàng của tôi</h5>
-                                    
-                                    {loadingOrders ? (
-                                        <div className="text-center p-4">
-                                            <Spinner animation="border" variant="primary" />
-                                            <p className="mt-2">Đang tải dữ liệu đơn hàng...</p>
-                                        </div>
-                                    ) : orderError ? (
-                                        <Alert variant="danger">{orderError}</Alert>
-                                    ) : orders.length === 0 ? (
-                                        <Alert variant="info">
-                                            Bạn chưa có đơn hàng nào.
-                                        </Alert>
-                                    ) : (
-                                        <div className="table-responsive">
-                                            <table className="table table-hover">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Mã đơn</th>
-                                                        <th>Ngày tạo</th>
-                                                        <th>Dịch vụ</th>
-                                                        <th>Trạng thái</th>
-                                                        <th>Tổng tiền</th>
-                                                        <th></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {orders.map((order) => (
-                                                        <tr key={order.order_id}>
-                                                            <td>#{order.order_id}</td>
-                                                            <td>{order.create_at.split('T')?.[0]} {order.create_at.split('T')?.[1]}</td>
-                                                            <td>{order.service_summary || 'Nhiều dịch vụ'}</td>
-                                                            <td>
-                                                                <Badge bg={getStatusBadgeColor(order.status)}>
-                                                                    {order.status}
-                                                                </Badge>
-                                                            </td>
-                                                            <td>{order.total_price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.total_price) : 'Chưa tính'}</td>
-                                                            <td>
-                                                                <Button variant="outline-secondary" size="sm">
-                                                                    Chi tiết
-                                                                </Button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
-                                    
-                                    {/* Invoices Section */}
-                                    <h5 className="mt-5 mb-3">Hóa đơn của tôi</h5>
-                                    
+                                    <h4 className="mb-4">Hóa đơn của tôi</h4>
                                     {loadingInvoices ? (
                                         <div className="text-center p-4">
                                             <Spinner animation="border" variant="primary" />
@@ -679,56 +551,10 @@ const Profile = () => {
                                     )}
                                 </Tab.Pane>
 
-                                <Tab.Pane eventKey="password" active={activeTab === 'password'}>
-                                    <h4 className="mb-4">Đổi mật khẩu</h4>
-
-                                    <Form onSubmit={handlePasswordSubmit}>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Mật khẩu hiện tại</Form.Label>
-                                            <Form.Control
-                                                type="password"
-                                                name="currentPassword"
-                                                value={passwordData.currentPassword}
-                                                onChange={handlePasswordChange}
-                                                required
-                                            />
-                                        </Form.Group>
-
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Mật khẩu mới</Form.Label>
-                                            <Form.Control
-                                                type="password"
-                                                name="newPassword"
-                                                value={passwordData.newPassword}
-                                                onChange={handlePasswordChange}
-                                                required
-                                            />
-                                            <Form.Text className="text-muted">
-                                                Mật khẩu phải có ít nhất 6 ký tự
-                                            </Form.Text>
-                                        </Form.Group>
-
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Xác nhận mật khẩu mới</Form.Label>
-                                            <Form.Control
-                                                type="password"
-                                                name="confirmPassword"
-                                                value={passwordData.confirmPassword}
-                                                onChange={handlePasswordChange}
-                                                required
-                                            />
-                                        </Form.Group>
-
-                                        <div className="text-end mt-4">
-                                            <Button
-                                                type="submit"
-                                                className="btn-primary-red"
-                                                disabled={loading}
-                                            >
-                                                {loading ? 'Đang cập nhật...' : 'Đổi mật khẩu'}
-                                            </Button>
-                                        </div>
-                                    </Form>
+                                {/* Tab mới: Đơn hàng của tôi */}
+                                <Tab.Pane eventKey="myorders" active={activeTab === 'myorders'}>
+                                    <h4 className="mb-4">Đơn hàng của tôi</h4>
+                                    <MyOrderList />
                                 </Tab.Pane>
                                 
                                 {/* New tab for motorcycles and their order history */}
@@ -791,7 +617,6 @@ const Profile = () => {
                                                                                     <Button 
                                                                                         variant="outline-secondary" 
                                                                                         size="sm"
-                                                                                        onClick={() => handleShowOrderDetails(order.order_id, motorcycle.motocycle_id)}
                                                                                     >
                                                                                         Chi tiết
                                                                                     </Button>
@@ -813,221 +638,6 @@ const Profile = () => {
                     </Card>
                 </Col>
             </Row>
-            
-            {/* Order Detail Modal */}
-            <Modal
-                show={showOrderModal}
-                onHide={() => setShowOrderModal(false)}
-                size="lg"
-                backdrop="static"
-            >
-                <Modal.Header closeButton>
-                    <Modal.Title>Chi tiết đơn sửa chữa #{currentOrder?.order_id}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {orderModalLoading ? (
-                        <div className="text-center py-4">
-                            <Spinner animation="border" variant="primary" />
-                            <p className="mt-3 text-muted">Đang tải chi tiết đơn hàng...</p>
-                        </div>
-                    ) : (
-                        <div id="order-detail-content">
-                            <div className="mb-4">
-                                <h5 className="border-bottom pb-2 mb-3">Thông tin đơn hàng</h5>
-                                <Row>
-                                    <Col md={6}>
-                                        <p className="mb-1"><strong>Mã đơn hàng:</strong> {currentOrder?.order_id}</p>
-                                        <p className="mb-1"><strong>Ngày tạo:</strong> {currentOrder ? new Date(currentOrder.created_at || currentOrder.create_at).toLocaleDateString('vi-VN', { 
-                                            year: 'numeric', 
-                                            month: '2-digit', 
-                                            day: '2-digit',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        }) : ''}</p>
-                                    </Col>
-                                    <Col md={6}>
-                                        <p className="mb-1">
-                                            <strong>Trạng thái:</strong>{' '}
-                                            <Badge bg={getStatusBadgeColor(currentOrder?.status)}>
-                                                {currentOrder?.status}
-                                            </Badge>
-                                        </p>
-                                        <p className="mb-1"><strong>Tổng tiền:</strong> <span className="text-primary fw-bold">
-                                            {currentOrder?.total_price ? formatCurrency(currentOrder.total_price) : 'Chưa tính'}
-                                        </span></p>
-                                    </Col>
-                                </Row>
-                            </div>
-
-                            <div className="mb-4">
-                                <h5 className="border-bottom pb-2 mb-3">Thông tin xe</h5>
-                                <p className="mb-1"><strong>Biển số:</strong> {motorcycle?.license_plate || 'N/A'}</p>
-                                <p className="mb-1"><strong>Loại xe:</strong> {motorcycle?.brand} {motorcycle?.model}</p>
-                                <p className="mb-1"><strong>Loại động cơ:</strong> {motorcycle?.moto_type_name || 'N/A'}</p>
-                            </div>
-
-                            <div className="mb-4 diagnosis-section">
-                                <h5 className="border-bottom pb-2 mb-3">Chuẩn đoán</h5>
-                                <div className="p-3 bg-light rounded mb-3">
-                                    <p className="mb-1"><strong>Vấn đề:</strong> {diagnosis?.problem || 'Không có thông tin'}</p>
-                                    {diagnosis?.estimated_cost && <p className="mb-0"><strong>Chi phí ước tính:</strong> {formatCurrency(diagnosis.estimated_cost)}</p>}
-                                </div>
-                            </div>
-
-                            {/* Hiển thị chi tiết phụ tùng */}
-                            <div className="mb-4">
-                                <h5 className="border-bottom pb-2 mb-3">Phụ tùng và vật tư</h5>
-                                <div className="table-responsive">
-                                    <Table bordered hover className="mb-0">
-                                        <thead className="table-light">
-                                            <tr>
-                                                <th width="5%">#</th>
-                                                <th width="40%">Tên phụ tùng</th>
-                                                <th width="15%" className="text-center">Đơn giá</th>
-                                                <th width="10%" className="text-center">Số lượng</th>
-                                                <th width="15%" className="text-center">Thành tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {partOrderDetails.length > 0 ? (
-                                                partOrderDetails.map((item, index) => (
-                                                    <tr key={item.part_order_detail_id || index}>
-                                                        <td className="text-center">{index + 1}</td>
-                                                        <td>
-                                                            <span className="fw-medium">{item.part_name}</span>
-                                                        </td>
-                                                        <td className="text-center">{formatCurrency(item.price / item.quantity)}</td>
-                                                        <td className="text-center">{item.quantity}</td>
-                                                        <td className="text-end">{formatCurrency(item.price)}</td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan={5} className="text-center py-3 text-muted">
-                                                        Không có phụ tùng nào được sử dụng
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                        {partOrderDetails.length > 0 && (
-                                            <tfoot className="table-light">
-                                                <tr>
-                                                    <td colSpan={4} className="text-end fw-bold">Tổng chi phí phụ tùng:</td>
-                                                    <td className="text-end fw-bold">
-                                                        {formatCurrency(
-                                                            partOrderDetails.reduce((sum, part) => sum + (part.price), 0)
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            </tfoot>
-                                        )}
-                                    </Table>
-                                </div>
-                            </div>
-
-                            {/* Hiển thị chi tiết dịch vụ */}
-                            <div className="mb-4">
-                                <h5 className="border-bottom pb-2 mb-3">Dịch vụ</h5>
-                                <div className="table-responsive">
-                                    <Table bordered hover className="mb-0">
-                                        <thead className="table-light">
-                                            <tr>
-                                                <th width="5%">#</th>
-                                                <th width="55%">Tên dịch vụ</th>
-                                                <th width="15%" className="text-center">Đơn giá</th>
-                                                <th width="15%" className="text-center">Thành tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {serviceOrderDetails.length > 0 ? (
-                                                serviceOrderDetails.map((item, index) => (
-                                                    <tr key={item.service_order_detail_id || index}>
-                                                        <td className="text-center">{index + 1}</td>
-                                                        <td>
-                                                            <span className="fw-medium">{item.service_name}</span>
-                                                        </td>
-                                                        <td className="text-center">{formatCurrency(item.price)}</td>
-                                                        <td className="text-end">{formatCurrency(item.price)}</td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan={4} className="text-center py-3 text-muted">
-                                                        Không có dịch vụ nào được sử dụng
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                        {serviceOrderDetails.length > 0 && (
-                                            <tfoot className="table-light">
-                                                <tr>
-                                                    <td colSpan={3} className="text-end fw-bold">Tổng chi phí dịch vụ:</td>
-                                                    <td className="text-end fw-bold">
-                                                        {formatCurrency(
-                                                            serviceOrderDetails.reduce((sum, service) => sum + service.price, 0)
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            </tfoot>
-                                        )}
-                                    </Table>
-                                </div>
-                            </div>
-
-                            {/* Hiển thị tổng chi phí */}
-                            <div className="mt-4 border-top pt-3">
-                                <Row>
-                                    <Col md={7}>
-                                        <div>
-                                            <p className="mb-1 text-muted">Ghi chú:</p>
-                                            <p className="small text-muted mb-0">
-                                                {currentOrder?.note || 'Không có ghi chú'}
-                                            </p>
-                                        </div>
-                                    </Col>
-                                    <Col md={5}>
-                                        <div className="bg-light p-3 rounded">
-                                            <div className="d-flex justify-content-between mb-2">
-                                                <span>Tổng chi phí phụ tùng:</span>
-                                                <span>
-                                                    {formatCurrency(
-                                                        partOrderDetails.reduce((sum, part) => sum + (part.price * part.quantity), 0)
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <div className="d-flex justify-content-between mb-2">
-                                                <span>Tổng chi phí dịch vụ:</span>
-                                                <span>
-                                                    {formatCurrency(
-                                                        serviceOrderDetails.reduce((sum, service) => sum + service.price, 0)
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <div className="d-flex justify-content-between pt-2 border-top mt-2">
-                                                <span className="fw-bold">Tổng cộng:</span>
-                                                <span className="fw-bold text-primary fs-5">
-                                                    {currentOrder?.total_price 
-                                                        ? formatCurrency(currentOrder.total_price) 
-                                                        : formatCurrency(
-                                                            partOrderDetails.reduce((sum, part) => sum + (part.price * part.quantity), 0) +
-                                                            serviceOrderDetails.reduce((sum, service) => sum + service.price, 0)
-                                                        )
-                                                    }
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </Col>
-                                </Row>
-                            </div>
-                        </div>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowOrderModal(false)}>
-                        Đóng
-                    </Button>
-                </Modal.Footer>
-            </Modal>
         </Container>
     );
 };

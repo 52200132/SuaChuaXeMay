@@ -16,6 +16,18 @@ export const formatDate = (date, locale = 'vi-VN') => {
     });
 };
 
+export const formatTime = (time, locale = 'vi-VN') => {
+    if (!time) return '';
+    
+    const timeObj = typeof time === 'string' ? new Date(`1970-01-01T${time}`) : time;
+    
+    return timeObj.toLocaleTimeString(locale, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+}
+
 /**
  * Format a number as Vietnamese currency (VND)
  * @param {number} amount - The amount to format

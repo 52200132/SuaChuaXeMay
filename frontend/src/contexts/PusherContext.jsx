@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import pusher, { subscribeToChannel, unsubscribeFromChannel } from '../services/pusher';
+import { subscribeToChannel, unsubscribeFromChannel } from '../services/pusher';
 import { useStaffAuth } from '../admin/contexts/StaffAuthContext';
 import { useAuth } from './AuthContext';
 
@@ -79,7 +79,7 @@ export const PusherProvider = ({ children }) => {
             const channelName = `customer-${currentUser.customer_id}`;
             console.log(`Đăng ký kênh khách hàng: ${channelName}`);
 
-            customerChannel = subscribeToChannel(channelName, 'notification', handleNotification);
+            customerChannel = subscribeToChannel(channelName, 'client-notification', handleNotification);
         }
 
         return () => {
@@ -97,7 +97,7 @@ export const PusherProvider = ({ children }) => {
             const channelName = `staff-${currentStaff.staff_id}`;
             console.log(`Đăng ký kênh nhân viên: ${channelName}`);
 
-            staffChannel = subscribeToChannel(channelName, 'notification', handleNotification);
+            staffChannel = subscribeToChannel(channelName, 'client-notification', handleNotification);
         }
 
         // Cleanup

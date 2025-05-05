@@ -32,7 +32,7 @@ const OrderDetailView = ({
     // Get cached parts, services and moto type data
     const partsData = getAllData('parts');
     const servicesData = getAllData('services');
-    const motorTypeId = currentOrder?.motorTypeId;
+    const motorTypeId = currentOrder?.motoTypeId;
     
     // Fetch parts and services data if not already in context
     useEffect(() => {
@@ -225,6 +225,7 @@ const OrderDetailView = ({
                                     <tbody>
                                         {partOrderDetails.map(part => {
                                             const partInfo = findPartById(part.part_id);
+                                            // console.log('Part Info', partInfo, part);
                                             const unitPrice = part.quantity ? part.price / part.quantity : 0;
                                             return (
                                                 <tr key={part.part_detail_ID || `part-${part.part_id}-${Math.random()}`} 

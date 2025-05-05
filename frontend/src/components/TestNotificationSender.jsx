@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Button, Card } from 'react-bootstrap';
+import { Form, Button, Card, Alert } from 'react-bootstrap';
 
 const TestNotificationSender = () => {
     const [notification, setNotification] = useState({
@@ -8,6 +8,7 @@ const TestNotificationSender = () => {
         message: 'Đây là thông báo thử nghiệm',
         type: 'info'
     });
+    const [status, setStatus] = useState({ show: false, message: '', variant: 'success' });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -19,9 +20,23 @@ const TestNotificationSender = () => {
 
     const sendTestNotification = async () => {
         try {
+            setStatus({ show: false, message: '', variant: 'success' });
             const socket = new WebSocket('ws://localhost:4000');
+            
+            // Thiết lập timeout để xử lý kết nối không thành công
+            const connectionTimeout = setTimeout(() => {
+                socket.close();
+                setStatus({ 
+                    show: true, 
+                    message: 'Không thể kết nối đến máy chủ WebSocket sau 5 giây', 
+                    variant: 'danger' 
+                });
+            }, 5000);
 
             socket.onopen = () => {
+                // Xóa timeout khi kết nối thành công
+                clearTimeout(connectionTimeout);
+                
                 const payload = {
                     event: 'notification',
                     channel: notification.channel,
@@ -36,6 +51,11 @@ const TestNotificationSender = () => {
 
                 socket.send(JSON.stringify(payload));
                 console.log('Đã gửi thông báo thử nghiệm', payload);
+                setStatus({ 
+                    show: true, 
+                    message: `Đã gửi thông báo đến kênh ${notification.channel} thành công!`, 
+                    variant: 'success' 
+                });
 
                 // Đóng socket sau khi gửi
                 setTimeout(() => {
@@ -44,12 +64,21 @@ const TestNotificationSender = () => {
             };
 
             socket.onerror = (error) => {
+                clearTimeout(connectionTimeout);
                 console.error('Lỗi WebSocket:', error);
-                alert('Không thể kết nối đến server WebSocket');
+                setStatus({ 
+                    show: true, 
+                    message: 'Không thể kết nối đến server WebSocket', 
+                    variant: 'danger' 
+                });
             };
         } catch (error) {
             console.error('Lỗi khi gửi thông báo thử nghiệm:', error);
-            alert('Có lỗi khi gửi thông báo');
+            setStatus({ 
+                show: true, 
+                message: `Có lỗi khi gửi thông báo: ${error.message}`, 
+                variant: 'danger' 
+            });
         }
     };
 
@@ -57,6 +86,12 @@ const TestNotificationSender = () => {
         <Card className="my-3">
             <Card.Header>Gửi thông báo thử nghiệm</Card.Header>
             <Card.Body>
+                {status.show && (
+                    <Alert variant={status.variant} onClose={() => setStatus({...status, show: false})} dismissible>
+                        {status.message}
+                    </Alert>
+                )}
+                
                 <Form>
                     <Form.Group className="mb-3">
                         <Form.Label>Kênh</Form.Label>

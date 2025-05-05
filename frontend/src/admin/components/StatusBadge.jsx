@@ -30,6 +30,7 @@ const StatusBadge = ({ status }) => {
         'đã hủy': 'danger',
 
         'đã trả khách': 'success',
+        'đã trả xe': 'success',
     };
 
 

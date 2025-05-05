@@ -40,6 +40,7 @@ export function AuthProvider({ children }) {
             console.log("Đăng nhập thành công:", userData);
             const user = {
                 id: userData.customer_id,
+                customer_id: userData.customer_id,
                 email: userData.email,
                 displayName: userData.fullname || userData.email.split('@')[0],
                 phone: userData.phone_num,

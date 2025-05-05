@@ -42,7 +42,7 @@ async def get_order_by_id(db: AsyncSession, order_id: int) -> Order:
     return db_order
 
 async def get_orders_by_motorcycle_id(db: AsyncSession, motocycle_id: int) -> list[Order]:
-    result = await db.execute(select(Order).where(Order.motocycle_id == motocycle_id))
+    result = await db.execute(select(Order).where(Order.motocycle_id == motocycle_id).order_by(Order.order_id.desc()))
     db_order = result.scalars().all()
     return db_order
 

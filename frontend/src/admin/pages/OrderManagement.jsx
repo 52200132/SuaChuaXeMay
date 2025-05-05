@@ -158,6 +158,7 @@ const OrderManagement = () => {
             customerName: customer?.fullname || '',
             customerPhone: customer?.phone_num || '',
             // moto info
+            motoTypeId: motorcycle?.moto_type_id || '',
             plateNumber: motorcycle?.license_plate || '',
             motorcycleModel: `${motorcycle?.brand || ''} ${motorcycle?.model || ''}`,
             // staff info

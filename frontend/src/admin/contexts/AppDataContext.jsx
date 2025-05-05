@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useCallback, useMemo, useEffect, useRef, use } from 'react';
 import { useStaffAuth } from './StaffAuthContext';
 import { customerService, repairService, resourceService } from '../../services/api';
-
+import pusher, { subscribeToChannel, unsubscribeFromChannel } from '../../services/pusher';
 // Create context
 const AppDataContext = createContext();
 
@@ -14,6 +14,10 @@ export const AppDataProvider = ({ children }) => {
     const idsNeeded = useRef({
         customersIds: new Set(), 
         motorcyclesIds: new Set(), 
+    });
+
+    const [channel, setChannel] = useState({
+        order: null,
     });
 
     // State for different data categories
@@ -65,6 +69,22 @@ export const AppDataProvider = ({ children }) => {
 
     // State to track errors
     const [errors, setErrors] = useState({});
+
+    // Đăng ký kênh Pusher 
+    useEffect(() => {
+        const orderChannel = pusher.subscribe('order-channel');
+        setChannel(prev => ({
+            ...prev,
+            order: orderChannel
+        }));
+
+        return () => {
+            if (orderChannel) {
+                orderChannel.unbind_all(); // Hủy tất cả các sự kiện đã đăng ký
+                pusher.unsubscribe('order-channel'); // Hủy đăng ký kênh
+            }
+        }
+    }, []);
 
     // Tải các dữ liệu cần thiết theo role
     const fetchCustomers = async (customerIds) => { 
@@ -693,6 +713,7 @@ export const AppDataProvider = ({ children }) => {
         loading,
         errors,
         idsNeeded,
+        channel,
         setData,
         setMultipleData,
         getData,
@@ -710,6 +731,7 @@ export const AppDataProvider = ({ children }) => {
         loading, 
         errors, 
         idsNeeded,
+        channel,
         setData, 
         setMultipleData, 
         getData, 

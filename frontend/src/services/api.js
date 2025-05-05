@@ -643,6 +643,16 @@ const repairService = {
             }
         },
 
+        getOrderById: async (orderId) => {
+            try {
+                const response = await apiRepairService.get(URLS.ORDER.GET_ORDER_BY_ID.replace('{order_id}', orderId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy thông tin đơn hàng ID=${orderId}:`, error);
+                throw error;
+            }
+        },
+
         // Lấy đơn hàng của kỹ thuật viên
         getOrdersByStaffId: async (staffId) => {
             try {
