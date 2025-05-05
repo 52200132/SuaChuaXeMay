@@ -107,15 +107,15 @@ async def get_all_reception_forms(
     )
     return db_reception_forms
 
-@router.get(URLS['RECEPTION']['GET_ALL_TODAY'], response_model=List[ReceptionFormResponse])
-async def get_all_reception_forms_today(
-    db: AsyncSession = Depends(get_db)
-):
-    """
-        Lấy danh sách tất cả biểu mẫu tiếp nhận trong ngày hôm nay.
-    """
-    db_reception_forms = await reception_crud.get_reception_form_today(db)
-    return db_reception_forms
+# @router.get(URLS['RECEPTION']['GET_ALL_TODAY'], response_model=List[ReceptionFormResponse])
+# async def get_all_reception_forms_today(
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     """
+#         Lấy danh sách tất cả biểu mẫu tiếp nhận trong ngày hôm nay.
+#     """
+#     db_reception_forms = await reception_crud.get_reception_form_today(db)
+#     return db_reception_forms
 
 @router.get(URLS['RECEPTION']['GET_RECEPTION_BY_ID'], response_model=ReceptionFormResponse)
 async def get_reception_form(
@@ -141,17 +141,17 @@ async def get_reception_form_by_motorcycle_id(
     db_reception_forms = await reception_crud.get_reception_form_by_motorcycle_id(db, motocycle_id)
     return db_reception_forms
 
-@router.get(URLS['RECEPTION']['GET_RECEPTION_BY_DATE_RANGE'], response_model=List[ReceptionFormResponse])
-async def get_reception_form_by_date_range(
-    start_date: datetime = Query(..., description="Ngày bắt đầu"),
-    end_date: datetime =  Query(..., description="Ngày kết thúc"),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Lấy danh sách biểu mẫu tiếp nhận theo khoảng thời gian.
-    """
-    db_reception_forms = await reception_crud.get_reception_form_by_range_date(db, start_date, end_date)
-    return db_reception_forms
+# @router.get(URLS['RECEPTION']['GET_RECEPTION_BY_DATE_RANGE'], response_model=List[ReceptionFormResponse])
+# async def get_reception_form_by_date_range(
+#     start_date: datetime = Query(..., description="Ngày bắt đầu"),
+#     end_date: datetime =  Query(..., description="Ngày kết thúc"),
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     """
+#     Lấy danh sách biểu mẫu tiếp nhận theo khoảng thời gian.
+#     """
+#     db_reception_forms = await reception_crud.get_reception_form_by_range_date(db, start_date, end_date)
+#     return db_reception_forms
 
 
 # @router.get("/", response_model=List[ReceptionFormResponse])

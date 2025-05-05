@@ -12,16 +12,14 @@ class StaffRoleEnum(str, PyEnum):
 
 
 class StaffStatusEnum(str, PyEnum):
-    IDLE = "idle"
-    BUSY = "busy"
-    OFF = "off"
-    NONE = "none"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
 
 
 class StaffBase(BaseModel):
     fullname: str
     role: StaffRoleEnum
-    status: Optional[StaffStatusEnum] = StaffStatusEnum.NONE
+    status: Optional[StaffStatusEnum] = StaffStatusEnum.ACTIVE
     email: EmailStr
 
 
@@ -63,7 +61,7 @@ class StaffResponse(BaseModel):
                 "staff_id": 1,
                 "fullname": "Nguyen Van A",
                 "role": StaffRoleEnum.RECEPTIONIST,
-                "status": StaffStatusEnum.IDLE,
+                "status": StaffStatusEnum.ACTIVE,
                 "email": "nhanvien@gmail.com"
             }
         }

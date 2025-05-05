@@ -87,6 +87,7 @@ class OrderStatusHistory(Base):
         'received',
         'checking',
         'wait_confirm',
+        'cancelled',
         'repairing',
         'wait_delivery',
         'delivered',
