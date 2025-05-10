@@ -111,6 +111,8 @@ const MyOrderList = () => {
             plateNumber: motorcycle?.license_plate,
 
             diagnosisProblem: diagnosis?.problem,
+
+            staffName: staff?.fullname,
         };
     };
 
@@ -420,6 +422,16 @@ const MyOrderList = () => {
                 total_price: totalSelectedAmount,
             });
             setData('orders', response.data, response.data.order_id);
+
+            console.log('currentOrder', currentOrder.originalData.staff_id);
+            pusher.subscribe(`staff-${currentOrder.originalData.staff_id}`).trigger('client-notification', {
+                title: 'Khách hàng đã xác nhận đơn hàng',
+                message: `Đơn hàng #${currentOrder.originalData.staff_id} đã được xác nhận`,
+                type: 'info',
+                timestamp: new Date().toISOString(),
+                id: Date.now().toString()
+            });
+
             // Update order status to repairing
             // const response = await repairService.order.updateOrder(currentOrder.orderId, {
             //     status: 'repairing',
@@ -649,12 +661,21 @@ const MyOrderList = () => {
                                     </Col>
                                 </Row>
                             </div>
-
-                            <div className="mb-4">
-                                <h5 className="border-bottom pb-2 mb-3">Thông tin xe</h5>
-                                <p className="mb-1"><strong>Biển số:</strong> {motorcycle?.license_plate || currentOrder?.licensePlate || 'N/A'}</p>
-                                <p className="mb-1"><strong>Loại xe:</strong> {motorcycle?.brand || currentOrder?.motorBrand || ''} {motorcycle?.model || currentOrder?.motorModel || ''}</p>
-                            </div>
+                            <Row className="mb-4">
+                                <Col md={6}>
+                                    <div className="mb-4">
+                                        <h5 className="border-bottom pb-2 mb-3">Thông tin xe</h5>
+                                        <p className="mb-1"><strong>Biển số:</strong> {motorcycle?.license_plate || currentOrder?.licensePlate || 'N/A'}</p>
+                                        <p className="mb-1"><strong>Loại xe:</strong> {motorcycle?.brand || currentOrder?.motorBrand || ''} {motorcycle?.model || currentOrder?.motorModel || ''}</p>
+                                    </div>
+                                </Col>
+                                <Col md={6}>
+                                    <div className="mb-4">
+                                        <h5 className="border-bottom pb-2 mb-3">Thông tin kỹ thuật viên</h5>
+                                        <p className="mb-1"><strong>Tên:</strong> {currentOrder?.staffName}</p>
+                                    </div>
+                                </Col>
+                            </Row>
 
                             <div className="mb-4 diagnosis-section">
                                 <h5 className="border-bottom pb-2 mb-3">Chuẩn đoán</h5>
@@ -852,6 +873,9 @@ const MyOrderList = () => {
                                 <Col md={6}>
                                     <p className="mb-1"><strong>Ngày tạo:</strong> {currentOrder?.createdDate}</p>
                                     <p className="mb-0"><strong>Trạng thái:</strong> <StatusBadge status={currentOrder?.status} /></p>
+                                </Col>
+                                <Col md={12}>
+                                    <p className="mb-1"><strong>Kỹ thuật viên:</strong> {currentOrder?.staffName}</p>
                                 </Col>
                             </Row>
                             

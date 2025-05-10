@@ -107,10 +107,17 @@ export const UserDataProvider = ({ children }) => {
             const response = await repairService.order.getAllOrdersByMotorcycleId(motorcycleId);
             const data = response.data || response || [];
             setMultipleData('orders', data, 'order_id');
+            const staffIds = new Set(); // Tạo một Set để lưu trữ các staff_id duy nhất
             data.forEach(order => {
                 const orderId = order.order_id;
+                console.log('orderId', order.staff_id);
+                if (order.staff_id !== null) { staffIds.add(order.staff_id); }
                 fetchDiagnosis(orderId);
             })
+            console.log('staffIds', staffIds);  
+            staffIds.forEach(staffId => {
+                fetchStaff(staffId); // Gọi hàm fetchStaff cho từng staff_id
+            }) 
         } catch (error) {
             console.error('Lỗi khi lấy danh sách đơn hàng:', error);
             setError('orders', error.message || 'Không thể lấy danh sách đơn hàng');
