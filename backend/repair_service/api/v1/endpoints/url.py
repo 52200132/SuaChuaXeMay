@@ -33,5 +33,22 @@ URLS = {
         'GET_SERVICE_ORDER_DETAIL_BY_ID':'/service-order-detail/{service_detail_ID}',
         'GET_SERVICE_ORDER_DETAILS_BY_ORDER':'/order/service-order-details/{order_id}',
         'UPDATE_SERVICE_ORDER_DETAIL':'/service-order-detail/update/{service_detail_ID}'
-    }
+    },
+    'MOTOCYCLE_TYPE':{
+        'GET_ALL_MOTOCYCLE_TYPES':'/motocycle-types',
+        'GET_ALL_BRANDS':'/motocycle-type/brands',
+        'GET_MOTOCYCLE_TYPES_BY_BRAND':'/motocycle-types/brand/{brand}',
+        'CREATE_MOTOCYCLE_TYPE':'/motocycle-type/create',
+        'CREATE_MOTOCYCLE_TYPE': '/motocycle-types/create',
+        'UPDATE_MOTOCYCLE_TYPE':'/motocycle-type/update/{moto_type_id}',
+        'DELETE_MOTOCYCLE_TYPE':'/motocycle-type/delete/{moto_type_id}',
+    },
+    'PART':{
+        'CREATE_PART':'/part/create',
+        'GET_ALL_PARTS':'/parts',
+        'GET_PART_BY_ID':'/part/{part_id}',
+        'GET_PARTS_VIEWS_BY_MOTO_TYPE_ID':'/part-views/motocycle-type/{moto_type_id}',
+        'UPDATE_PART':'/part/update/{part_id}',
+        'DELETE_PART':'/part/delete/{part_id}',
+    },
 }

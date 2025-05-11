@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 import os
 from dotenv import load_dotenv
 
-from models.models import Base
+from models.models_2 import Base
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
