@@ -28,7 +28,6 @@ class MotocycleType(Base):
     
     # Relationships
     motocycles = relationship("Motocycle", back_populates="moto_type")
-    service_moto_types = relationship("ServiceMotoType", back_populates="moto_type")
     compatible_parts = relationship("Compatible", back_populates="moto_type")
 
 class Motocycle(Base):
@@ -72,18 +71,12 @@ class ServiceMotoType(Base):
     __tablename__ = 'servicemototype'
     
     service_mototype_id = Column(Integer, primary_key=True, autoincrement=True)
-    moto_type_id = Column(Integer, ForeignKey('motocycletype.moto_type_id'))
+    type = Column(Enum('Xe số', 'Xe tay ga'))
     service_id = Column(Integer, ForeignKey('service.service_id'))
     price = Column(Integer, nullable=False)
     
-    # Check constraint for positive price
-    __table_args__ = (
-        CheckConstraint('price > 0', name='check_service_mototype_price_positive'),
-    )
-    
     # Relationships
     service = relationship("Service", back_populates="service_moto_types")
-    moto_type = relationship("MotocycleType", back_populates="service_moto_types")
 
 class Supplier(Base):
     __tablename__ = 'supplier'

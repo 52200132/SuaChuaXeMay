@@ -6,8 +6,10 @@ from sqlalchemy.exc import IntegrityError
 from api.v1.endpoints.url import URLS
 from db.session import get_db
 from crud import part as crud
+from services import part_services
 from utils.logger import get_logger
-from schemas.part import PartCreate, PartUpdate, PartResponse, PartView
+from schemas.part import PartCreate, PartUpdate, PartResponse
+from schemas.views.part import PartView, PartWarehouseView
 
 log = get_logger(__name__)
 
@@ -79,7 +81,7 @@ async def get_part_by_id(part_id: int, db: AsyncSession = Depends(get_db)):
 async def get_parts_views_by_moto_type(moto_type_id: int, db: AsyncSession = Depends(get_db)):
     """Lấy danh sách phụ tùng theo loại xe máy"""
     try:
-        return await crud.get_part_views_by_moto_type_id(db, moto_type_id)
+        return await part_services.get_part_views_by_moto_type_id(db, moto_type_id)
     except IntegrityError as e:
         log.error(f"Lỗi toàn vẹn dữ liệu khi lấy danh sách phụ tùng theo loại xe: {e}")
         raise HTTPException(
@@ -91,6 +93,42 @@ async def get_parts_views_by_moto_type(moto_type_id: int, db: AsyncSession = Dep
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Lỗi khi lấy danh sách phụ tùng theo loại xe: {str(e)}"
+        )
+
+@router.get(URLS['PART']['GET_PARTS_VIEWS_BY_ORDER_ID'], response_model=List[PartWarehouseView])
+async def get_parts_views_by_order_id(order_id: int, db: AsyncSession = Depends(get_db)):
+    """Lấy danh sách phụ tùng trong kho theo ID đơn hàng"""
+    try:
+        return await part_services.get_part_views_by_order_id(db, order_id)
+    except IntegrityError as e:
+        log.error(f"Lỗi toàn vẹn dữ liệu khi lấy danh sách phụ tùng theo đơn hàng: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Lỗi toàn vẹn dữ liệu khi lấy danh sách phụ tùng theo đơn hàng: {str(e)}"
+        )
+    except Exception as e:
+        log.error(f"Lỗi khi lấy danh sách phụ tùng theo đơn hàng: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy danh sách phụ tùng theo đơn hàng: {str(e)}"
+        )
+
+@router.post(URLS['PART']['GET_PARTS_VIEWS_BY_PART_ID_LIST'], response_model=List[PartWarehouseView])
+async def get_parts_views_by_part_id_list(part_id_list: List[int], db: AsyncSession = Depends(get_db)):
+    """Lấy danh sách phụ tùng trong kho theo danh sách ID phụ tùng"""
+    try:
+        return await part_services.get_part_warehouse_views_by_part_id_list(db, part_id_list)
+    except IntegrityError as e:
+        log.error(f"Lỗi toàn vẹn dữ liệu khi lấy danh sách phụ tùng theo danh sách ID: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Lỗi toàn vẹn dữ liệu khi lấy danh sách phụ tùng theo danh sách ID: {str(e)}"
+        )
+    except Exception as e:
+        log.error(f"Lỗi khi lấy danh sách phụ tùng theo danh sách ID: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy danh sách phụ tùng theo danh sách ID: {str(e)}"
         )
 
 @router.put(URLS['PART']['UPDATE_PART'], response_model=PartResponse)

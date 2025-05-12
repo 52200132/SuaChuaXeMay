@@ -1,11 +1,10 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import and_, or_, delete, insert, func
-from sqlalchemy.orm import selectinload, joinedload, subqueryload
+from sqlalchemy import and_, delete
 
 from models.models_2 import Part, Compatible, MotocycleType, Warehouse, PartLot, Supplier
-from schemas.part import PartCreate, PartUpdate, PartView
+from schemas.part import PartCreate, PartUpdate
 from utils.logger import get_logger
 
 log = get_logger(__name__)
@@ -237,62 +236,4 @@ async def search_parts(db: AsyncSession, search_term: str) -> list[Part]:
         raise e
     except Exception as e:
         log.error(f"Lỗi khi tìm kiếm phụ tùng: {e}")
-        raise e
-
-async def get_part_views_by_moto_type_id(db: AsyncSession, moto_type_id: int):
-    """
-    Lấy danh sách phụ tùng tương thích với một loại xe máy.
-    """
-    try:
-        # Truy vấn lấy thông tin phụ tùng kèm stock từ warehouse
-        query = (
-            select(
-                Part,
-                func.sum(Warehouse.stock).label("total_stock"),
-                Supplier.name.label("supplier_name")
-            )
-            .outerjoin(Compatible, Part.part_id == Compatible.part_id)
-            .outerjoin(PartLot, Part.part_id == PartLot.part_id)
-            .outerjoin(Warehouse, PartLot.part_lot_id == Warehouse.part_lot_id)
-            .outerjoin(Supplier, Part.supplier_id == Supplier.supplier_id)
-            .where(
-                and_(
-                    Part.is_deleted == False,
-                    Compatible.moto_type_id == moto_type_id,
-                    # Warehouse.stock > 0,
-                )
-            )
-            .group_by(
-                Part.part_id,
-            )
-        )
-            
-        result = await db.execute(query)
-        parts_data = result.all()
-        
-        result_list = []
-        for part_info in parts_data:
-            part = part_info[0]  # Part object
-            total_stock = part_info[1] or 0  # Stock từ warehouse, hoặc 0 nếu là None
-            supplier_name = part_info[2]
-
-            part_view = PartView(
-                part_id=part.part_id,
-                name=part.name,
-                unit=part.unit,
-                price=part.price,
-                total_stock=total_stock,
-                supplier_name=supplier_name,
-                URL=part.URL
-            )
-            result_list.append(part_view)
-        
-        # print(f"result_list: {result_list}")
-
-        return result_list
-    except IntegrityError as e:
-        log.error(f"Lỗi toàn vẹn dữ liệu khi lấy thông tin phụ tùng: {e}")
-        raise e
-    except Exception as e:
-        log.error(f"Lỗi khi lấy thông tin phụ tùng: {e}")
         raise e

@@ -48,7 +48,18 @@ URLS = {
         'GET_ALL_PARTS':'/parts',
         'GET_PART_BY_ID':'/part/{part_id}',
         'GET_PARTS_VIEWS_BY_MOTO_TYPE_ID':'/part-views/motocycle-type/{moto_type_id}',
+        'GET_PARTS_VIEWS_BY_ORDER_ID':'/part-views/order/{order_id}',
+        'GET_PARTS_VIEWS_BY_PART_ID_LIST':'/part-views/part-id-list',
         'UPDATE_PART':'/part/update/{part_id}',
         'DELETE_PART':'/part/delete/{part_id}',
+    },
+    'SERVICE':{
+        'CREATE_SERVICE':'/service/create',
+        'GET_ALL_SERVICES':'/services',
+        'GET_SERVICE_BY_ID':'/service/{service_id}',
+        'GET_SERVICE_VIEWS_BY_PARENT_MOTO_TYPE':'/service-views/motocycle-type/{parent_moto_type}',
+        ''
+        'UPDATE_SERVICE':'/service/update/{service_id}',
+        'DELETE_SERVICE':'/service/delete/{service_id}',
     },
 }

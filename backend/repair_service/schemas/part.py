@@ -68,27 +68,3 @@ class PartWithMotocycleTypes(PartResponse):
     
     class Config:
         from_attributes = True
-
-class PartView(BaseModel):
-    """Schema cho việc xem thông tin phụ tùng"""
-    part_id: int
-    name: str
-    unit: str
-    price: Optional[int] = None
-    total_stock: Optional[int] = None
-    supplier_name: Optional[str] = None
-    URL: Optional[str] = None
-        
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
-            "example": {
-                "part_id": 1,
-                "name": "Lọc gió Wave Alpha",
-                "unit": "cái",
-                "price": 65000,
-                "stock": 100,
-                "supplier_id": 1,
-                "URL": "/images/parts/loc-gio-wave-alpha.jpg",
-            }
-        }
