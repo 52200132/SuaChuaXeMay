@@ -21,8 +21,8 @@ export const DataProvider = ({ children }) => {
                 const servicesData = await resourceService.getAllServiceTypes();
                 setServiceTypes(servicesData);
 
-                const motorcycleTypesData = await customerService.motorcycle.getAllServiceTypes();
-                setMotorcycleTypes(motorcycleTypesData);
+                // const motorcycleTypesData = await customerService.motorcycle.getAllServiceTypes();
+                // setMotorcycleTypes(motorcycleTypesData);
                 
                 // Fetch dữ liệu khung giờ từ API (hoặc sử dụng dữ liệu cứng nếu chưa có API)
                 // const timeSlotsData = await resourceService.getTimeSlots();

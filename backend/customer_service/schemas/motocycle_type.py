@@ -24,13 +24,18 @@ class MotocycleTypeResponse(BaseModel):
     """Schema cơ bản để trả về thông tin MotocycleType"""
     moto_type_id: int
     name: str
-    
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    type: Optional[str] = None
     class Config:
         from_attributes = True
         json_schema_extra = {
             "example": {
                 "moto_type_id": 1,
-                "name": "Xe tay ga"
+                "name": "Xe tay ga",
+                "brand": "Honda",
+                "model": "SH",
+                "type": "Xe máy"
             }
         }
     

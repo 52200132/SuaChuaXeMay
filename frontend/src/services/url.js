@@ -144,6 +144,15 @@ const URLS = {
         'GET_SERVICE_ORDER_DETAILS_BY_ORDER':'/order/service-order-details/{order_id}',
         'UPDATE_SERVICE_ORDER_DETAIL':'/service-order-detail/update/{service_detail_ID}'
     },
+    'MOTOCYCLE_TYPE':{
+        'GET_ALL_MOTOCYCLE_TYPES':'/motocycle-types',
+        'GET_ALL_BRANDS':'/motocycle-type/brands',
+        'GET_MOTOCYCLE_TYPES_BY_BRAND':'/motocycle-types/brand/{brand}',
+        'CREATE_MOTOCYCLE_TYPE':'/motocycle-type/create',
+        'CREATE_MOTOCYCLE_TYPE': '/motocycle-types/create',
+        'UPDATE_MOTOCYCLE_TYPE':'/motocycle-type/update/{moto_type_id}',
+        'DELETE_MOTOCYCLE_TYPE':'/motocycle-type/delete/{moto_type_id}',
+    },
 }
 
 export default URLS;

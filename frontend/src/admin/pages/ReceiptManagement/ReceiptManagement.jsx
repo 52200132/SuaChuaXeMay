@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import { Card, Table, Button, Pagination, Modal, Form, Row, Col, InputGroup } from 'react-bootstrap';
 import { debounce } from 'lodash';
 
-import StatusBadge from '../components/StatusBadge';
-import { useAppData } from '../contexts/AppDataContext';
-import { useStaffAuth } from '../contexts/StaffAuthContext';
-import { customerService, repairService } from '../../services/api';
+import StatusBadge from '../../components/StatusBadge';
+import { useAppData } from '../../contexts/AppDataContext';
+import { useStaffAuth } from '../../contexts/StaffAuthContext';
+import { customerService, repairService } from '../../../services/api';
+import CreateNewModal from '../ReceiptManagement/Modals/CreateNewModals'
 
 const ReceiptManagement = () => {
     // Context and data fetching
@@ -19,7 +20,7 @@ const ReceiptManagement = () => {
     const motorcyclesById = getData('motorcycles');
     
     // Local state
-    const [receptionsDisplay, setReceptionsDisplay] = useState({});
+    // const [receptionsDisplay, setReceptionsDisplay] = useState({});
     const [filteredreceptionsIds, setFilteredreceptionsIds] = useState([]);
     const [currentCustomerWithMotorcycle, setCurrentCustomerWithMotorcycle] = useState({});
     const [customerNotFound, setCustomerNotFound] = useState(false);
@@ -49,8 +50,9 @@ const ReceiptManagement = () => {
         phone: '',
         email: '',
         plateNumber: '',
+        model: '',
         brand: '',
-        motorcycleModel: '',
+        model: '',
         initialCondition: '',
         note: '',
         isReturned: false,
@@ -59,12 +61,6 @@ const ReceiptManagement = () => {
         motocycleId: '',
         motoTypeId: '',
     });
-    
-    // Motorcycle types
-    const motoTypes = [
-        { id: 1, name: 'Xe tay ga' },
-        { id: 2, name: 'Xe số' },
-    ];
 
     // Format receipt data for display
     const formatReceiptData = (receipt, customer, motorcycle) => {
@@ -77,7 +73,7 @@ const ReceiptManagement = () => {
             customerName: customer?.fullname,
             phone: customer?.phone_num,
             plateNumber: motorcycle?.license_plate,
-            motorcycleModel: `${brand} ${model}`,
+            model: `${brand} ${model}`,
             initialCondition: receipt.initial_conditon, 
             note: receipt.note,
             isReturned: receipt.is_returned,
@@ -103,7 +99,7 @@ const ReceiptManagement = () => {
     const debouncedFindCustomer = useCallback(
         debounce((phone) => {
             setFormData(prev => ({
-                ...prev, brand: '', motorcycleModel: '',
+                ...prev, brand: '', model: '',
             }));
             customerService.customer.getCustomerWithMotorcyclesByPhone(phone)
                 .then(response => {
@@ -111,7 +107,7 @@ const ReceiptManagement = () => {
                     if (customer && customer.fullname) {
                         setCurrentCustomerWithMotorcycle(customer);
                         setMultipleData('motorcycles', customer.motocycles, 'motocycle_id');
-                        setData('customers', customer, customer.customer_id);
+                        // setData('customers', customer, customer.customer_id);
                         setFormData(prev => ({
                             ...prev,
                             customerId: customer.customer_id || '',
@@ -182,7 +178,7 @@ const ReceiptManagement = () => {
                 return receipt.customerName?.toLowerCase().includes(searchTerm) ||
                     receipt.phone?.includes(searchTerm) ||
                     receipt.plateNumber?.toLowerCase().includes(searchTerm) ||
-                    receipt.motorcycleModel?.toLowerCase().includes(searchTerm);
+                    receipt.model?.toLowerCase().includes(searchTerm);
             });
         }
 
@@ -251,7 +247,7 @@ const ReceiptManagement = () => {
             setFormData(prev => ({
                 ...prev,
                 brand: motorcycle.brand || '',
-                motorcycleModel: motorcycle.model || '',
+                model: motorcycle.model || '',
                 motocycleId: motorcycle.motocycle_id || '',
                 motoTypeId: motorcycle.moto_type_id || ''
             }));
@@ -259,7 +255,7 @@ const ReceiptManagement = () => {
             setFormData(prev => ({
                 ...prev,
                 brand: '',
-                motorcycleModel: '',
+                model: '',
                 motocycleId: '',
                 motoTypeId: ''
             }));
@@ -297,6 +293,8 @@ const ReceiptManagement = () => {
         setShowEditModal(true);
     };
 
+    // useEffect(() => {console.log(dataStore.receptionsIds)}, [dataStore.receptionsIds]);
+
     const handleShowCreateModal = () => {
         setFormData({
             customerName: '',
@@ -304,7 +302,7 @@ const ReceiptManagement = () => {
             email: '',
             plateNumber: '',
             brand: '',
-            motorcycleModel: '',
+            model: '',
             initialCondition: '',
             note: '',
             isReturned: false,
@@ -360,6 +358,8 @@ const ReceiptManagement = () => {
         }
     };
 
+    // useEffect(() => {console.log(dataStore.receptionsIds)}, [dataStore.receptionsIds]);
+
     const handleCreateSubmit = async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
@@ -396,11 +396,11 @@ const ReceiptManagement = () => {
             });
 
             // Add new receipt to store
-            dataStore['receptionsIds'] = new Set([reception.form_id, ...dataStore['receptionsIds']]);
+            dataStore['receptionsIds'] = new Set([reception.form_id.toString(), ...dataStore['receptionsIds']]);
             setData('receptions', reception, reception.form_id);
 
             // Get motorcycle and customer data if needed
-            await (async () => {
+            const moto = await (async () => {
                 if (!motorcyclesById[reception.motocycle_id]) { 
                     const response = await customerService.motorcycle.getMotorcycleById(reception.motocycle_id);
                     setData('motorcycles', response.data, reception.motocycle_id);
@@ -410,8 +410,9 @@ const ReceiptManagement = () => {
             })();
 
             await (async () => {
-                if (!customersById[reception.customer_id]) { 
-                    const response = await customerService.customer.getCustomerById(reception.customer_id);
+                console.log("Moto:", moto);
+                if (!customersById[moto.customer_id]) { 
+                    const response = await customerService.customer.getCustomerById(moto.customer_id);
                     setData('customers', response.data, reception.customer_id);
                     return response.data;
                 }
@@ -613,7 +614,7 @@ const ReceiptManagement = () => {
                                                 <small className="text-muted">{receipt.phone}</small>
                                             </td>
                                             <td>
-                                                <div>{receipt.motorcycleModel}</div>
+                                                <div>{receipt.model}</div>
                                                 <small className="text-muted">{receipt.plateNumber}</small>
                                             </td>
                                             <td>
@@ -693,7 +694,7 @@ const ReceiptManagement = () => {
                             <Row className="mb-4">
                                 <Col md={12}>
                                     <h6 className="text-muted mb-3">Thông tin xe</h6>
-                                    <p><strong>Loại xe:</strong> {currentReceipt.motorcycleModel}</p>
+                                    <p><strong>Loại xe:</strong> {currentReceipt.model}</p>
                                     <p><strong>Biển số:</strong> {currentReceipt.plateNumber}</p>
                                 </Col>
                             </Row>
@@ -743,7 +744,7 @@ const ReceiptManagement = () => {
                                 <div className="mb-3">
                                     <p className="mb-1"><strong>Mã đơn:</strong> {currentReceipt.id}</p>
                                     <p className="mb-1"><strong>Khách hàng:</strong> {currentReceipt.customerName}</p>
-                                    <p className="mb-1"><strong>Xe:</strong> {currentReceipt.motorcycleModel} - {currentReceipt.plateNumber}</p>
+                                    <p className="mb-1"><strong>Xe:</strong> {currentReceipt.model} - {currentReceipt.plateNumber}</p>
                                 </div>
 
                                 <Form.Group className="mb-3">
@@ -800,198 +801,17 @@ const ReceiptManagement = () => {
             </Modal>
 
             {/* Modal tạo mới */}
-            <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} size="lg">
-                <Form noValidate validated={validated} onSubmit={handleCreateSubmit}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Tạo đơn tiếp nhận mới</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <Row>
-                            <Col md={6}>
-                                <h6 className="mb-3">Thông tin khách hàng</h6>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Số điện thoại *</Form.Label>
-                                    <Form.Control
-                                        type="tel"
-                                        name="phone"
-                                        value={formData.phone}
-                                        pattern="^0[0-9]{9,10}$"
-                                        onChange={handleFormChange}
-                                        required
-                                        maxLength={10}
-                                    />
-                                    <Form.Control.Feedback type="invalid">
-                                        Vui lòng nhập số điện thoại hợp lệ
-                                    </Form.Control.Feedback>
-                                    {customerNotFound && (
-                                        <div className="text-warning mt-1" style={{ fontSize: '0.95em' }}>
-                                            Khách hàng chưa có tài khoản!
-                                        </div>
-                                    )}
-                                </Form.Group>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Họ và tên khách hàng *</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="customerName"
-                                        value={formData.customerName}
-                                        onChange={handleFormChange}
-                                        required
-                                        readOnly={!customerNotFound}
-                                    />
-                                    <Form.Control.Feedback type="invalid">
-                                        Vui lòng nhập họ tên khách hàng
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Email</Form.Label>
-                                    <Form.Control
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleFormChange}
-                                        readOnly={!customerNotFound}
-                                        placeholder="Email khách hàng (nếu có)"
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={6}>
-                                <h6 className="mb-3">Thông tin xe</h6>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Biển số xe *</Form.Label>
-                                    {Array.isArray(currentCustomerWithMotorcycle.motocycles) && currentCustomerWithMotorcycle.motocycles.length > 0 ? (
-                                        <Form.Select
-                                            name="plateNumber"
-                                            value={formData.plateNumber}
-                                            onChange={handleFormChange}
-                                            required
-                                        >
-                                            <option value="">-- Chọn biển số xe --</option>
-                                            {currentCustomerWithMotorcycle.motocycles.map(m => (
-                                                <option key={m.motocycle_id} value={m.license_plate}>
-                                                    {m.license_plate} 
-                                                </option>
-                                            ))} 
-                                            <option value="__manual__">Nhập biển số mới...</option>
-                                        </Form.Select>
-                                    ) : (
-                                        <Form.Control
-                                            type="text"
-                                            name="plateNumber"
-                                            value={formData.plateNumber}
-                                            onChange={handleFormChange}
-                                            required
-                                            disabled={!formData.phone}
-                                            placeholder="Ví dụ: 59X1-12345"
-                                        />
-                                    )}
-                                    {Array.isArray(currentCustomerWithMotorcycle.motocycles) 
-                                    && currentCustomerWithMotorcycle.motocycles.length > 0 
-                                    && formData.plateNumber === "__manual__" && (
-                                        <Form.Control
-                                            className="mt-2"
-                                            type="text"
-                                            name="plateNumberManual"
-                                            value={formData.plateNumberManual || ""}
-                                            onChange={handleFormChange}
-                                            required
-                                            placeholder="Nhập biển số mới"
-                                        />
-                                    )}
-                                    <Form.Control.Feedback type="invalid">
-                                        Vui lòng nhập biển số xe
-                                    </Form.Control.Feedback>
-                                </Form.Group>
-                                <Row>
-                                    <Col md={6}>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Hãng xe</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                name="brand"
-                                                onChange={handleFormChange}
-                                                value={formData.brand}
-                                                readOnly={!formData.phone}
-                                                required
-                                                placeholder="Hãng xe (tự động điền nếu có)"
-                                            />
-                                        </Form.Group>
-                                    </Col>
-                                    <Col md={6}>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Loại xe *</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                name="motorcycleModel"
-                                                value={formData.motorcycleModel}
-                                                onChange={handleFormChange}
-                                                readOnly={!formData.phone}
-                                                required
-                                                placeholder="Ví dụ: Honda Wave, Yamaha Exciter..."
-                                            />
-                                            <Form.Control.Feedback type="invalid">
-                                                Vui lòng nhập loại xe
-                                            </Form.Control.Feedback>
-                                        </Form.Group>
-                                    </Col>
-                                </Row>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Chọn loại xe *</Form.Label>
-                                    <Form.Select
-                                        name="motoTypeId"
-                                        value={formData.motoTypeId}
-                                        onChange={handleFormChange}
-                                        required
-                                    >
-                                        <option value="">-- Chọn loại xe --</option>
-                                        {motoTypes.map(type => (
-                                            <option key={type.id} value={type.id}>{type.name}</option>
-                                        ))}
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
-                        </Row>
-                        <h6 className="mt-2 mb-3">Tình trạng & Ghi chú</h6>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Tình trạng ban đầu *</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                name="initialCondition"
-                                value={formData.initialCondition}
-                                onChange={handleFormChange}
-                                required
-                                placeholder="Mô tả tình trạng của xe khi tiếp nhận"
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                Vui lòng nhập tình trạng ban đầu của xe
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Ghi chú</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                name="note"
-                                value={formData.note}
-                                onChange={handleFormChange}
-                                placeholder="Nhập ghi chú nếu có"
-                            />
-                        </Form.Group>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
-                            Hủy
-                        </Button>
-                        <Button
-                            type="submit"
-                            style={{ backgroundColor: '#d30000', borderColor: '#d30000' }}
-                        >
-                            Tạo đơn tiếp nhận
-                        </Button>
-                    </Modal.Footer>
-                </Form>
-            </Modal>
+            <CreateNewModal 
+                show={showCreateModal}
+                onHide={() => setShowCreateModal(false)}
+                validated={validated}
+
+                formData={formData}
+                handleFormChange={handleFormChange}
+                handleCreateSubmit={handleCreateSubmit}
+                customerNotFound={customerNotFound}
+                currentCustomerWithMotorcycle={currentCustomerWithMotorcycle}
+            />
         </>
     );
 };

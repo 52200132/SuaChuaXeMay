@@ -23,7 +23,9 @@ class MotocycleType(Base):
     __tablename__ = 'MotocycleType'
     
     moto_type_id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(Unicode(255), nullable=False)
+    type = Column(Enum('Xe số', 'Xe tay ga'), nullable=False)
+    brand = Column(Unicode(255), nullable=False)
+    model = Column(Unicode(255), nullable=False)
     
     # Relationships
     motocycles = relationship("Motocycle", back_populates="moto_type") # checked
@@ -38,8 +40,6 @@ class Motocycle(Base):
     customer_id = Column(Integer, ForeignKey('Customer.customer_id'))
     moto_type_id = Column(Integer, ForeignKey('MotocycleType.moto_type_id'))
     license_plate = Column(String(20), nullable=False)
-    brand = Column(Unicode(50))
-    model = Column(Unicode(50))
     
     # Relationships
     customer = relationship("Customer", back_populates="motocycles") # checked

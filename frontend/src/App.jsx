@@ -33,7 +33,7 @@ import Reports from './admin/pages/Reports';
 import Settings from './admin/pages/Settings';
 import AdminProfile from './admin/pages/Profile';
 import StaffLogin from './admin/pages/Login';
-import ReceiptManagement from './admin/pages/ReceiptManagement';
+import ReceiptManagement from './admin/pages/ReceiptManagement/ReceiptManagement';
 import OrderManagement from './admin/pages/OrderManagement';
 import TechnicianDashboard from './admin/pages/TechnicianDashboard';
 // Thêm import cho trang hóa đơn

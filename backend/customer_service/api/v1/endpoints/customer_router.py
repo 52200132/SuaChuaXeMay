@@ -81,9 +81,8 @@ async def get_customer_with_motorcycles(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Không tìm thấy khách hàng với số điện thoại này"
         )
-    # Truy vấn danh sách xe máy nếu chưa được tải trước
-    logger.info(f"Lấy thành công thông tin xe máy cho khách hàng: {customer.fullname}")
-    return CustomerResponseWithMotocycles.from_orm(customer)
+    logger.info(f"Lấy thành công thông tin xe máy cho khách hàng: {customer}")
+    return customer
 
 # @router.put(URLS['CUSTOMER']['UPDATE_CUSTOMER'], response_model=CustomerResponse)
 # async def update_customer(

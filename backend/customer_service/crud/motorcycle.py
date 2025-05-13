@@ -1,20 +1,34 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update, delete
+from sqlalchemy.orm import Bundle
+
 from sqlalchemy.exc import IntegrityError
 
 from utils.logger import get_logger
-from models.models import Motocycle
-from schemas.motocycle import MotocycleResponse, MotocycleCreate, MotocycleUpdate
+from models.models import Motocycle, MotocycleType
+from schemas.motocycle import MotocycleCreate, MotocycleUpdate, MotocycleResponse2
 from utils.logger import get_logger
 
 
 logger = get_logger(__name__)
 
-async def get_all_motorcycles(db: AsyncSession) -> list[Motocycle]:
+async def get_all_motorcycles(db: AsyncSession) -> list[MotocycleResponse2]:
     """Lấy danh sách tất cả các loại xe máy."""
     try:
-        result = await db.execute(select(Motocycle))
+        result = await db.execute(
+            select(
+                Bundle("motocycle",
+                    Motocycle.motocycle_id,
+                    Motocycle.customer_id,
+                    Motocycle.license_plate,
+                    MotocycleType.brand,
+                    MotocycleType.model,
+                    MotocycleType.moto_type_id
+                )
+            )
+            .join(MotocycleType, Motocycle.moto_type_id == MotocycleType.moto_type_id)
+        )
         motorcycles = result.scalars().all()
         logger.info("Lấy danh sách tất cả các loại xe máy thành công")
         return motorcycles
@@ -24,18 +38,34 @@ async def get_all_motorcycles(db: AsyncSession) -> list[Motocycle]:
     except Exception as e:
         logger.error(f"Lỗi không xác định: {str(e)}")
         raise e
-async def get_motorcycle_by_id(db: AsyncSession, motorcycle_id: int) -> Motocycle:
+
+async def get_motorcycle_by_id(db: AsyncSession, motorcycle_id: int) -> MotocycleResponse2:
     """Lấy thông tin loại xe máy theo ID."""
     try:
-        result = await db.get(Motocycle, motorcycle_id)
+        result = await db.execute(
+            select(
+                Bundle("motocycle",
+                    Motocycle.motocycle_id,
+                    Motocycle.customer_id,
+                    Motocycle.license_plate,
+                    MotocycleType.brand,
+                    MotocycleType.model,
+                    MotocycleType.moto_type_id
+                )
+            )
+            .join(MotocycleType, Motocycle.moto_type_id == MotocycleType.moto_type_id)
+            .where(Motocycle.motocycle_id == motorcycle_id)
+        )
         logger.info(f"Lấy thông tin loại xe máy với ID {motorcycle_id} thành công")
-        return result
+        t = result.scalars().one_or_none()
+        return t
     except IntegrityError as e:
         logger.error(f"Lỗi khi lấy thông tin loại xe máy: {str(e)}")
         raise IntegrityError("Lỗi khi lấy thông tin loại xe máy")
     except Exception as e:
         logger.error(f"Lỗi không xác định: {str(e)}")
         raise e
+    
 async def create_motorcycle(db: AsyncSession, motorcycle: MotocycleCreate) -> Motocycle:
     """Tạo một loại xe máy mới."""
     try:

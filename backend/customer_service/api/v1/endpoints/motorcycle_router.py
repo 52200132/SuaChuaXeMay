@@ -7,7 +7,7 @@ from db.session import get_db
 from crud import motorcycle_type as motorcycle_type_crud
 from crud import motorcycle as motorcycle_crud
 from schemas.motocycle_type import MotocycleTypeResponse
-from schemas.motocycle import MotocycleResponse, MotocycleCreate, MotocycleUpdate
+from schemas.motocycle import MotocycleResponse, MotocycleCreate, MotocycleUpdate, MotocycleResponse2
 from utils.logger import get_logger
 from .url import URLS
 
@@ -31,37 +31,43 @@ async def get_all_motorcycle_types(db: AsyncSession = Depends(get_db)):
         motorcycle_types = await motorcycle_type_crud.get_all_motorcycle_types(db)
         if not motorcycle_types:
             return []
-        return [MotocycleTypeResponse.from_orm(motorcycle_type) for motorcycle_type in motorcycle_types]
+        return motorcycle_types
+    except IntegrityError as e:
+        logger.error(f"Lỗi khi lấy thông tin loại xe máy: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Lỗi hệ thống khi lấy danh sách loại xe máy"
+        )
     except Exception as e:
         logger.error(f"Lỗi khi lấy thông tin loại xe máy: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Lỗi hệ thống khi lấy danh sách loại xe máy"
         )
-@router.get(URLS['MOTORCYCLE']['GET_ALL_MOTORCYCLES'], response_model=List[MotocycleResponse])
+    
+@router.get(URLS['MOTORCYCLE']['GET_ALL_MOTORCYCLES'], response_model=List[MotocycleResponse2])
 async def get_all_motorcycle(db: AsyncSession = Depends(get_db)):
     """Lấy danh sách tất cả xe máy."""
     try:
         motorcycles = await motorcycle_crud.get_all_motorcycles(db)
-        if not motorcycles:
-            return []
-        return [MotocycleResponse.from_orm(motorcycle) for motorcycle in motorcycles]
+        return motorcycles
     except Exception as e:
         logger.error(f"Lỗi khi lấy thông tin xe máy: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Lỗi hệ thống khi lấy danh sách xe máy"
         )
-@router.get(URLS['MOTORCYCLE']['GET_MOTORCYCLE_BY_ID'], response_model=MotocycleResponse)
+    
+@router.get(URLS['MOTORCYCLE']['GET_MOTORCYCLE_BY_ID'], response_model=MotocycleResponse2)
 async def get_motorcycle_by_id(
     motorcycle_id: int,
     db: AsyncSession = Depends(get_db)
 ):
     """Lấy thông tin xe máy theo ID."""
-    motorcycle_type = await motorcycle_crud.get_motorcycle_by_id(db, motorcycle_id)
-    if not motorcycle_type:
+    motorcycle = await motorcycle_crud.get_motorcycle_by_id(db, motorcycle_id)
+    if not motorcycle:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy xe máy")
-    return MotocycleResponse.from_orm(motorcycle_type)
+    return motorcycle
 
 @router.post(URLS['MOTORCYCLE']['CREATE_MOTORCYCLE'], response_model=MotocycleResponse)
 async def create_motorcycle(

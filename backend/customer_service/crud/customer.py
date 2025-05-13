@@ -1,11 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete
+from sqlalchemy import update, delete, func
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, Bundle
 
 from utils.logger import get_logger
-from models.models import Customer
+from models.models import Customer, Motocycle, MotocycleType
 from schemas.customer import CustomerCreate, CustomerUpdate, CustomerResponse
 
 logger = get_logger(__name__)
@@ -40,13 +40,37 @@ async def get_customer_by_phone(db: AsyncSession, phone_num: str) -> Customer:
     result = await db.execute(select(Customer).where(Customer.phone_num == phone_num))
     return result.scalar_one_or_none()
 
-async def get_customer_with_motorcycle_by_phone(db: AsyncSession, phone_num: str) -> Customer:
-    """Lấy thông tin khách hàng theo số điện thoại và bao gồm thông tin xe máy"""
-    result = await db.execute(
-        select(Customer).where(Customer.phone_num == phone_num).options(selectinload(Customer.motocycles))
-    )
-    return result.scalar_one_or_none()
+async def get_customer_with_motorcycle_by_phone(db: AsyncSession, phone_num: str):
+    # Lấy thông tin khách hàng
+    result = await db.execute(select(Customer).where(Customer.phone_num == phone_num))
+    customer = result.scalar_one_or_none()
+    if not customer:
+        return None
 
+    # Lấy danh sách xe máy của khách hàng
+    result = await db.execute(
+        select(
+            Motocycle.customer_id,
+            Motocycle.motocycle_id,
+            Motocycle.license_plate,
+            MotocycleType.brand,
+            MotocycleType.model,
+            MotocycleType.moto_type_id
+        )
+        .join(MotocycleType, Motocycle.moto_type_id == MotocycleType.moto_type_id)
+        .where(Motocycle.customer_id == customer.customer_id)
+    )
+    motocycles = result.mappings().all()
+
+    # Trả về object dạng dict hoặc schema
+    return {
+        "customer_id": customer.customer_id,
+        "fullname": customer.fullname,
+        "phone_num": customer.phone_num,
+        "email": customer.email,
+        "is_guest": customer.is_guest,
+        "motocycles": motocycles
+    }
 async def get_all_customers(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[Customer]:
     """Lấy danh sách khách hàng với phân trang"""
     result = await db.execute(select(Customer).offset(skip).limit(limit))
@@ -99,4 +123,3 @@ async def get_customer_by_email_and_password(db: AsyncSession, email: str, passw
         return None
     except Exception as e:
         logger.error(f"Lỗi khi lấy thông tin khách hàng: {str(e)}")
-

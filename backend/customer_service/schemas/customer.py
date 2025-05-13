@@ -3,7 +3,7 @@ from typing import Optional
 import re
 # Thêm để lấy list motocycles
 from typing import List
-from schemas.motocycle import MotocycleResponse
+from schemas.motocycle import MotocycleResponse2
 
 class CustomerBase(BaseModel):
     """Base model cho Customer"""
@@ -78,9 +78,9 @@ class CustomerResponseWithMotocycles(BaseModel):
     fullname: str
     phone_num: str
     email: Optional[EmailStr] = None
-    password: Optional[str] = None
+    # password: Optional[str] = None
     is_guest: Optional[bool] = True
-    motocycles: List[MotocycleResponse] = []  # Danh sách xe máy
+    motocycles: List[MotocycleResponse2] = []  # Danh sách xe máy
 
     class Config:
         from_attributes = True
@@ -90,7 +90,7 @@ class CustomerResponseWithMotocycles(BaseModel):
                 "fullname": "Người Dùng Demo",
                 "phone_num": "0000000000",
                 "email": "demo@gmail.com",
-                "password": "000000",
+                # "password": "000000",
                 "is_guest": True,
                 "motocycles": [
                     {
