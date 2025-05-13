@@ -96,6 +96,32 @@
     background-color: #dc3545 !important;
 }
 
+/* Styling for expanded lot rows */
+.expanded-lots {
+    border-top: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.lot-table {
+    margin-bottom: 0;
+    border: 1px solid #dee2e6;
+}
+
+.lot-table th, .lot-table td {
+    font-size: 0.9rem;
+}
+
+/* Highlight the expanded parent row */
+tr.table-active {
+    background-color: rgba(0, 123, 255, 0.1);
+    border-bottom: none !important;
+}
+
+/* Clickable rows styling */
+tbody tr[style*="cursor: pointer"]:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .part-info-row {

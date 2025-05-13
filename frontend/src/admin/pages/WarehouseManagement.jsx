@@ -29,6 +29,7 @@ const WarehouseManagement = () => {
     const [showReceiveModal, setShowReceiveModal] = useState(false);
     const [showDistributeModal, setShowDistributeModal] = useState(false);
     const [currentPart, setCurrentPart] = useState(null);
+    const [currentBatch, setCurrentBatch] = useState(null);
     const [receiveForm, setReceiveForm] = useState({
         quantity: 0,
         import_price: 0,
@@ -41,6 +42,13 @@ const WarehouseManagement = () => {
         notes: ''
     });
 
+    // State for expanded rows
+    const [expandedPartId, setExpandedPartId] = useState(null);
+    
+    // New state for grouped parts
+    const [groupedParts, setGroupedParts] = useState({});
+    const [groupedPartsIds, setGroupedPartsIds] = useState([]);
+
     // State for tab management
     const [activeTab, setActiveTab] = useState('inventory');
     
@@ -48,7 +56,7 @@ const WarehouseManagement = () => {
     const [localLoading, setLocalLoading] = useState(false);
     const [validated, setValidated] = useState(false);
 
-    // Locations and suppliers lists - update locations to be shelf positions
+    // Locations and suppliers lists
     const locations = ['A1-01', 'A1-02', 'A2-01', 'B1-01', 'B2-01', 'C1-01'];
     const suppliers = ['Nhà cung cấp A', 'Nhà cung cấp B', 'Nhà cung cấp C'];
     const destinations = ['Phục vụ sửa chữa', 'Chuyển kệ khác', 'Xuất bán lẻ'];
@@ -63,19 +71,44 @@ const WarehouseManagement = () => {
             // Simulate fetching parts data
             fetchParts();
         } else {
-            setFilteredPartsIds(partsIds);
-            setTotalPages(Math.ceil(partsIds.length / itemsPerPage));
+            // Group parts by part_id
+            const grouped = groupPartsByPartId(partsIds.map(id => partsById[id]));
+            setGroupedParts(grouped);
+            setGroupedPartsIds(Object.keys(grouped));
+            setFilteredPartsIds(Object.keys(grouped));
+            setTotalPages(Math.ceil(Object.keys(grouped).length / itemsPerPage));
             setLocalLoading(false);
         }
     }, [loading, partsById, partsIds]);
 
-    // Mock function to fetch parts - update to reflect correct meaning of fields
+    // Group parts by part_id
+    const groupPartsByPartId = (partsArray) => {
+        const grouped = {};
+        
+        partsArray.forEach(part => {
+            const partId = part.part_id.toString();
+            
+            if (!grouped[partId]) {
+                grouped[partId] = {
+                    part_id: part.part_id,
+                    name: part.name,
+                    unit: part.unit,
+                    URL: part.URL,
+                    batches: [],
+                    totalStock: 0
+                };
+            }
+            
+            grouped[partId].batches.push(part);
+            grouped[partId].totalStock += part.stock;
+        });
+        
+        return grouped;
+    };
+
+    // Mock function to fetch parts
     const fetchParts = async () => {
         try {
-            // In a real application, this would be an API call
-            // const response = await inventoryService.getParts();
-            // setData('parts', response.data);
-            
             // Mock data using the correct structure for batch inventory
             const mockParts = [
                 {
@@ -154,11 +187,15 @@ const WarehouseManagement = () => {
             
             // Add parts to data store
             mockParts.forEach(part => {
-                setData('parts', part, part.part_warehouse_id); // Index by batch ID, not part ID
+                setData('parts', part, part.part_warehouse_id);
             });
             
-            setFilteredPartsIds(mockParts.map(part => part.part_warehouse_id)); // Track batch IDs
-            setTotalPages(Math.ceil(mockParts.length / itemsPerPage));
+            // Group parts by part_id
+            const grouped = groupPartsByPartId(mockParts);
+            setGroupedParts(grouped);
+            setGroupedPartsIds(Object.keys(grouped));
+            setFilteredPartsIds(Object.keys(grouped));
+            setTotalPages(Math.ceil(Object.keys(grouped).length / itemsPerPage));
             setLocalLoading(false);
         } catch (error) {
             console.error("Error fetching parts data:", error);
@@ -166,34 +203,41 @@ const WarehouseManagement = () => {
         }
     };
 
-    // Apply filters - update to filter by part ID and batch criteria
+    // Apply filters
     const handleApplyFilter = () => {
-        let filtered = [...partsIds];
+        let filtered = [...groupedPartsIds];
         
         if (filters.search) {
             const searchTerm = filters.search.toLowerCase();
             filtered = filtered.filter(id => {
-                const part = partsById[id];
+                const part = groupedParts[id];
                 return part.name.toLowerCase().includes(searchTerm) ||
-                       part.part_id.toString().includes(searchTerm) ||
-                       part.part_warehouse_id.toString().includes(searchTerm);
+                       part.part_id.toString().includes(searchTerm);
             });
         }
         
+        // Location filter now checks all batches of a part
         if (filters.location) {
-            filtered = filtered.filter(id => partsById[id].location === filters.location);
+            filtered = filtered.filter(id => {
+                const part = groupedParts[id];
+                return part.batches.some(batch => batch.location === filters.location);
+            });
         }
         
+        // Supplier filter now checks all batches of a part
         if (filters.supplier) {
-            filtered = filtered.filter(id => partsById[id].supplier_name === filters.supplier);
+            filtered = filtered.filter(id => {
+                const part = groupedParts[id];
+                return part.batches.some(batch => batch.supplier_name === filters.supplier);
+            });
         }
         
         if (filters.minStock) {
-            filtered = filtered.filter(id => partsById[id].stock >= parseInt(filters.minStock));
+            filtered = filtered.filter(id => groupedParts[id].totalStock >= parseInt(filters.minStock));
         }
         
         if (filters.maxStock) {
-            filtered = filtered.filter(id => partsById[id].stock <= parseInt(filters.maxStock));
+            filtered = filtered.filter(id => groupedParts[id].totalStock <= parseInt(filters.maxStock));
         }
         
         setFilteredPartsIds(filtered);
@@ -210,8 +254,8 @@ const WarehouseManagement = () => {
             minStock: '',
             maxStock: ''
         });
-        setFilteredPartsIds(partsIds);
-        setTotalPages(Math.ceil(partsIds.length / itemsPerPage));
+        setFilteredPartsIds(groupedPartsIds);
+        setTotalPages(Math.ceil(groupedPartsIds.length / itemsPerPage));
         setCurrentPage(1);
     };
     
@@ -228,7 +272,7 @@ const WarehouseManagement = () => {
     const getCurrentItems = () => {
         const indexOfLastItem = currentPage * itemsPerPage;
         const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-        return filteredPartsIds.slice(indexOfFirstItem, indexOfLastItem).map(id => partsById[id]);
+        return filteredPartsIds.slice(indexOfFirstItem, indexOfLastItem).map(id => groupedParts[id]);
     };
     
     // Handle page change
@@ -287,6 +331,11 @@ const WarehouseManagement = () => {
         const date = new Date(dateString);
         return date.toLocaleDateString('vi-VN');
     };
+
+    // Toggle expanded row
+    const toggleExpandedRow = (partId) => {
+        setExpandedPartId(expandedPartId === partId ? null : partId);
+    };
     
     // Show part detail modal
     const handleShowDetailModal = (part) => {
@@ -294,27 +343,36 @@ const WarehouseManagement = () => {
         setShowDetailModal(true);
     };
     
-    // Show receive modal
-    const handleShowReceiveModal = (part) => {
+    // Show receive modal for a specific batch
+    const handleShowReceiveModal = (part, batch = null) => {
         setCurrentPart(part);
+        setCurrentBatch(batch);
+        
         setReceiveForm({
             quantity: 0,
-            import_price: part.import_price,
-            supplier_name: part.supplier_name,
-            notes: ''
+            import_price: batch ? batch.import_price : 0,
+            supplier_name: batch ? batch.supplier_name : '',
+            notes: '',
+            location: batch ? batch.location : ''
         });
+        
         setValidated(false);
         setShowReceiveModal(true);
     };
     
-    // Show distribute modal
-    const handleShowDistributeModal = (part) => {
+    // Show distribute modal for a specific batch
+    const handleShowDistributeModal = (part, batch) => {
+        if (!batch) return;
+        
         setCurrentPart(part);
+        setCurrentBatch(batch);
+        
         setDistributeForm({
             quantity: 0,
             destination: '',
             notes: ''
         });
+        
         setValidated(false);
         setShowDistributeModal(true);
     };
@@ -337,7 +395,7 @@ const WarehouseManagement = () => {
         }));
     };
     
-    // Handle receive submit - update to match correct field usage
+    // Handle receive submit
     const handleReceiveSubmit = async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
@@ -351,26 +409,42 @@ const WarehouseManagement = () => {
         try {
             setLocalLoading(true);
             
-            // In a real application, this would be an API call to receive inventory
-            // await inventoryService.receiveParts(currentPart.part_id, receiveForm);
+            // If receiving for an existing batch
+            if (currentBatch) {
+                // Update batch in local store
+                const updatedBatch = {
+                    ...currentBatch,
+                    stock: currentBatch.stock + receiveForm.quantity,
+                    import_price: receiveForm.import_price,
+                    import_date: new Date().toISOString(),
+                    supplier_name: receiveForm.supplier_name,
+                    location: receiveForm.location || currentBatch.location
+                };
+                
+                setData('parts', updatedBatch, currentBatch.part_warehouse_id);
+            } else {
+                // Create a new batch
+                const newBatchId = Date.now(); // Generate a temporary ID
+                const newBatch = {
+                    URL: currentPart.URL,
+                    part_id: currentPart.part_id,
+                    part_warehouse_id: newBatchId,
+                    name: currentPart.name,
+                    unit: currentPart.unit,
+                    stock: receiveForm.quantity,
+                    import_price: receiveForm.import_price,
+                    import_date: new Date().toISOString(),
+                    supplier_name: receiveForm.supplier_name,
+                    location: receiveForm.location || ""
+                };
+                
+                setData('parts', newBatch, newBatchId);
+            }
             
-            // Update part in local store - maintaining exact field names/structure
-            const updatedPart = {
-                ...currentPart,
-                stock: currentPart.stock + receiveForm.quantity, // Update stock (actual inventory)
-                import_price: receiveForm.import_price,
-                import_date: new Date().toISOString(),
-                supplier_name: receiveForm.supplier_name,
-                // Ensure we maintain the same structure
-                URL: currentPart.URL,
-                part_id: currentPart.part_id,
-                part_warehouse_id: currentPart.part_warehouse_id,
-                name: currentPart.name,
-                unit: currentPart.unit,
-                location: receiveForm.location || currentPart.location
-            };
-            
-            setData('parts', updatedPart, currentPart.part_warehouse_id);
+            // Update grouped parts
+            const updatedParts = partsIds.map(id => partsById[id]);
+            const grouped = groupPartsByPartId(updatedParts);
+            setGroupedParts(grouped);
             
             setShowReceiveModal(false);
             alert('Nhập kho thành công!');
@@ -382,12 +456,12 @@ const WarehouseManagement = () => {
         }
     };
     
-    // Handle distribute submit - update to match correct field usage
+    // Handle distribute submit
     const handleDistributeSubmit = async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
         
-        if (form.checkValidity() === false || distributeForm.quantity > currentPart.stock) {
+        if (form.checkValidity() === false || distributeForm.quantity > currentBatch.stock) {
             e.stopPropagation();
             setValidated(true);
             return;
@@ -396,17 +470,18 @@ const WarehouseManagement = () => {
         try {
             setLocalLoading(true);
             
-            // In a real application, this would be an API call to distribute inventory
-            // await inventoryService.distributeParts(currentPart.part_warehouse_id, distributeForm);
-            
-            // Update part in local store - maintaining exact field structure
-            const updatedPart = {
-                ...currentPart,
-                stock: currentPart.stock - distributeForm.quantity // Update stock (actual inventory)
-                // All other fields remain unchanged
+            // Update batch in local store
+            const updatedBatch = {
+                ...currentBatch,
+                stock: currentBatch.stock - distributeForm.quantity
             };
             
-            setData('parts', updatedPart, currentPart.part_warehouse_id);
+            setData('parts', updatedBatch, currentBatch.part_warehouse_id);
+            
+            // Update grouped parts
+            const updatedParts = partsIds.map(id => partsById[id]);
+            const grouped = groupPartsByPartId(updatedParts);
+            setGroupedParts(grouped);
             
             setShowDistributeModal(false);
             alert('Xuất kho thành công!');
@@ -415,18 +490,6 @@ const WarehouseManagement = () => {
             alert('Có lỗi xảy ra khi xuất kho. Vui lòng thử lại!');
         } finally {
             setLocalLoading(false);
-        }
-    };
-
-    // Render stock status badge - based on stock threshold, not comparing to total
-    const renderStockStatusBadge = (stock) => {
-        // Set thresholds based on absolute values, not percentages
-        if (stock > 30) {
-            return <Badge bg="success">Đủ hàng</Badge>;
-        } else if (stock > 10) {
-            return <Badge bg="warning">Cần nhập thêm</Badge>;
-        } else {
-            return <Badge bg="danger">Sắp hết</Badge>;
         }
     };
 
@@ -564,7 +627,7 @@ const WarehouseManagement = () => {
                         </Card.Body>
                     </Card>
 
-                    {/* Table Section - Updated to show batch/lot information */}
+                    {/* Table Section - Modified to show parts with expandable batches */}
                     <Card className="shadow-sm mb-4">
                         <Card.Body className="p-0">
                             <div className="table-responsive">
@@ -573,20 +636,15 @@ const WarehouseManagement = () => {
                                         <tr>
                                             <th style={{ width: '70px' }}>Hình ảnh</th>
                                             <th>Mã PT</th>
-                                            <th>Mã lô</th>
                                             <th>Tên phụ tùng</th>
-                                            <th>Tồn kho</th>
-                                            <th>Vị trí kệ</th>
-                                            <th>Giá nhập</th>
-                                            <th>Ngày nhập</th>
-                                            <th>Tình trạng</th>
+                                            <th>Tổng tồn kho</th>
                                             <th>Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {localLoading ? (
                                             <tr>
-                                                <td colSpan="10" className="text-center py-4">
+                                                <td colSpan="5" className="text-center py-4">
                                                     <div className="spinner-border text-primary" role="status">
                                                         <span className="visually-hidden">Loading...</span>
                                                     </div>
@@ -595,70 +653,137 @@ const WarehouseManagement = () => {
                                             </tr>
                                         ) : (
                                             getCurrentItems().map(part => (
-                                                <tr key={part.part_warehouse_id}>
-                                                    <td>
-                                                        <Image 
-                                                            src={part.URL || "/images/parts/placeholder.jpg"} 
-                                                            alt={part.name}
-                                                            width={50}
-                                                            height={50}
-                                                            className="part-thumbnail"
-                                                        />
-                                                    </td>
-                                                    <td>{part.part_id}</td>
-                                                    <td>{part.part_warehouse_id}</td>
-                                                    <td>
-                                                        <div className="fw-semibold">{part.name}</div>
-                                                        <small className="text-muted">{part.unit}</small>
-                                                    </td>
-                                                    <td>
-                                                        <div className="fw-semibold">{part.stock} {part.unit}</div>
-                                                    </td>
-                                                    <td>{part.location}</td>
-                                                    <td>{formatCurrency(part.import_price)}</td>
-                                                    <td>{formatDate(part.import_date)}</td>
-                                                    <td>
-                                                        {renderStockStatusBadge(part.stock)}
-                                                    </td>
-                                                    <td>
-                                                        <div className="d-flex gap-2">
-                                                            <Button
-                                                                variant="outline-primary"
-                                                                size="sm"
-                                                                className="btn-icon"
-                                                                onClick={() => handleShowDetailModal(part)}
-                                                                title="Xem chi tiết"
-                                                            >
-                                                                <i className="bi bi-eye"></i>
-                                                            </Button>
-                                                            <Button
-                                                                variant="outline-success"
-                                                                size="sm"
-                                                                className="btn-icon"
-                                                                onClick={() => handleShowReceiveModal(part)}
-                                                                title="Nhập kho"
-                                                            >
-                                                                <i className="bi bi-arrow-down-circle"></i>
-                                                            </Button>
-                                                            <Button
-                                                                variant="outline-danger"
-                                                                size="sm"
-                                                                className="btn-icon"
-                                                                onClick={() => handleShowDistributeModal(part)}
-                                                                title="Xuất kho"
-                                                                disabled={part.stock <= 0}
-                                                            >
-                                                                <i className="bi bi-arrow-up-circle"></i>
-                                                            </Button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
+                                                <React.Fragment key={part.part_id}>
+                                                    <tr 
+                                                        className={expandedPartId === part.part_id ? 'table-active' : ''}
+                                                        onClick={() => toggleExpandedRow(part.part_id)}
+                                                        style={{ cursor: 'pointer' }}
+                                                    >
+                                                        <td>
+                                                            <Image 
+                                                                src={part.URL || "/images/parts/placeholder.jpg"} 
+                                                                alt={part.name}
+                                                                width={50}
+                                                                height={50}
+                                                                className="part-thumbnail"
+                                                            />
+                                                        </td>
+                                                        <td>{part.part_id}</td>
+                                                        <td>
+                                                            <div className="fw-semibold">{part.name}</div>
+                                                            <small className="text-muted">{part.unit}</small>
+                                                        </td>
+                                                        <td>
+                                                            <div className="fw-semibold">{part.totalStock} {part.unit}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div className="d-flex gap-2">
+                                                                <Button
+                                                                    variant="outline-primary"
+                                                                    size="sm"
+                                                                    className="btn-icon"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleShowDetailModal(part);
+                                                                    }}
+                                                                    title="Xem chi tiết"
+                                                                >
+                                                                    <i className="bi bi-eye"></i>
+                                                                </Button>
+                                                                <Button
+                                                                    variant="outline-success"
+                                                                    size="sm"
+                                                                    className="btn-icon"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleShowReceiveModal(part);
+                                                                    }}
+                                                                    title="Nhập kho mới"
+                                                                >
+                                                                    <i className="bi bi-arrow-down-circle"></i>
+                                                                </Button>
+                                                                <Button
+                                                                    variant="outline-secondary"
+                                                                    size="sm"
+                                                                    className="btn-icon"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        toggleExpandedRow(part.part_id);
+                                                                    }}
+                                                                    title={expandedPartId === part.part_id ? "Thu gọn" : "Xem chi tiết lô"}
+                                                                >
+                                                                    <i className={`bi ${expandedPartId === part.part_id ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {expandedPartId === part.part_id && (
+                                                        <tr className="expanded-lots">
+                                                            <td colSpan="5" className="p-0">
+                                                                <Table className="lot-table mb-0">
+                                                                    <thead className="table-light">
+                                                                        <tr>
+                                                                            <th>Mã lô</th>
+                                                                            <th>Số lượng</th>
+                                                                            <th>Vị trí kệ</th>
+                                                                            <th>Giá nhập</th>
+                                                                            <th>Ngày nhập</th>
+                                                                            <th>Nhà cung cấp</th>
+                                                                            <th>Thao tác</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {part.batches.map(batch => (
+                                                                            <tr key={batch.part_warehouse_id}>
+                                                                                <td>{batch.part_warehouse_id}</td>
+                                                                                <td>{batch.stock} {batch.unit}</td>
+                                                                                <td>{batch.location}</td>
+                                                                                <td>{formatCurrency(batch.import_price)}</td>
+                                                                                <td>{formatDate(batch.import_date)}</td>
+                                                                                <td>{batch.supplier_name}</td>
+                                                                                <td>
+                                                                                    <div className="d-flex gap-1">
+                                                                                        {/* <Button
+                                                                                            variant="outline-success"
+                                                                                            size="sm"
+                                                                                            className="btn-icon"
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                handleShowReceiveModal(part, batch);
+                                                                                            }}
+                                                                                            title="Nhập thêm vào lô"
+                                                                                        >
+                                                                                            <i className="bi bi-arrow-down-circle"></i>
+                                                                                        </Button> */}
+                                                                                        <Button
+                                                                                            variant="outline-danger"
+                                                                                            size="sm"
+                                                                                            className="btn-icon"
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                handleShowDistributeModal(part, batch);
+                                                                                            }}
+                                                                                            title="Xuất kho lô này"
+                                                                                            disabled={batch.stock <= 0}
+                                                                                        >
+                                                                                            <i className="bi bi-arrow-up-circle"></i>
+                                                                                        </Button>
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </Table>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </React.Fragment>
                                             ))
                                         )}
 
                                         {!localLoading && filteredPartsIds.length === 0 && (
                                             <tr>
-                                                <td colSpan="10" className="text-center py-4">
+                                                <td colSpan="5" className="text-center py-4">
                                                     <div className="text-muted">
                                                         <i className="bi bi-inbox fs-4 d-block mb-2"></i>
                                                         Không tìm thấy phụ tùng nào
@@ -676,7 +801,7 @@ const WarehouseManagement = () => {
                 </>
             )}
 
-            {/* Part Detail Modal - Updated to show correct batch information */}
+            {/* Part Detail Modal */}
             <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>Chi tiết phụ tùng</Modal.Title>
@@ -702,48 +827,44 @@ const WarehouseManagement = () => {
                                         <span className="part-info-value">{currentPart.part_id}</span>
                                     </div>
                                     <div className="part-info-row">
-                                        <span className="part-info-label">Mã lô:</span>
-                                        <span className="part-info-value">{currentPart.part_warehouse_id}</span>
+                                        <span className="part-info-label">Đơn vị:</span>
+                                        <span className="part-info-value">{currentPart.unit}</span>
                                     </div>
                                     <div className="part-info-row">
-                                        <span className="part-info-label">Số lượng tồn:</span>
-                                        <span className="part-info-value">{currentPart.stock} {currentPart.unit}</span>
+                                        <span className="part-info-label">Tổng số lượng tồn:</span>
+                                        <span className="part-info-value">{currentPart.totalStock} {currentPart.unit}</span>
                                     </div>
                                     <div className="part-info-row">
-                                        <span className="part-info-label">Giá nhập:</span>
-                                        <span className="part-info-value">{formatCurrency(currentPart.import_price)}</span>
-                                    </div>
-                                    <div className="part-info-row">
-                                        <span className="part-info-label">Nhà cung cấp:</span>
-                                        <span className="part-info-value">{currentPart.supplier_name}</span>
-                                    </div>
-                                    <div className="part-info-row">
-                                        <span className="part-info-label">Vị trí kệ:</span>
-                                        <span className="part-info-value">{currentPart.location}</span>
-                                    </div>
-                                    <div className="part-info-row">
-                                        <span className="part-info-label">Ngày nhập:</span>
-                                        <span className="part-info-value">{formatDate(currentPart.import_date)}</span>
+                                        <span className="part-info-label">Số lô hàng:</span>
+                                        <span className="part-info-value">{currentPart.batches?.length || 0} lô</span>
                                     </div>
                                 </div>
                                 <div className="stock-status mt-4">
-                                    <h6>Tình trạng tồn kho:</h6>
-                                    <div className="progress">
-                                        <div 
-                                            className={`progress-bar ${
-                                                currentPart.stock > 30 ? 'bg-success' : 
-                                                currentPart.stock > 10 ? 'bg-warning' : 'bg-danger'
-                                            }`}
-                                            role="progressbar" 
-                                            style={{ width: `${Math.min((currentPart.stock / 50) * 100, 100)}%` }}
-                                            aria-valuenow={currentPart.stock} 
-                                            aria-valuemin="0" 
-                                            aria-valuemax="50"
-                                        ></div>
+                                    <h6>Chi tiết các lô hàng:</h6>
+                                    <div className="table-responsive mt-2">
+                                        <Table size="sm" className="lot-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Mã lô</th>
+                                                    <th>Số lượng</th>
+                                                    <th>Vị trí</th>
+                                                    <th>Giá nhập</th>
+                                                    <th>Ngày nhập</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {currentPart.batches?.map(batch => (
+                                                    <tr key={batch.part_warehouse_id}>
+                                                        <td>{batch.part_warehouse_id}</td>
+                                                        <td>{batch.stock} {batch.unit}</td>
+                                                        <td>{batch.location}</td>
+                                                        <td>{formatCurrency(batch.import_price)}</td>
+                                                        <td>{formatDate(batch.import_date)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
                                     </div>
-                                    <small className="text-muted">
-                                        {currentPart.stock} {currentPart.unit} (Mức đủ hàng: 50 {currentPart.unit})
-                                    </small>
                                 </div>
                             </Col>
                         </Row>
@@ -760,26 +881,18 @@ const WarehouseManagement = () => {
                             handleShowReceiveModal(currentPart);
                         }}
                     >
-                        <i className="bi bi-arrow-down-circle me-1"></i> Nhập kho
-                    </Button>
-                    <Button 
-                        variant="danger" 
-                        onClick={() => {
-                            setShowDetailModal(false);
-                            handleShowDistributeModal(currentPart);
-                        }}
-                        disabled={currentPart?.stock <= 0}
-                    >
-                        <i className="bi bi-arrow-up-circle me-1"></i> Xuất kho
+                        <i className="bi bi-arrow-down-circle me-1"></i> Nhập kho mới
                     </Button>
                 </Modal.Footer>
             </Modal>
 
-            {/* Receive Modal - Updated for correct batch terminology */}
+            {/* Receive Modal */}
             <Modal show={showReceiveModal} onHide={() => setShowReceiveModal(false)}>
                 <Form noValidate validated={validated} onSubmit={handleReceiveSubmit}>
                     <Modal.Header closeButton>
-                        <Modal.Title>Nhập kho phụ tùng</Modal.Title>
+                        <Modal.Title>
+                            {currentBatch ? 'Nhập thêm vào lô hàng' : 'Nhập kho phụ tùng mới'}
+                        </Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         {currentPart && (
@@ -787,8 +900,12 @@ const WarehouseManagement = () => {
                                 <div className="part-header mb-3">
                                     <h6>{currentPart.name}</h6>
                                     <p className="text-muted mb-0">Mã phụ tùng: {currentPart.part_id}</p>
-                                    <p className="text-muted mb-0">Mã lô: {currentPart.part_warehouse_id}</p>
-                                    <p className="text-muted mb-0">Tồn kho hiện tại: {currentPart.stock} {currentPart.unit}</p>
+                                    {currentBatch && (
+                                        <>
+                                            <p className="text-muted mb-0">Mã lô: {currentBatch.part_warehouse_id}</p>
+                                            <p className="text-muted mb-0">Tồn kho hiện tại: {currentBatch.stock} {currentBatch.unit}</p>
+                                        </>
+                                    )}
                                 </div>
                                 
                                 <Form.Group className="mb-3">
@@ -843,10 +960,11 @@ const WarehouseManagement = () => {
                                     <Form.Label>Vị trí kệ</Form.Label>
                                     <Form.Select
                                         name="location"
-                                        value={receiveForm.location || currentPart.location}
+                                        value={receiveForm.location || (currentBatch ? currentBatch.location : '')}
                                         onChange={handleReceiveFormChange}
                                         required
                                     >
+                                        <option value="">-- Chọn vị trí kệ --</option>
                                         {locations.map((location, idx) => (
                                             <option key={idx} value={location}>{location}</option>
                                         ))}
@@ -891,20 +1009,21 @@ const WarehouseManagement = () => {
                 </Form>
             </Modal>
 
-            {/* Distribute Modal - Updated for correct batch terminology */}
+            {/* Distribute Modal */}
             <Modal show={showDistributeModal} onHide={() => setShowDistributeModal(false)}>
                 <Form noValidate validated={validated} onSubmit={handleDistributeSubmit}>
                     <Modal.Header closeButton>
                         <Modal.Title>Xuất kho phụ tùng</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        {currentPart && (
+                        {currentPart && currentBatch && (
                             <>
                                 <div className="part-header mb-3">
                                     <h6>{currentPart.name}</h6>
                                     <p className="text-muted mb-0">Mã phụ tùng: {currentPart.part_id}</p>
-                                    <p className="text-muted mb-0">Mã lô: {currentPart.part_warehouse_id}</p>
-                                    <p className="text-muted mb-0">Tồn kho hiện tại: {currentPart.stock} {currentPart.unit}</p>
+                                    <p className="text-muted mb-0">Mã lô: {currentBatch.part_warehouse_id}</p>
+                                    <p className="text-muted mb-0">Tồn kho hiện tại: {currentBatch.stock} {currentBatch.unit}</p>
+                                    <p className="text-muted mb-0">Vị trí: {currentBatch.location}</p>
                                 </div>
                                 
                                 <Form.Group className="mb-3">
@@ -915,12 +1034,12 @@ const WarehouseManagement = () => {
                                         value={distributeForm.quantity}
                                         onChange={handleDistributeFormChange}
                                         min="1"
-                                        max={currentPart.stock}
+                                        max={currentBatch.stock}
                                         required
                                     />
                                     <Form.Control.Feedback type="invalid">
-                                        {distributeForm.quantity > currentPart.stock 
-                                            ? `Số lượng xuất không được vượt quá ${currentPart.stock}`
+                                        {distributeForm.quantity > currentBatch.stock 
+                                            ? `Số lượng xuất không được vượt quá ${currentBatch.stock}`
                                             : 'Vui lòng nhập số lượng lớn hơn 0'}
                                     </Form.Control.Feedback>
                                 </Form.Group>
@@ -964,7 +1083,7 @@ const WarehouseManagement = () => {
                         <Button 
                             variant="danger" 
                             type="submit"
-                            disabled={localLoading || distributeForm.quantity > (currentPart?.stock || 0)}
+                            disabled={localLoading || distributeForm.quantity > (currentBatch?.stock || 0)}
                         >
                             {localLoading ? (
                                 <>
