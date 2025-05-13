@@ -493,6 +493,179 @@ const WarehouseManagement = () => {
         }
     };
 
+    // State for bulk receiving modal
+    const [showBulkReceiveModal, setShowBulkReceiveModal] = useState(false);
+    const [bulkReceiveForm, setBulkReceiveForm] = useState({
+        supplier_name: '',
+        notes: '',
+        parts: []
+    });
+    const [availableParts, setAvailableParts] = useState([]);
+    const [selectedParts, setSelectedParts] = useState([]);
+
+    // Initialize available parts for bulk receiving
+    useEffect(() => {
+        if (Object.keys(groupedParts).length > 0) {
+            const uniqueParts = Object.values(groupedParts).map(part => ({
+                part_id: part.part_id,
+                name: part.name,
+                unit: part.unit,
+                URL: part.URL,
+                selected: false,
+                quantity: 0,
+                import_price: 0,
+                location: ''
+            }));
+            setAvailableParts(uniqueParts);
+        }
+    }, [groupedParts]);
+    
+    // Show bulk receive modal
+    const handleShowBulkReceiveModal = () => {
+        setBulkReceiveForm({
+            supplier_name: '',
+            notes: '',
+            parts: []
+        });
+        setSelectedParts([]);
+        setValidated(false);
+        setShowBulkReceiveModal(true);
+    };
+    
+    // Handle part selection in bulk form
+    const handlePartSelection = (partIndex, checked) => {
+        const updatedParts = [...availableParts];
+        updatedParts[partIndex].selected = checked;
+        
+        // If checked, add to selected parts with default values
+        if (checked) {
+            const part = updatedParts[partIndex];
+            const existingPriceFromBatches = 
+                groupedParts[part.part_id]?.batches?.[0]?.import_price || 0;
+            
+            setSelectedParts(prev => [
+                ...prev, 
+                {
+                    ...part,
+                    quantity: 1,
+                    import_price: existingPriceFromBatches,
+                    location: ''
+                }
+            ]);
+        } else {
+            // If unchecked, remove from selected parts
+            setSelectedParts(prev => 
+                prev.filter(p => p.part_id !== updatedParts[partIndex].part_id)
+            );
+        }
+        
+        setAvailableParts(updatedParts);
+    };
+    
+    // Handle changing values for selected parts
+    const handleSelectedPartChange = (index, field, value) => {
+        const updatedParts = [...selectedParts];
+        
+        // Handle numeric values
+        if (field === 'quantity' || field === 'import_price') {
+            updatedParts[index][field] = Number(value);
+        } else {
+            updatedParts[index][field] = value;
+        }
+        
+        setSelectedParts(updatedParts);
+    };
+    
+    // Handle bulk supplier change
+    const handleBulkSupplierChange = (supplierName) => {
+        setBulkReceiveForm(prev => ({
+            ...prev,
+            supplier_name: supplierName
+        }));
+    };
+    
+    // Handle bulk notes change
+    const handleBulkNotesChange = (notes) => {
+        setBulkReceiveForm(prev => ({
+            ...prev,
+            notes: notes
+        }));
+    };
+    
+    // Handle bulk receive submit
+    const handleBulkReceiveSubmit = async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        
+        // Validate all fields
+        if (form.checkValidity() === false || 
+            !bulkReceiveForm.supplier_name ||
+            selectedParts.length === 0 ||
+            selectedParts.some(part => !part.location || part.quantity <= 0 || part.import_price <= 0)) {
+            e.stopPropagation();
+            setValidated(true);
+            return;
+        }
+        
+        try {
+            setLocalLoading(true);
+            
+            // Create new batches for each selected part
+            for (const part of selectedParts) {
+                const newBatchId = Date.now() + Math.floor(Math.random() * 1000); // Generate a unique ID
+                
+                const newBatch = {
+                    URL: part.URL,
+                    part_id: part.part_id,
+                    part_warehouse_id: newBatchId,
+                    name: part.name,
+                    unit: part.unit,
+                    stock: part.quantity,
+                    import_price: part.import_price,
+                    import_date: new Date().toISOString(),
+                    supplier_name: bulkReceiveForm.supplier_name,
+                    location: part.location
+                };
+                
+                // In a real app, this would be a batch API call
+                setData('parts', newBatch, newBatchId);
+            }
+            
+            // Update grouped parts
+            const updatedParts = [...partsIds, ...selectedParts.map(p => p.part_warehouse_id)]
+                .map(id => partsById[id]);
+            const grouped = groupPartsByPartId(updatedParts);
+            setGroupedParts(grouped);
+            
+            setShowBulkReceiveModal(false);
+            alert('Nhập kho hàng loạt thành công!');
+            
+            // Reset selections
+            const resetAvailableParts = availableParts.map(part => ({
+                ...part,
+                selected: false
+            }));
+            setAvailableParts(resetAvailableParts);
+            
+        } catch (error) {
+            console.error('Lỗi khi nhập kho hàng loạt:', error);
+            alert('Có lỗi xảy ra khi nhập kho hàng loạt. Vui lòng thử lại!');
+        } finally {
+            setLocalLoading(false);
+        }
+    };
+    
+    // Remove part from selection
+    const handleRemoveSelectedPart = (partId) => {
+        // Remove from selected parts
+        setSelectedParts(prev => prev.filter(p => p.part_id !== partId));
+        
+        // Update available parts selection status
+        setAvailableParts(prev => prev.map(p => 
+            p.part_id === partId ? { ...p, selected: false } : p
+        ));
+    };
+
     return (
         <>
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -525,9 +698,18 @@ const WarehouseManagement = () => {
                     <Button 
                         style={{ backgroundColor: '#d30000', borderColor: '#d30000' }}
                         onClick={() => setActiveTab('inventory')}
+                        className="me-2"
                     >
                         <i className="bi bi-plus-circle me-1"></i>
                         Thêm phụ tùng mới
+                    </Button>
+                    {/* Nút nhập kho hàng loạt */}
+                    <Button
+                        variant="success"
+                        onClick={handleShowBulkReceiveModal}
+                    >
+                        <i className="bi bi-arrow-bar-down me-1"></i>
+                        Nhập kho hàng loạt
                     </Button>
                 </div>
             </div>
@@ -1093,6 +1275,230 @@ const WarehouseManagement = () => {
                             ) : (
                                 <>
                                     <i className="bi bi-arrow-up-circle me-1"></i> Xác nhận xuất kho
+                                </>
+                            )}
+                        </Button>
+                    </Modal.Footer>
+                </Form>
+            </Modal>
+
+            {/* Bulk Receive Modal */}
+            <Modal show={showBulkReceiveModal} onHide={() => setShowBulkReceiveModal(false)} size="xl">
+                <Form noValidate validated={validated} onSubmit={handleBulkReceiveSubmit}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Nhập kho hàng loạt</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Row className="mb-4">
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Nhà cung cấp *</Form.Label>
+                                    <Form.Select
+                                        name="supplier_name"
+                                        value={bulkReceiveForm.supplier_name}
+                                        onChange={(e) => handleBulkSupplierChange(e.target.value)}
+                                        required
+                                    >
+                                        <option value="">-- Chọn nhà cung cấp --</option>
+                                        {suppliers.map((supplier, idx) => (
+                                            <option key={idx} value={supplier}>{supplier}</option>
+                                        ))}
+                                    </Form.Select>
+                                    <Form.Control.Feedback type="invalid">
+                                        Vui lòng chọn nhà cung cấp
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Ghi chú</Form.Label>
+                                    <Form.Control
+                                        as="textarea"
+                                        name="notes"
+                                        rows={1}
+                                        value={bulkReceiveForm.notes}
+                                        onChange={(e) => handleBulkNotesChange(e.target.value)}
+                                        placeholder="Nhập ghi chú nếu có..."
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+
+                        <Row>
+                            <Col md={5}>
+                                <Card className="mb-3">
+                                    <Card.Header className="bg-light">
+                                        <div className="d-flex justify-content-between align-items-center">
+                                            <strong>Danh sách phụ tùng</strong>
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Tìm kiếm phụ tùng..."
+                                                className="form-control-sm w-50"
+                                            />
+                                        </div>
+                                    </Card.Header>
+                                    <div className="parts-selection-container">
+                                        {availableParts.map((part, index) => (
+                                            <div 
+                                                key={part.part_id} 
+                                                className={`part-selection-item ${part.selected ? 'selected' : ''}`}
+                                            >
+                                                <Form.Check 
+                                                    type="checkbox"
+                                                    id={`part-${part.part_id}`}
+                                                    checked={part.selected}
+                                                    onChange={(e) => handlePartSelection(index, e.target.checked)}
+                                                    label={
+                                                        <div className="d-flex align-items-center">
+                                                            <Image 
+                                                                src={part.URL || "/images/parts/placeholder.jpg"}
+                                                                alt={part.name}
+                                                                width={30}
+                                                                height={30}
+                                                                className="me-2 part-thumbnail"
+                                                            />
+                                                            <div>
+                                                                <div className="fw-semibold">{part.name}</div>
+                                                                <small className="text-muted">Mã PT: {part.part_id}</small>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                />
+                                            </div>
+                                        ))}
+                                        {availableParts.length === 0 && (
+                                            <div className="text-center p-3 text-muted">
+                                                Không có phụ tùng
+                                            </div>
+                                        )}
+                                    </div>
+                                </Card>
+                            </Col>
+                            <Col md={7}>
+                                <Card>
+                                    <Card.Header className="bg-light">
+                                        <strong>Phụ tùng đã chọn ({selectedParts.length})</strong>
+                                    </Card.Header>
+                                    <div className="selected-parts-container">
+                                        {selectedParts.length === 0 ? (
+                                            <div className="text-center p-3 text-muted">
+                                                Chưa chọn phụ tùng nào
+                                            </div>
+                                        ) : (
+                                            <Table className="mb-0">
+                                                <thead className="table-light">
+                                                    <tr>
+                                                        <th>Phụ tùng</th>
+                                                        <th style={{ width: '100px' }}>Số lượng</th>
+                                                        <th style={{ width: '150px' }}>Giá nhập (VNĐ)</th>
+                                                        <th style={{ width: '150px' }}>Vị trí kệ</th>
+                                                        <th style={{ width: '60px' }}></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {selectedParts.map((part, index) => (
+                                                        <tr key={part.part_id}>
+                                                            <td>
+                                                                <div className="d-flex align-items-center">
+                                                                    <Image 
+                                                                        src={part.URL || "/images/parts/placeholder.jpg"}
+                                                                        alt={part.name}
+                                                                        width={30}
+                                                                        height={30}
+                                                                        className="me-2 part-thumbnail"
+                                                                    />
+                                                                    <div>
+                                                                        <div className="fw-semibold">{part.name}</div>
+                                                                        <small className="text-muted">Mã PT: {part.part_id}</small>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <Form.Control
+                                                                    type="number"
+                                                                    size="sm"
+                                                                    min="1"
+                                                                    value={part.quantity}
+                                                                    onChange={(e) => handleSelectedPartChange(index, 'quantity', e.target.value)}
+                                                                    required
+                                                                    isInvalid={validated && part.quantity <= 0}
+                                                                />
+                                                            </td>
+                                                            <td>
+                                                                <Form.Control
+                                                                    type="number"
+                                                                    size="sm"
+                                                                    min="1000"
+                                                                    value={part.import_price}
+                                                                    onChange={(e) => handleSelectedPartChange(index, 'import_price', e.target.value)}
+                                                                    required
+                                                                    isInvalid={validated && part.import_price <= 0}
+                                                                />
+                                                            </td>
+                                                            <td>
+                                                                <Form.Select
+                                                                    size="sm"
+                                                                    value={part.location}
+                                                                    onChange={(e) => handleSelectedPartChange(index, 'location', e.target.value)}
+                                                                    required
+                                                                    isInvalid={validated && !part.location}
+                                                                >
+                                                                    <option value="">Chọn vị trí</option>
+                                                                    {locations.map((location, idx) => (
+                                                                        <option key={idx} value={location}>{location}</option>
+                                                                    ))}
+                                                                </Form.Select>
+                                                            </td>
+                                                            <td>
+                                                                <Button 
+                                                                    variant="outline-danger"
+                                                                    size="sm"
+                                                                    className="btn-icon"
+                                                                    onClick={() => handleRemoveSelectedPart(part.part_id)}
+                                                                >
+                                                                    <i className="bi bi-trash"></i>
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </Table>
+                                        )}
+                                    </div>
+                                </Card>
+                                {selectedParts.length > 0 && (
+                                    <div className="mt-3 text-end">
+                                        <div className="mb-2">
+                                            <strong>Tổng số phụ tùng:</strong> {selectedParts.length} loại
+                                        </div>
+                                        <div className="mb-2">
+                                            <strong>Tổng số lượng:</strong> {selectedParts.reduce((sum, part) => sum + part.quantity, 0)} sản phẩm
+                                        </div>
+                                        <div>
+                                            <strong>Tổng giá trị:</strong> {formatCurrency(selectedParts.reduce((sum, part) => sum + (part.quantity * part.import_price), 0))}
+                                        </div>
+                                    </div>
+                                )}
+                            </Col>
+                        </Row>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowBulkReceiveModal(false)}>
+                            Hủy
+                        </Button>
+                        <Button 
+                            variant="success" 
+                            type="submit"
+                            disabled={localLoading || selectedParts.length === 0 || !bulkReceiveForm.supplier_name}
+                        >
+                            {localLoading ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>
+                                    <i className="bi bi-arrow-down-circle me-1"></i> Xác nhận nhập kho hàng loạt
                                 </>
                             )}
                         </Button>

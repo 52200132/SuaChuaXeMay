@@ -133,3 +133,45 @@ tbody tr[style*="cursor: pointer"]:hover {
         margin-bottom: 4px;
     }
 }
+
+/* Bulk parts selection styling */
+.parts-selection-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.part-selection-item {
+    padding: 10px;
+    border-bottom: 1px solid #f3f3f3;
+    transition: background-color 0.2s;
+}
+
+.part-selection-item:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.part-selection-item.selected {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.selected-parts-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Make form controls in tables more compact */
+.table .form-control-sm, 
+.table .form-select-sm {
+    padding: 0.25rem 0.5rem;
+    height: calc(1.5em + 0.5rem + 2px);
+}
+
+/* Customize table in modal */
+.table {
+    margin-bottom: 0;
+}
+
+.table td {
+    vertical-align: middle;
+}
