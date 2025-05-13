@@ -16,7 +16,7 @@ const PrivateRoute = ({ children }) => {
         
         // For admin routes, user must have a valid staff role
         if (isAdminRoute) {
-            const validRoles = ['receptionist', 'technician', 'cashier', 'manager', 'admin', 'owner'];
+            const validRoles = ['receptionist', 'head technician', 'technician', 'warehouse worker', 'cashier', 'manager', 'admin', 'owner'];
             
             // Kiểm tra vai trò hợp lệ
             if (!validRoles.includes(currentStaff.role)) {
@@ -38,7 +38,13 @@ const PrivateRoute = ({ children }) => {
             
             // Kiểm tra truy cập trang technician
             if (location.pathname.includes('/technician-dashboard') && 
-                !['technician', 'manager', 'admin', 'owner'].includes(currentStaff.role)) {
+                !['head technician', 'technician', 'manager', 'admin', 'owner'].includes(currentStaff.role)) {
+                return false;
+            }
+
+            // Kiểm tra truy cập warehouse (kho hàng)
+            if (location.pathname.includes('/warehouse') && 
+                !['warehouse worker', 'manager', 'admin', 'owner'].includes(currentStaff.role)) {
                 return false;
             }
             

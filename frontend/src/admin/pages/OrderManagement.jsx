@@ -9,6 +9,7 @@ import { useAppData } from '../contexts/AppDataContext';
 import { customerService, resourceService, repairService } from '../../services/api';
 import './OrderManagement.css';
 import OrderDetailView from '../components/OrderDetailView';
+import { useStaffAuth } from '../contexts/StaffAuthContext';
 
 // Register Chart.js components
 const OrderManagement = () => {
@@ -20,6 +21,7 @@ const OrderManagement = () => {
     const motorcyclesById = getData('motorcycles');
     const diagnosisById = getData('diagnosis');
     const staffsById = getData('staffs');
+    const { currentStaff } = useStaffAuth();
 
     const [newOrderId, setNewOrderId] = useState(null);
 
@@ -930,13 +932,15 @@ const OrderManagement = () => {
                         <i className="bi bi-person-check me-1"></i>
                         Phân công công việc
                     </Button>
-                    <Button
+                    {currentStaff?.role !== 'head technician' && (
+                                            <Button
                         onClick={handleShowCreateModal}
                         style={{ backgroundColor: '#d30000', borderColor: '#d30000' }}
                     >
                         <i className="bi bi-plus-circle me-1"></i>
                         Tạo đơn hàng mới
                     </Button>
+                    )}
                 </div>
             </div>
 

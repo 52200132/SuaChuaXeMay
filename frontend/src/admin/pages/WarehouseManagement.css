@@ -1,0 +1,109 @@
+/* Styling for warehouse management */
+
+.part-thumbnail {
+    border-radius: 4px;
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+}
+
+.part-detail-image {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.part-image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.part-info-row {
+    display: flex;
+    margin-bottom: 8px;
+    border-bottom: 1px dotted #dee2e6;
+    padding-bottom: 8px;
+}
+
+.part-info-label {
+    flex: 0 0 150px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.part-info-value {
+    flex: 1;
+}
+
+.stock-status {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+/* Keep button icons aligned */
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Tab button active state */
+.btn.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Stylize modal headers */
+.modal-header .modal-title {
+    color: #d30000;
+}
+
+/* Layout adjustments for consistent spacing */
+.part-header {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 10px;
+}
+
+/* Progress bar styling */
+.progress {
+    height: 10px;
+    border-radius: 5px;
+}
+
+/* Add hover effect to table rows */
+.table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+/* Badge styling for stock status */
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .part-info-row {
+        flex-direction: column;
+    }
+    
+    .part-info-label {
+        flex: 0 0 100%;
+        margin-bottom: 4px;
+    }
+}

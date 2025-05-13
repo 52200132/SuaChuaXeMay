@@ -4,10 +4,12 @@ import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useStaffAuth } from '../contexts/StaffAuthContext';
 
 const Dashboard = () => {
     const { currentUser } = useAuth();
     const isOwner = currentUser?.role === 'admin' || currentUser?.role === 'owner';
+    const { currentStaff } = useStaffAuth();
     
     // Mock data
     const [stats, setStats] = useState({

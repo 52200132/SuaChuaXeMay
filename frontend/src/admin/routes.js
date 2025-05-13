@@ -10,6 +10,7 @@ import OrderManagement from './pages/OrderManagement';
 import TechnicianDashboard from './pages/TechnicianDashboard';
 import InvoiceManagement from './pages/InvoiceManagement';
 import OrderAssignment from './pages/OrderAssignment';
+import WarehouseManagement from './pages/WarehouseManagement';
 
 // Routes cho vai trò receptionist (tiếp tân)
 export const receptionistRoutes = [
@@ -71,6 +72,31 @@ export const head_technicianRoutes = [
         component: OrderAssignment,
         name: 'Phân công đơn hàng',
         icon: 'bi bi-cart3',
+        exact: true,
+    },
+    {
+        path: '/admin/profile',
+        component: Profile,
+        name: 'Thông tin cá nhân',
+        icon: 'bi bi-person',
+        exact: true,
+    },
+];
+
+// Routes cho vai trò technician (kỹ thuật viên)
+export const warehouse_workerRoutes = [
+    {
+        path: '/admin/dashboard',
+        component: Dashboard,
+        name: 'Dashboard',
+        icon: 'bi bi-speedometer2',
+        exact: true,
+    },
+    {
+        path: '/admin/warehouse',
+        component: WarehouseManagement,
+        name: 'Quản lý kho',
+        icon: 'bi bi-box',
         exact: true,
     },
     {
@@ -214,5 +240,5 @@ export const managerRoutes = [
 ];
 
 // Giữ lại các routes cũ để khả năng tương thích ngược
-export const employeeRoutes = [...receptionistRoutes, ...head_technicianRoutes, ...technicianRoutes, ...cashierRoutes];
+export const employeeRoutes = [...receptionistRoutes, ...head_technicianRoutes, ...technicianRoutes, ...warehouse_workerRoutes, ...cashierRoutes];
 export const ownerRoutes = managerRoutes;

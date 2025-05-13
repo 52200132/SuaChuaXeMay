@@ -22,35 +22,36 @@ export const AppDataProvider = ({ children }) => {
 
     // State for different data categories
     const [dataStore, setDataStore] = useState({
-        customers: {},    // Customer data by ID
-        customersIds: new Set(),  // IDs of customers
+        customers: {},
+        customersIds: new Set(),
 
-        appointments: {}, // Appointment data by ID
-        appointmentsIds: new Set(),  // IDs of appointments
+        appointments: {},
+        appointmentsIds: new Set(),
 
-        receptions: {}, // Reception data by ID
-        receptionsIds: new Set(),  // IDs of receptions
+        receptions: {},
+        receptionsIds: new Set(),
 
-        services: {},     // Service data by ID
-        servicesIds: new Set(),  // IDs of services
+        services: {},
+        servicesIds: new Set(),
+        servicesMotoType: {},
 
-        staffs: {},     // Staff data by ID
-        staffsIds: new Set(),  // IDs of staffs
+        staffs: {},
+        staffsIds: new Set(),
 
-        orders: {},     // Order data by ID
-        ordersIds: new Set(),  // IDs of orders
+        orders: {},
+        ordersIds: new Set(),
 
-        diagnosis: {},     // Diagnosis data by ID
-        diagnosisIds: new Set(),  // IDs of diagnosis
+        diagnosis: {},
+        diagnosisIds: new Set(),
 
-        motorcycles: {},     // Motorcycle data by ID
-        motorcyclesIds: new Set(),  // IDs of motorcycles
+        motorcycles: {},
+        motorcyclesIds: new Set(),
 
-        parts : {},     // Part data by ID
-        partsMotoType : {},     
-        services : {},     // Service data by ID
-        servicesMotoType : {},
+        parts: {},
+        partsIds: new Set(),
+        partsMotoType: {},
     });
+
 
     // State to track loading status for different categories
     const [loading, setLoading] = useState({
@@ -426,11 +427,19 @@ export const AppDataProvider = ({ children }) => {
         }
         else if (currentStaff.role === 'head technician') {
             console.log('Đang là trưởng kỹ thuật viên');
-            fetchPartsMotoType();
-            fetchServicesMotoType();
-            fetchParts();
-            fetchServices();
-            fetchOrderForTechnician();
+            // fetchPartsMotoType();
+            // fetchServicesMotoType();
+            // fetchParts();
+            // fetchServices();
+            // fetchOrderForTechnician();
+        }
+        else if (currentStaff.role === 'warehouse worker') {
+            console.log('Đang là nhân viên kho');
+            // fetchPartsMotoType();
+            // fetchServicesMotoType();
+            // fetchParts();
+            // fetchServices();
+            // fetchOrderForTechnician();
         }
     }, [currentStaff]);
 
