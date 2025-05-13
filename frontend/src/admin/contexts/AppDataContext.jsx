@@ -407,6 +407,7 @@ export const AppDataProvider = ({ children }) => {
             setLoadingState('staffs', false);
         }
 
+        console.log('Đang là nhân viên', currentStaff.role);
 
         if (currentStaff.role === 'receptionist') {
             console.log('Đang là nhân viên lễ tân');
@@ -417,6 +418,14 @@ export const AppDataProvider = ({ children }) => {
             fetchStaffs();
         } else if (currentStaff.role === 'technician') {
             console.log('Đang là nhân viên kỹ thuật');
+            fetchPartsMotoType();
+            fetchServicesMotoType();
+            fetchParts();
+            fetchServices();
+            fetchOrderForTechnician();
+        }
+        else if (currentStaff.role === 'head technician') {
+            console.log('Đang là trưởng kỹ thuật viên');
             fetchPartsMotoType();
             fetchServicesMotoType();
             fetchParts();

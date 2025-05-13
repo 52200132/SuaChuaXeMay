@@ -151,7 +151,7 @@ class Staff(Base):
     
     staff_id = Column(Integer, primary_key=True, autoincrement=True)
     fullname = Column(Unicode(255), nullable=False)
-    role = Column(Enum('receptionist', 'technician', 'cashier', 'manager', name='staff_role'), nullable=False)
+    role = Column(Enum('receptionist', 'technician', 'head technician', 'warehouse worker', 'cashier', 'manager', name='staff_role'), nullable=False)
     status = Column(Enum('active', 'inactive', name='staff_status'), default='active')
     email = Column(String(50), unique=True, nullable=False)
     password = Column(String(255), nullable=False)

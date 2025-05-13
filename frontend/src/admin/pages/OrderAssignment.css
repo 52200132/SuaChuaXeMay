@@ -1,0 +1,138 @@
+/* Styling for standalone assignment management component */
+
+.assignment-management-container {
+    padding: 20px;
+}
+
+.page-title {
+    color: #d30000;
+    font-weight: 600;
+}
+
+/* Dashboard cards styling */
+.dashboard-card {
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.stat-icon i {
+    font-size: 1.5rem;
+}
+
+.stat-details h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.stat-details p {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Table styling */
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-assign {
+    white-space: nowrap;
+}
+
+/* Card styling */
+.card-header {
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.card-header h6 {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Hover effect for table rows */
+.table-hover tbody tr:hover {
+    background-color: rgba(211, 0, 0, 0.03);
+}
+
+/* Status badge styling - these will be used if StatusBadge component isn't available */
+.badge-received, .badge-checking {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-wait_confirm {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.badge-repairing {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.badge-wait_delivery {
+    background-color: #fd7e14;
+    color: #fff;
+}
+
+.badge-delivered {
+    background-color: #198754;
+    color: #fff;
+}
+
+/* Modal styling */
+.modal-header .modal-title {
+    color: #d30000;
+}
+
+/* Custom button colors */
+.btn-primary {
+    background-color: #d30000;
+    border-color: #d30000;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #b10000;
+    border-color: #b10000;
+}
+
+/* Media queries for responsive design */
+@media (max-width: 768px) {
+    .dashboard-card {
+        margin-bottom: 15px;
+    }
+    
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .stat-details h3 {
+        font-size: 1.5rem;
+    }
+}

@@ -3,7 +3,7 @@ import { Container, Row, Col, Nav, Button, Navbar, NavDropdown } from 'react-boo
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 import { useStaffAuth } from '../contexts/StaffAuthContext';    
-import { receptionistRoutes, technicianRoutes, cashierRoutes, managerRoutes } from '../routes';
+import { receptionistRoutes, technicianRoutes, cashierRoutes, managerRoutes, head_technicianRoutes } from '../routes';
 import './AdminLayout.css';
 import NotificationCenter from '../../components/NotificationCenter';
 
@@ -22,6 +22,8 @@ const AdminLayout = () => {
                 return managerRoutes;
             case 'receptionist':
                 return receptionistRoutes;
+            case 'head technician':
+                return head_technicianRoutes;
             case 'technician':
                 return technicianRoutes;
             case 'cashier':
@@ -42,6 +44,8 @@ const AdminLayout = () => {
                 return 'Quản lý';
             case 'receptionist':
                 return 'Tiếp nhận viên';
+            case 'head technician':
+                return 'Kỹ thuật viên trưởng';
             case 'technician':
                 return 'Kỹ thuật viên';
             case 'cashier':
