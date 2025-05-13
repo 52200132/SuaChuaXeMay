@@ -1,6 +1,6 @@
 import Dashboard from './pages/Dashboard';
 import BookingManagement from './pages/BookingManagement';
-import ReceiptManagement from './pages/ReceiptManagement';
+import ReceiptManagement from './pages/ReceiptManagement/ReceiptManagement';
 import ServiceManagement from './pages/ServiceManagement';
 import UserManagement from './pages/UserManagement';
 import Reports from './pages/Reports';

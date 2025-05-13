@@ -370,15 +370,15 @@ const customerService = {
                 throw error;
             }
         },
-        getAllServiceTypes: async () => {
-            try {
-                const response = await apiCustomerService.get(URLS.MOTORCYCLE.GET_ALL_MOTORCYCLE_TYPES);
-                return response.data;
-            } catch (error) {
-                console.error('Lỗi khi lấy danh sách loại xe máy:', error);
-                throw error;
-            }
-        },
+        // getAllServiceTypes: async () => {
+        //     try {
+        //         const response = await apiCustomerService.get(URLS.MOTORCYCLE.GET_ALL_MOTORCYCLE_TYPES);
+        //         return response.data;
+        //     } catch (error) {
+        //         console.error('Lỗi khi lấy danh sách loại xe máy:', error);
+        //         throw error;
+        //     }
+        // },
 
         getMotorcycleById: async (id) => {
             try {
@@ -798,6 +798,27 @@ const repairService = {
             }
         }
     },
+
+    motocycleType: {
+        getAllBrands: async () => {
+            try {
+                const response = await apiRepairService.get(URLS.MOTOCYCLE_TYPE.GET_ALL_BRANDS);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách thương hiệu xe máy:', error);
+                throw error;
+            }
+        },
+        getMotocycleTypesByBrand: async (brand) => {
+            try {
+                const response = await apiRepairService.get(URLS.MOTOCYCLE_TYPE.GET_MOTOCYCLE_TYPES_BY_BRAND.replace('{brand}', brand));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy danh sách loại xe máy theo thương hiệu ${brand}:`, error);
+                throw error;
+            }
+        },
+    }
 };
 
 export { customerService, resourceService, repairService };

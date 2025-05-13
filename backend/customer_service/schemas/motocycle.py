@@ -61,12 +61,10 @@ class MotocycleUpdate(BaseModel):
 
 class MotocycleResponse(BaseModel):
     """Schema để trả về thông tin Motocycle"""
-    motocycle_id: Optional[int]
-    customer_id: Optional[int]
-    moto_type_id: Optional[int]
+    motocycle_id: Optional[int] = None
+    customer_id: Optional[int] = None
+    moto_type_id: Optional[int] = None
     license_plate: Optional[str] = None
-    brand: Optional[str] = None
-    model: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -76,8 +74,27 @@ class MotocycleResponse(BaseModel):
                 "customer_id": 1,
                 "moto_type_id": 1,
                 "license_plate": "59Y2-123.45",
-                "brand": "Honda",
-                "model": "SH"
             }
         }
 
+class MotocycleResponse2(MotocycleResponse):
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    moto_type: Optional[MotocycleTypeResponse] = None  # Thông tin loại xe máy
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "motocycle_id": 1,
+                "customer_id": 1,
+                "moto_type_id": 1,
+                "license_plate": "59Y2-123.45",
+                "brand": "Honda",
+                "model": "SH",
+                "moto_type": {
+                    "moto_type_id": 1,
+                    "name": "Xe tay ga"
+                }
+            }
+        }
