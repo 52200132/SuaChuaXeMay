@@ -15,7 +15,6 @@ class SupplierCreate(SupplierBase):
         attribute_from = True
         json_schema_extra = {
             "example": {
-                "supplier_id": 1,
                 "name": "Nhà cung cấp A",
                 "address": "123 Đường ABC, Quận 1, TP.HCM",
                 "phone_num": "0123456789",

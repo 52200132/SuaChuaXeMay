@@ -17,9 +17,9 @@ app = FastAPI(title="Resource Service API", version="1.0.0")
 app.include_router(service_type.router, prefix="/api/v1", tags=["Service Types"])
 app.include_router(service.router, prefix="/api/v1", tags=["Service"])
 app.include_router(staff.router, prefix="/api/v1", tags=["Staff"])
-app.include_router(part.router, prefix="/api/v1", tags=["Part"])
-app.include_router(part_moto_type.router, prefix="/api/v1", tags=["Part Moto Type"])
-app.include_router(service_moto_type.router, prefix="/api/v1", tags=["Service Moto Type"])
+# app.include_router(part.router, prefix="/api/v1", tags=["Part"])
+# app.include_router(part_moto_type.router, prefix="/api/v1", tags=["Part Moto Type"])
+# app.include_router(service_moto_type.router, prefix="/api/v1", tags=["Service Moto Type"])
 app.include_router(invoice.router, prefix="/api/v1", tags=["Invoice"])
 
 # Cấu hình CORS cho phép truy cập từ các nguồn khác nhau
