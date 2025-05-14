@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, or_
 
 from utils.logger import get_logger
 from models.models_2 import Part, Compatible, Warehouse, Supplier, PartLot, PartOrderDetail
@@ -73,7 +73,7 @@ async def get_part_views_by_moto_type_id(db: AsyncSession, moto_type_id: int):
             select(
                 Part,
                 func.sum(Warehouse.stock).label("total_stock"),
-                Supplier.name.label("supplier_name")
+                Supplier.name.label("supplier_name"),
             )
             .outerjoin(Compatible, Part.part_id == Compatible.part_id)
             .outerjoin(PartLot, Part.part_id == PartLot.part_id)
@@ -82,7 +82,10 @@ async def get_part_views_by_moto_type_id(db: AsyncSession, moto_type_id: int):
             .where(
                 and_(
                     Part.is_deleted == False,
-                    Compatible.moto_type_id == moto_type_id,
+                    or_(
+                        Compatible.moto_type_id == moto_type_id,
+                        Compatible.moto_type_id == None,
+                    ),
                     # Warehouse.stock > 0,
                 )
             )
@@ -90,10 +93,10 @@ async def get_part_views_by_moto_type_id(db: AsyncSession, moto_type_id: int):
                 Part.part_id,
             )
         )
-            
+
         result = await db.execute(query)
         parts_data = result.all()
-        
+
         result_list = []
         for part_info in parts_data:
             part = part_info[0]  # Part object
@@ -110,7 +113,7 @@ async def get_part_views_by_moto_type_id(db: AsyncSession, moto_type_id: int):
                 URL=part.URL
             )
             result_list.append(part_view)
-        
+
         # print(f"result_list: {result_list}")
 
         return result_list
@@ -177,7 +180,7 @@ async def get_part_warehouse_views_by_part_id_list(db: AsyncSession, part_id_lis
     except Exception as e:
         log.error(f"Lỗi khi lấy thông tin kho phụ tùng: {e}")
         raise e
-    
+
 async def get_part_warehouse_views_by_order_id(db: AsyncSession, order_id: int) -> list[PartWarehouseView]:
     """
     Lấy danh sách thông tin kho của các phụ tùng theo ID đơn hàng.
@@ -198,7 +201,7 @@ async def get_part_warehouse_views_by_order_id(db: AsyncSession, order_id: int) 
     except Exception as e:
         log.error(f"Lỗi khi lấy thông tin kho phụ tùng theo đơn hàng: {e}")
         raise e
-    
+
 async def get_part_order_detail_views_by_order_id(db: AsyncSession, order_id: int):
     """
     Lấy danh sách thông tin chi tiết đơn hàng phụ tùng theo ID đơn hàng.
@@ -250,7 +253,7 @@ async def get_part_order_detail_views_by_order_id(db: AsyncSession, order_id: in
     except Exception as e:
         log.error(f"Lỗi khi lấy danh sách chi tiết đơn hàng phụ tùng: {e}")
         raise e
-    
+
 async def get_part_warehouse_views_by_order_id_v2(db: AsyncSession, order_id: int) -> list[PartWarehouseView2]:
     """
     Lấy danh sách thông tin kho của các phụ tùng theo danh sách ID.

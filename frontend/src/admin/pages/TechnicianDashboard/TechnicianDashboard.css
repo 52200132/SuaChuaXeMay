@@ -516,7 +516,7 @@ tr.priority-medium td:first-child {
 .parts-list {
     border-radius: 0 !important;
     overflow-y: auto !important;
-    height: 100% !important;
+    /* height: 100% !important; */
 }
 
 /* Thiết lập thanh cuộn cho danh sách */

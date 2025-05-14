@@ -50,10 +50,15 @@ export const AppDataProvider = ({ children }) => {
 
         parts: {},
         partsIds: new Set(),
+        
         partsMotoType: {},
+        partsMotoTypeIds: new Set(), // { part_id: {} }
 
         partsview: {}, // { part_id: {} }
         partsviewIds: new Set(),
+
+        servicesParentMotoType: {}, // { service_id: {} }
+        servicesParentMotoTypeIds: new Set(), // { service_id: {} }
     });
 
     // State to track loading status for different categories
@@ -192,7 +197,7 @@ export const AppDataProvider = ({ children }) => {
     const fetchParts = async () => {
         setLoadingState('parts', true);
         try {
-            const response = await repairService.part.getAllParts();
+            const response = await repairService2.part.getPartViews();
             const data = response?.data;
             const dataObject = Array.isArray(data) 
                 ? data.reduce((obj, item) => {
@@ -447,7 +452,8 @@ export const AppDataProvider = ({ children }) => {
         }
         else if (currentStaff.role === 'head technician') {
             console.log('Đang là trưởng kỹ thuật viên');
-            
+            fetchServicesParentMotoType();
+            fetchParts();
             fetchOrderForTechnician();
             fetchOrders();
             fetchDiagnosis();
@@ -493,6 +499,8 @@ export const AppDataProvider = ({ children }) => {
             if (id) {
                 const idsKey = `${category}Ids`;
                 const idStr = id.toString();
+                console.log('category:', category, 'ID:', idStr, 'data:', data);
+                console.log('Id set:', prevStore[idsKey]);
                 
                 // Kiểm tra xem ID đã tồn tại chưa
                 if (!prevStore[idsKey].has(idStr)) {
