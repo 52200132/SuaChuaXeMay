@@ -69,7 +69,7 @@ export const head_technicianRoutes = [
     },
     {
         path: '/admin/orders',
-        component: OrderAssignment,
+        component: OrderManagement,
         name: 'Phân công đơn hàng',
         icon: 'bi bi-cart3',
         exact: true,

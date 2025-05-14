@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Pagination, Modal, Form, Row, Col, InputGroup, Badge, Image, Tabs, Tab } from 'react-bootstrap';
 import { useAppData } from '../contexts/AppDataContext';
-import { inventoryService } from '../../services/api';
+import { repairService } from '../../services/api';
 import './WarehouseManagement.css';
 
 const WarehouseManagement = () => {
     const { getData, getIds, setData, loading } = useAppData();
+    
+    // Get parts data from context
     const partsById = getData('parts') || {};
     const partsIds = getIds('parts') || [];
+
+    // Get partsview data from context
+    const partsviewById = getData('partsview') || {};
+    const partsviewIds = getIds('partsview') || [];
 
     // State for parts inventory
     const [filteredPartsIds, setFilteredPartsIds] = useState([]);
@@ -45,7 +51,7 @@ const WarehouseManagement = () => {
     // State for expanded rows
     const [expandedPartId, setExpandedPartId] = useState(null);
     
-    // New state for grouped parts
+    // State for grouped parts
     const [groupedParts, setGroupedParts] = useState({});
     const [groupedPartsIds, setGroupedPartsIds] = useState([]);
 
@@ -64,28 +70,38 @@ const WarehouseManagement = () => {
     // Initialize data
     useEffect(() => {
         setLocalLoading(true);
+        
+        // Check if we're loading parts data
         if (loading['parts'] === true) return;
         
-        // Mock data for development - would be replaced by actual API calls
-        if (Object.keys(partsById).length === 0) {
-            // Simulate fetching parts data
-            fetchParts();
-        } else {
+        // Check if we have partsview data
+        if (Object.keys(partsviewById).length > 0) {
+            console.log('Using partsview data from context:', partsviewById);
+            
+            // Convert partsviewById to array for processing
+            const partsViewArray = Object.keys(partsviewById).map(id => partsviewById[id]);
+            
             // Group parts by part_id
-            const grouped = groupPartsByPartId(partsIds.map(id => partsById[id]));
+            const grouped = groupPartsByPartId(partsViewArray);
             setGroupedParts(grouped);
             setGroupedPartsIds(Object.keys(grouped));
             setFilteredPartsIds(Object.keys(grouped));
             setTotalPages(Math.ceil(Object.keys(grouped).length / itemsPerPage));
             setLocalLoading(false);
+        } else {
+            // If no data in context, fetch mock data
+            console.log('No partsview data in context, using mock data');
+            fetchParts();
         }
-    }, [loading, partsById, partsIds]);
+    }, [loading, partsviewById]);
 
     // Group parts by part_id
     const groupPartsByPartId = (partsArray) => {
         const grouped = {};
         
         partsArray.forEach(part => {
+            if (!part || !part.part_id) return; // Skip invalid parts
+            
             const partId = part.part_id.toString();
             
             if (!grouped[partId]) {
@@ -100,7 +116,7 @@ const WarehouseManagement = () => {
             }
             
             grouped[partId].batches.push(part);
-            grouped[partId].totalStock += part.stock;
+            grouped[partId].totalStock += part.stock || 0;
         });
         
         return grouped;
@@ -112,82 +128,36 @@ const WarehouseManagement = () => {
             // Mock data using the correct structure for batch inventory
             const mockParts = [
                 {
-                    "URL": "/images/parts/loc-gio-wave-alpha.jpg",
-                    "import_date": "2023-10-01T12:00:00",
-                    "import_price": 65000,
-                    "location": "A1-01", // Shelf location
-                    "name": "Lọc gió Wave Alpha",
-                    "part_id": 1, // Part ID
-                    "part_warehouse_id": 1, // Batch/lot ID
-                    "stock": 50, // Current quantity of this batch
-                    "supplier_name": "Nhà cung cấp A",
-                    "unit": "cái"
-                },
-                {
-                    "URL": "/images/parts/loc-gio-wave-alpha.jpg",
-                    "import_date": "2023-11-15T14:30:00",
-                    "import_price": 68000,
-                    "location": "A1-02", // Different shelf location
-                    "name": "Lọc gió Wave Alpha",
-                    "part_id": 1, // Same part ID
-                    "part_warehouse_id": 6, // Different batch/lot ID
-                    "stock": 35, // Current quantity of this batch
-                    "supplier_name": "Nhà cung cấp A",
-                    "unit": "cái"
-                },
-                {
-                    "URL": "/images/parts/day-curoa-vision.jpg",
-                    "import_date": "2023-09-15T10:30:00",
-                    "import_price": 120000,
-                    "location": "A2-01",
-                    "name": "Dây curoa Vision",
-                    "part_id": 2,
+                    "URL": "http://example.com/updated_part",
+                    "import_date": null,
+                    "import_price": 40000,
+                    "location": "A1",
+                    "name": "Bugi NGK CR7HSA",
+                    "part_id": 1,
                     "part_warehouse_id": 2,
-                    "stock": 30,
-                    "supplier_name": "Nhà cung cấp B",
+                    "quantity": 100,
+                    "stock": 70,
+                    "supplier_name": "NGK",
                     "unit": "cái"
                 },
                 {
-                    "URL": "/images/parts/bugi-denso-iridium.jpg",
-                    "import_date": "2023-10-05T14:20:00",
-                    "import_price": 95000,
-                    "location": "B1-01",
-                    "name": "Bugi Denso Iridium",
-                    "part_id": 3,
-                    "part_warehouse_id": 3,
-                    "stock": 80,
-                    "supplier_name": "Nhà cung cấp A",
-                    "unit": "cái"
-                },
-                {
-                    "URL": "/images/parts/nhot-motul-3000.jpg",
-                    "import_date": "2023-09-20T09:15:00",
-                    "import_price": 85000,
-                    "location": "B2-01",
-                    "name": "Nhớt Motul 3000",
-                    "part_id": 4,
-                    "part_warehouse_id": 4,
-                    "stock": 25,
-                    "supplier_name": "Nhà cung cấp C",
-                    "unit": "chai"
-                },
-                {
-                    "URL": "/images/parts/lop-michelin.jpg",
-                    "import_date": "2023-10-10T11:45:00",
-                    "import_price": 450000,
-                    "location": "C1-01",
-                    "name": "Lốp Michelin 70/90-17",
-                    "part_id": 5,
-                    "part_warehouse_id": 5,
-                    "stock": 15,
-                    "supplier_name": "Nhà cung cấp B",
-                    "unit": "cái"
+                    "URL": null,
+                    "import_date": null,
+                    "import_price": 120000,
+                    "location": "A3",
+                    "name": "Bi nồi 18g Yamaha",
+                    "part_id": 11,
+                    "part_warehouse_id": 1,
+                    "quantity": 50,
+                    "stock": 40,
+                    "supplier_name": "Yamaha",
+                    "unit": "bộ"
                 }
             ];
             
-            // Add parts to data store
+            // Store in partsview instead of parts
             mockParts.forEach(part => {
-                setData('parts', part, part.part_warehouse_id);
+                setData('partsview', part, part.part_warehouse_id);
             });
             
             // Group parts by part_id
@@ -272,7 +242,9 @@ const WarehouseManagement = () => {
     const getCurrentItems = () => {
         const indexOfLastItem = currentPage * itemsPerPage;
         const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-        return filteredPartsIds.slice(indexOfFirstItem, indexOfLastItem).map(id => groupedParts[id]);
+        return filteredPartsIds.slice(indexOfFirstItem, indexOfLastItem)
+            .map(id => groupedParts[id])
+            .filter(Boolean); // Remove undefined items
     };
     
     // Handle page change
@@ -328,8 +300,9 @@ const WarehouseManagement = () => {
     
     // Format date
     const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
         const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN');
+        return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString('vi-VN');
     };
 
     // Toggle expanded row
@@ -421,7 +394,8 @@ const WarehouseManagement = () => {
                     location: receiveForm.location || currentBatch.location
                 };
                 
-                setData('parts', updatedBatch, currentBatch.part_warehouse_id);
+                // Update in partsview instead of parts
+                setData('partsview', updatedBatch, currentBatch.part_warehouse_id);
             } else {
                 // Create a new batch
                 const newBatchId = Date.now(); // Generate a temporary ID
@@ -432,20 +406,22 @@ const WarehouseManagement = () => {
                     name: currentPart.name,
                     unit: currentPart.unit,
                     stock: receiveForm.quantity,
+                    quantity: receiveForm.quantity,
                     import_price: receiveForm.import_price,
                     import_date: new Date().toISOString(),
                     supplier_name: receiveForm.supplier_name,
                     location: receiveForm.location || ""
                 };
                 
-                setData('parts', newBatch, newBatchId);
+                // Store in partsview instead of parts
+                setData('partsview', newBatch, newBatchId);
             }
             
             // Update grouped parts
-            const updatedParts = partsIds.map(id => partsById[id]);
+            const updatedParts = Object.keys(partsviewById).map(id => partsviewById[id]);
             const grouped = groupPartsByPartId(updatedParts);
             setGroupedParts(grouped);
-            
+
             setShowReceiveModal(false);
             alert('Nhập kho thành công!');
         } catch (error) {
@@ -476,10 +452,11 @@ const WarehouseManagement = () => {
                 stock: currentBatch.stock - distributeForm.quantity
             };
             
-            setData('parts', updatedBatch, currentBatch.part_warehouse_id);
+            // Update in partsview instead of parts
+            setData('partsview', updatedBatch, currentBatch.part_warehouse_id);
             
             // Update grouped parts
-            const updatedParts = partsIds.map(id => partsById[id]);
+            const updatedParts = Object.keys(partsviewById).map(id => partsviewById[id]);
             const grouped = groupPartsByPartId(updatedParts);
             setGroupedParts(grouped);
             
@@ -505,20 +482,20 @@ const WarehouseManagement = () => {
 
     // Initialize available parts for bulk receiving
     useEffect(() => {
-        if (Object.keys(groupedParts).length > 0) {
-            const uniqueParts = Object.values(groupedParts).map(part => ({
-                part_id: part.part_id,
-                name: part.name,
-                unit: part.unit,
-                URL: part.URL,
-                selected: false,
-                quantity: 0,
-                import_price: 0,
-                location: ''
-            }));
-            setAvailableParts(uniqueParts);
-        }
-    }, [groupedParts]);
+    if (Object.keys(partsById).length > 0) {
+        const uniqueParts = Object.values(partsById).map(part => ({
+            part_id: part.part_id,
+            name: part.name,
+            unit: part.unit,
+            URL: part.URL,
+            selected: false,
+            quantity: 0,
+            import_price: 0,
+            location: ''
+        }));
+        setAvailableParts(uniqueParts);
+    }
+}, [partsById]);
     
     // Show bulk receive modal
     const handleShowBulkReceiveModal = () => {
@@ -610,31 +587,35 @@ const WarehouseManagement = () => {
         try {
             setLocalLoading(true);
             
-            // Create new batches for each selected part
-            for (const part of selectedParts) {
-                const newBatchId = Date.now() + Math.floor(Math.random() * 1000); // Generate a unique ID
-                
-                const newBatch = {
-                    URL: part.URL,
-                    part_id: part.part_id,
-                    part_warehouse_id: newBatchId,
-                    name: part.name,
-                    unit: part.unit,
-                    stock: part.quantity,
-                    import_price: part.import_price,
-                    import_date: new Date().toISOString(),
-                    supplier_name: bulkReceiveForm.supplier_name,
-                    location: part.location
-                };
-                
-                // In a real app, this would be a batch API call
-                setData('parts', newBatch, newBatchId);
+            // Chuẩn bị dữ liệu để gửi lên server
+            const bulkReceiveData = {
+            supplier_name: bulkReceiveForm.supplier_name,
+            notes: bulkReceiveForm.notes,
+            parts: selectedParts.map(part => ({
+                part_id: part.part_id,
+                quantity: part.quantity,
+                import_price: part.import_price,
+                location: part.location
+            }))
+            };
+            
+            // Gọi API để lưu vào CSDL
+            const result = await repairService.part.bulkReceive(bulkReceiveData);
+            // bulkReceiveInventory(bulkReceiveData);
+            
+            if (result && result.success) {
+            // Nếu thành công, cập nhật dữ liệu local từ kết quả trả về
+                if (result.data && Array.isArray(result.data)) {
+                    result.data.forEach(batch => {
+                        // Cập nhật vào context
+                        setData('partsview', batch, batch.part_warehouse_id);
+                    });
+                }
             }
             
-            // Update grouped parts
-            const updatedParts = [...partsIds, ...selectedParts.map(p => p.part_warehouse_id)]
-                .map(id => partsById[id]);
-            const grouped = groupPartsByPartId(updatedParts);
+            // Update grouped parts using the updated partsview data
+            const updatedPartsViews = Object.keys(partsviewById).map(id => partsviewById[id]);
+            const grouped = groupPartsByPartId(updatedPartsViews);
             setGroupedParts(grouped);
             
             setShowBulkReceiveModal(false);
@@ -853,7 +834,7 @@ const WarehouseManagement = () => {
                                                         <td>{part.part_id}</td>
                                                         <td>
                                                             <div className="fw-semibold">{part.name}</div>
-                                                            <small className="text-muted">{part.unit}</small>
+                                                            {/* <small className="text-muted">{part.unit}</small> */}
                                                         </td>
                                                         <td>
                                                             <div className="fw-semibold">{part.totalStock} {part.unit}</div>

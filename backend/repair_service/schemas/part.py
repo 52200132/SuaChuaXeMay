@@ -68,3 +68,63 @@ class PartWithMotocycleTypes(PartResponse):
     
     class Config:
         from_attributes = True
+
+class PartLotCreate(BaseModel):
+    """Schema cho việc tạo mới một lô phụ tùng"""
+    part_id: int = Field(..., description="ID của phụ tùng")
+    quantity: int = Field(..., gt=0, description="Số lượng phụ tùng trong lô")
+    price: int = Field(..., gt=0, description="Giá nhập của phụ tùng")
+    location: str = Field(..., description="Vị trí kệ lưu trữ")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "part_id": 1,
+                "quantity": 10,
+                "price": 60000,
+                "location": "A1-01"
+            }
+        }
+
+class BulkPartLotCreate(BaseModel):
+    """Schema cho việc tạo nhiều lô phụ tùng cùng lúc"""
+    supplier_id: int = Field(..., description="ID của nhà cung cấp")
+    note: Optional[str] = Field(None, description="Ghi chú cho lô hàng")
+    parts: List[PartLotCreate] = Field(..., description="Danh sách các phụ tùng cần nhập kho")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "supplier_id": 1,
+                "note": "Đơn hàng nhập kho ngày 15/06/2023",
+                "parts": [
+                    {
+                        "part_id": 1,
+                        "quantity": 10,
+                        "price": 60000,
+                        "location": "A1-01"
+                    },
+                    {
+                        "part_id": 2,
+                        "quantity": 5,
+                        "price": 120000,
+                        "location": "B2-03"
+                    }
+                ]
+            }
+        }
+
+class BulkPartLotResponse(BaseModel):
+    """Schema cho phản hồi khi tạo nhiều lô phụ tùng cùng lúc"""
+    success: bool
+    message: str
+    created_lots: Optional[List[int]] = Field(None, description="Danh sách ID của các lô đã tạo")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "message": "Đã nhập kho thành công 2 loại phụ tùng",
+                "created_lots": [101, 102]
+            }
+        }

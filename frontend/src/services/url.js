@@ -25,11 +25,14 @@ const URLS = {
     },
     
     'PART': {
-        'GET_ALL_PARTS' : '/parts',
-        'GET_PART_BY_ID' : '/part/{part_id}',
-        'CREATE_PART' : '/part/create',
-        'UPDATE_PART' : '/part/update',
-        'DELETE_PART' : '/part/delete/{part_id}'
+        'CREATE_PART':'/part/create',
+        'GET_ALL_PARTS':'/parts',
+        'GET_PART_BY_ID':'/part/{part_id}',
+        'GET_PARTS_VIEWS_BY_MOTO_TYPE_ID':'/part-views/motocycle-type/{moto_type_id}',
+        'GET_PARTS_VIEWS_BY_ORDER_ID':'/part-views/order/{order_id}',
+        'GET_PARTS_VIEWS_BY_PART_ID_LIST':'/part-views/part-id-list',
+        'UPDATE_PART':'/part/update/{part_id}',
+        'DELETE_PART':'/part/delete/{part_id}',
     },
     
     'PART_MOTO_TYPE': {
@@ -149,7 +152,6 @@ const URLS = {
         'GET_ALL_BRANDS':'/motocycle-type/brands',
         'GET_MOTOCYCLE_TYPES_BY_BRAND':'/motocycle-types/brand/{brand}',
         'CREATE_MOTOCYCLE_TYPE':'/motocycle-type/create',
-        'CREATE_MOTOCYCLE_TYPE': '/motocycle-types/create',
         'UPDATE_MOTOCYCLE_TYPE':'/motocycle-type/update/{moto_type_id}',
         'DELETE_MOTOCYCLE_TYPE':'/motocycle-type/delete/{moto_type_id}',
     },
