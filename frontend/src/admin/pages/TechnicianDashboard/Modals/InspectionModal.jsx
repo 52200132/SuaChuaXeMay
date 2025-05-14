@@ -54,6 +54,7 @@ const InspectionModal = ({
                 notes: currentOrder.note || ''
             });
         }
+        // console.log(parts);
     }, [show, currentOrder]);
 
     // Reset lựa chọn khi mở modal
