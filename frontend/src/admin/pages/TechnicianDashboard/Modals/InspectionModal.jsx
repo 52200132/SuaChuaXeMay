@@ -158,7 +158,7 @@ const InspectionModal = ({
                 quantity: partQuantities[partId] || 1,
                 name: part.name || '',
                 unit: part.unit || '',
-                price: part.price || 0
+                price: part.price * partQuantities[partId] || 0
             };
         }).filter(Boolean);
 

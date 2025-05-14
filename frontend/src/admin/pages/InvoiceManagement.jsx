@@ -376,6 +376,7 @@ const InvoiceManagement = () => {
                 is_paid: true,
                 payment_method: selectedPaymentMethod,
                 staff_id: currentStaff.staff_id,
+                // create_at: new Date()
             });
             
             // Cập nhật trong context
@@ -383,7 +384,8 @@ const InvoiceManagement = () => {
                 ...invoiceToPayment,
                 is_paid: true, 
                 payment_method: selectedPaymentMethod,
-                staff_id: currentStaff.staff_id
+                staff_id: currentStaff.staff_id,
+                pay_at: new Date()
             }, invoiceToPayment.invoice_id);
             
             setShowPaymentModal(false);

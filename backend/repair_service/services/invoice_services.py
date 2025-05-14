@@ -26,6 +26,7 @@ async def get_invoice_views(db: AsyncSession, skip: int = 0, limit: int = 1000) 
                         Order.order_id,
                         Invoice.is_paid,
                         Invoice.staff_id,
+                        Invoice.payment_method
                     ).label("order")
                 )
             .join(Order, Invoice.order_id == Order.order_id)

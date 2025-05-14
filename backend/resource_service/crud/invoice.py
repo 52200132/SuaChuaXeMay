@@ -135,6 +135,11 @@ async def update_invoice(
                 Invoice.invoice_id == invoice_id
             ).values(**update_data)
             await db.execute(stmt)
+        await db.execute(
+            update(Invoice)
+            .where(Invoice.invoice_id == invoice_id)
+            .values(create_at=datetime.now())
+        )
         
         await db.commit()
         return await get_invoice_by_id(db, invoice_id)
