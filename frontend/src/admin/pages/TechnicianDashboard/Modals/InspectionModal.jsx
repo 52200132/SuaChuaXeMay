@@ -43,6 +43,7 @@ const InspectionModal = ({
     
     // State cho dịch vụ
     const [selectedServices, setSelectedServices] = useState([]);
+    const [serviceSearchTerm, setServiceSearchTerm] = useState('');
 
     // Khởi tạo dữ liệu khi modal mở
     useEffect(() => {
@@ -62,6 +63,8 @@ const InspectionModal = ({
         setSelectedParts([]);
         setPartQuantities({});
         setSelectedServices([]);
+        setPartSearchTerm('');
+        setServiceSearchTerm('');
         setActiveTab('status');
         setActiveCatalogTab('services');
     };
@@ -254,7 +257,7 @@ const InspectionModal = ({
 
     // TODO: Render phần chọn phụ tùng và dịch vụ
     const renderPartsSelection = ({ partsViews = [], servicesViews = [] }) => {
-        // Lọc phụ tùng theo từ khóa tìm kiếm
+        // Lọc phụ tùng và dịch vụ theo từ khóa tìm kiếm
         console.log('Load danh sách phụ tùng', partsViews);
         console.log('Load danh sách dịch vụ', servicesViews);
         
@@ -263,6 +266,11 @@ const InspectionModal = ({
                 part.name?.toLowerCase().includes(partSearchTerm.toLowerCase()) ||
                 part.supplier_name?.toLowerCase().includes(partSearchTerm.toLowerCase()))
             : partsViews;
+            
+        const filteredServices = serviceSearchTerm
+            ? servicesViews.filter(service =>
+                service.name?.toLowerCase().includes(serviceSearchTerm.toLowerCase()))
+            : servicesViews;
 
         return (
             <>
@@ -275,6 +283,25 @@ const InspectionModal = ({
                             className="mb-3"
                         >
                             <Tab eventKey="services" title={<span><i className="bi bi-tools me-1"></i>Dịch vụ</span>}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Tìm kiếm dịch vụ</Form.Label>
+                                    <InputGroup>
+                                        <Form.Control
+                                            placeholder="Nhập tên dịch vụ..."
+                                            value={serviceSearchTerm}
+                                            onChange={(e) => setServiceSearchTerm(e.target.value)}
+                                        />
+                                        {serviceSearchTerm && (
+                                            <Button
+                                                variant="outline-secondary"
+                                                onClick={() => setServiceSearchTerm('')}
+                                            >
+                                                <i className="bi bi-x"></i>
+                                            </Button>
+                                        )}
+                                    </InputGroup>
+                                </Form.Group>
+                                
                                 {!servicesViews ? (
                                     <div className="text-center py-2">
                                         <div className="spinner-border spinner-border-sm" role="status">
@@ -284,40 +311,60 @@ const InspectionModal = ({
                                 ) : (
                                     <>
                                         <div className="service-list-container p-2 border rounded">
-                                            {servicesViews.length > 0 ? (
-                                                <ListGroup variant="flush">
-                                                    {servicesViews.map(service => (
-                                                        <ListGroup.Item
-                                                            key={`${service.service_id}-${currentOrder.parentMotoType}`}
-                                                            as="div"
-                                                            className={`d-flex justify-content-between align-items-center service-item ${selectedServices.includes(service.service_id) ? 'selected' : ''}`}
-                                                            action
-                                                            onClick={() => toggleServiceSelection(service.service_id)}
-                                                        >
-                                                            <div className="service-info">
-                                                                <div>{service.name}</div>
-                                                                {service.price > 0 && (
-                                                                    <small className="text-primary">
-                                                                        {formatCurrency(service.price)}
-                                                                    </small>
-                                                                )}
-                                                            </div>
-                                                            <div className="service-actions">
-                                                                <Form.Check
-                                                                    type="checkbox"
-                                                                    className="m-0"
-                                                                    checked={selectedServices.includes(service.service_id)}
-                                                                    onChange={() => toggleServiceSelection(service.service_id)}
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                />
-                                                            </div>
-                                                        </ListGroup.Item>
-                                                    ))}
-                                                </ListGroup>
+                                            {filteredServices.length > 0 ? (
+                                                <>
+                                                    <div className="d-flex justify-content-between align-items-center px-2 py-1 bg-light border-bottom">
+                                                        <small className="text-muted">
+                                                            {filteredServices.length} dịch vụ {serviceSearchTerm ? `cho "${serviceSearchTerm}"` : ''}
+                                                        </small>
+                                                        {serviceSearchTerm && (
+                                                            <Button
+                                                                variant="link"
+                                                                className="p-0 text-decoration-none"
+                                                                size="sm"
+                                                                onClick={() => setServiceSearchTerm('')}
+                                                            >
+                                                                <small>Xóa bộ lọc</small>
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                    <ListGroup variant="flush">
+                                                        {filteredServices.map(service => (
+                                                            <ListGroup.Item
+                                                                key={`${service.service_id}-${currentOrder.parentMotoType}`}
+                                                                as="div"
+                                                                className={`d-flex justify-content-between align-items-center service-item ${selectedServices.includes(service.service_id) ? 'selected' : ''}`}
+                                                                action
+                                                                onClick={() => toggleServiceSelection(service.service_id)}
+                                                            >
+                                                                <div className="service-info">
+                                                                    <div>{service.name}</div>
+                                                                    {service.price > 0 && (
+                                                                        <small className="text-primary">
+                                                                            {formatCurrency(service.price)}
+                                                                        </small>
+                                                                    )}
+                                                                </div>
+                                                                <div className="service-actions">
+                                                                    <Form.Check
+                                                                        type="checkbox"
+                                                                        className="m-0"
+                                                                        checked={selectedServices.includes(service.service_id)}
+                                                                        onChange={() => toggleServiceSelection(service.service_id)}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    />
+                                                                </div>
+                                                            </ListGroup.Item>
+                                                        ))}
+                                                    </ListGroup>
+                                                </>
                                             ) : (
-                                                <div className="text-center py-3">
-                                                    <p className="text-muted">Không có dịch vụ nào khả dụng</p>
-                                                </div>
+                                                <Alert variant="info">
+                                                    {serviceSearchTerm
+                                                        ? `Không tìm thấy dịch vụ phù hợp với từ khóa "${serviceSearchTerm}".`
+                                                        : 'Không có dịch vụ nào khả dụng.'
+                                                    }
+                                                </Alert>
                                             )}
                                         </div>
                                     </>
