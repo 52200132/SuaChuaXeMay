@@ -33,15 +33,13 @@ const apiRepairService = axios.create({
     timeout: 10000 // Timeout 10 giây
 });
 
-//
 const apiRepairService2 = axios.create({
     baseURL: 'http://localhost:8002/api/v2',
     headers: {
         'Content-Type': 'application/json'
     },
     timeout: 10000 // Timeout 10 giây
-}); 
-
+});
 // Object chứa các hàm gọi API
 const resourceService = {
     // Lấy tất cả các loại dịch vụ
@@ -824,6 +822,86 @@ const repairService = {
                 return response;
             } catch (error) {
                 console.error(`api - Lỗi khi lấy danh sách loại xe máy theo thương hiệu ${brand}:`, error);
+                throw error;
+            }
+        },
+    },
+
+    part: {
+        createPart: async (data) => {
+            try {
+                const response = await apiRepairService2.post(URLS.PART.CREATE_PART, data);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi tạo phụ tùng mới:', error);
+                throw error;
+            }
+        },
+        getAllParts: async () => {
+            try {
+                const response = await apiRepairService2.get(URLS.PART.GET_ALL_PARTS);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách phụ tùng:', error);
+                throw error;
+            }
+        },
+        getPartById: async (partId) => {
+            try {
+                const response = await apiRepairService2.get(URLS.PART.GET_PART_BY_ID.replace('{part_id}', partId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy thông tin phụ tùng ID=${partId}:`, error);
+                throw error;
+            }
+        },
+        getPartViewsByMotoTypeId: async (motoTypeId) => {
+            try {
+                const response = await apiRepairService2.get(URLS.PART.GET_PART_VIEWS_BY_MOTO_TYPE_ID.replace('{moto_type_id}', motoTypeId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy danh sách phụ tùng theo loại xe ID=${motoTypeId}:`, error);
+                throw error;
+            }
+        },
+        getPartViewsByOrderId: async (orderId) => {
+            try {
+                const response = await apiRepairService2.get(URLS.PART.GET_PART_VIEWS_BY_ORDER_ID.replace('{order_id}', orderId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy danh sách phụ tùng theo đơn hàng ID=${orderId}:`, error);
+                throw error;
+            }
+        },
+        getPartViewsByPartIdList: async (partIdList) => {
+            try {
+                const partIdListNumber = partIdList.map(id => Number(id));
+                console.log('Gửi lên:', partIdListNumber);
+                const response = await apiRepairService2.post(
+                    URLS.PART.GET_PARTS_VIEWS_BY_PART_ID_LIST,
+                    partIdListNumber // truyền mảng số trực tiếp
+                );
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách phụ tùng theo danh sách ID:', error);
+                throw error;
+            }
+        },
+        updatePart: async (partId, data) => {
+            try {
+                const response = await apiRepairService2.put(URLS.PART.UPDATE_PART.replace('{part_id}', partId), data);
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi cập nhật phụ tùng ID=${partId}:`, error);
+                throw error;
+            }
+        },
+        bulkReceive: async (data) => {
+            try {
+                const response = await apiRepairService2.post('/api/v2/parts/bulk-receive', data);
+                return response;
+            } catch (error) {
+                console.error('Lỗi khi gọi API nhập kho hàng loạt:', error);
                 throw error;
             }
         },

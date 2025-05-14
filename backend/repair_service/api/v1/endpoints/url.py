@@ -54,6 +54,7 @@ URLS = {
         'GET_PARTS_VIEWS_BY_ORDER_ID_V2':'/part-views/order/{order_id}/v2',
         'UPDATE_PART':'/part/update/{part_id}',
         'DELETE_PART':'/part/delete/{part_id}',
+        'BULK_RECEIVE_PARTS': "/parts/bulk-receive"
     },
     'SERVICE':{
         'CREATE_SERVICE':'/service/create',
@@ -63,6 +64,12 @@ URLS = {
         ''
         'UPDATE_SERVICE':'/service/update/{service_id}',
         'DELETE_SERVICE':'/service/delete/{service_id}',
+    },
+    'SUPPLIER': {
+        'CREATE_SUPPLIER': '/supplier/create',
+        'GET_ALL_SUPPLIERS': '/suppliers',
+        'GET_SUPPLIER_BY_ID': '/supplier/{supplier_id}',
+        'UPDATE_SUPPLIER': '/supplier/update/{supplier_id}',
     },
     'ORDER_V2':{
         'GET_ORDER_VIEWS_FOR_TABLE':'/order-views/table',

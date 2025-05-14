@@ -51,11 +51,9 @@ export const AppDataProvider = ({ children }) => {
         parts: {},
         partsIds: new Set(),
         partsMotoType: {},
-        parts : {},     // Part data by ID
-        // partsMotoType : {},     
-        services : {},     // Service data by ID
-        servicesParentMotoType : {},
-        servicesParentMotoTypeIds: new Set(),  // IDs of services
+
+        partsview: {}, // { part_id: {} }
+        partsviewIds: new Set(),
     });
 
     // State to track loading status for different categories
@@ -68,6 +66,7 @@ export const AppDataProvider = ({ children }) => {
         diagnosis: false,
         motorcycles: false,
         parts: false,
+        partsview: false,
         partsMotoType: false, // { "moto_type_id": { part_id: {} } }
         services: false,
         servicesParentMotoType: false,
@@ -193,23 +192,42 @@ export const AppDataProvider = ({ children }) => {
     const fetchParts = async () => {
         setLoadingState('parts', true);
         try {
-            const response = await repairService2.part.getPartViews();
+            const response = await repairService.part.getAllParts();
             const data = response?.data;
             const dataObject = Array.isArray(data) 
                 ? data.reduce((obj, item) => {
-                    obj[item.part_id] = item; // Lưu item vào object với part_id là key
+                    obj[item.part_id] = item;
                     return obj;
                 }, {})
                 : data;
-            console.log('Dữ liệu part', dataObject);
             setDataStore(prevStore => ({
                 ...prevStore,
                 parts: dataObject
             }));
+            setLoadingState('parts', false);
+            return Object.keys(dataObject); // Trả về danh sách ID
         } catch (error) {
             console.error('Lỗi khi lấy danh sách part:', error);
+            setLoadingState('parts', false);
+            return [];
         }
-        setLoadingState('parts', false);
+    };
+
+    const fetchPartsView = async (partIdList = []) => {
+        setLoadingState('partsview', true);
+        try {
+            const response = await repairService.part.getPartViewsByPartIdList(partIdList);
+            const data = response?.data;
+            const dataArray = Array.isArray(data) ? data : (data ? [data] : []);
+            console.log('Dữ liệu partview', dataArray);
+            setDataStore(prevStore => ({
+                ...prevStore,
+                partsview: dataArray // Lưu vào partsview dưới dạng array
+            }));
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách partview:', error);
+        }
+        setLoadingState('partsview', false);
     }
 
     const fetchServices = async () => {
@@ -429,13 +447,18 @@ export const AppDataProvider = ({ children }) => {
         }
         else if (currentStaff.role === 'head technician') {
             console.log('Đang là trưởng kỹ thuật viên');
-            // fetchPartsMotoType();
-            fetchServicesParentMotoType();
-            fetchParts();
-            fetchServices();
+            
             fetchOrderForTechnician();
-        } else if (currentStaff.role === 'warehouse worker') {
+            fetchOrders();
+            fetchDiagnosis();
+            fetchStaffs();
+        }
+        else if (currentStaff.role === 'warehouse worker') {
             console.log('Đang là nhân viên kho');
+            (async () => {
+                const allPartIds = await fetchParts();
+                fetchPartsView(allPartIds);
+            })();
         }
     }, [currentStaff]);
 
@@ -739,7 +762,8 @@ export const AppDataProvider = ({ children }) => {
         setLoadingState,
         setError,
         clearError,
-        fetchAndStoreData
+        fetchAndStoreData,
+        fetchPartsView
     }), [
         dataStore, 
         loading, 
@@ -757,7 +781,8 @@ export const AppDataProvider = ({ children }) => {
         setLoadingState, 
         setError, 
         clearError, 
-        fetchAndStoreData
+        fetchAndStoreData,
+        fetchPartsView
     ]);
 
     return (

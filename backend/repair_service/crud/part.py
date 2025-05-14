@@ -2,9 +2,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import and_, delete
+from datetime import datetime
+from typing import List, Dict, Any, Tuple
 
-from models.models_2 import Part, Compatible, MotocycleType, Warehouse, PartLot, Supplier
-from schemas.part import PartCreate, PartUpdate
+from models.models_2 import Part, Compatible, MotocycleType, Warehouse, PartLot, Supplier, History
+from schemas.part import PartCreate, PartUpdate, PartLotCreate, BulkPartLotCreate
 from utils.logger import get_logger
 
 log = get_logger(__name__)
@@ -237,3 +239,118 @@ async def search_parts(db: AsyncSession, search_term: str) -> list[Part]:
     except Exception as e:
         log.error(f"Lỗi khi tìm kiếm phụ tùng: {e}")
         raise e
+
+async def create_part_lot(db: AsyncSession, part_lot: Dict[str, Any]) -> Tuple[PartLot, Warehouse]:
+    """
+    Tạo một lô phụ tùng mới và cập nhật kho.
+    
+    Args:
+        db: Session cơ sở dữ liệu
+        part_lot: Thông tin lô phụ tùng cần tạo
+    
+    Returns:
+        Tuple[PartLot, Warehouse]: Lô phụ tùng và thông tin kho đã tạo
+    """
+    try:
+        # Kiểm tra xem phụ tùng có tồn tại không
+        part = await get_part_by_id(db, part_lot["part_id"])
+        if not part:
+            raise ValueError(f"Không tìm thấy phụ tùng với ID: {part_lot['part_id']}")
+        
+        # Tạo mới lô phụ tùng
+        new_part_lot = PartLot(
+            part_id=part_lot["part_id"],
+            quantity=part_lot["quantity"],
+            import_date=datetime.now(),
+            unit=part.unit,
+            price=part_lot["price"]
+        )
+        
+        db.add(new_part_lot)
+        await db.flush()  # Để lấy ID của lô vừa tạo
+        
+        # Tạo mới thông tin kho
+        new_warehouse = Warehouse(
+            part_lot_id=new_part_lot.part_lot_id,
+            stock=part_lot["quantity"],
+            location=part_lot["location"]
+        )
+        
+        db.add(new_warehouse)
+        
+        # Tạo mới lịch sử nhập kho
+        new_history = History(
+            part_lot_id=new_part_lot.part_lot_id,
+            date=datetime.now(),
+            quantity=part_lot["quantity"],
+            type="Nhập",
+            note=part_lot.get("note", "Nhập kho mới")
+        )
+        
+        db.add(new_history)
+        
+        return new_part_lot, new_warehouse
+    except IntegrityError as e:
+        await db.rollback()
+        log.error(f"Lỗi toàn vẹn dữ liệu khi tạo lô phụ tùng: {e}")
+        raise e
+    except Exception as e:
+        await db.rollback()
+        log.error(f"Lỗi khi tạo lô phụ tùng: {e}")
+        raise e
+
+async def bulk_receive_parts(db: AsyncSession, data: BulkPartLotCreate) -> Dict[str, Any]:
+    """
+    Nhập kho hàng loạt nhiều phụ tùng cùng lúc.
+    
+    Args:
+        db: Session cơ sở dữ liệu
+        data: Dữ liệu nhập kho hàng loạt
+    
+    Returns:
+        Dict[str, Any]: Kết quả của quá trình nhập kho
+    """
+    created_lots = []
+    try:
+        # Kiểm tra xem nhà cung cấp có tồn tại không
+        supplier = await db.get(Supplier, data.supplier_id)
+        if not supplier:
+            raise ValueError(f"Không tìm thấy nhà cung cấp với ID: {data.supplier_id}")
+        
+        # Thêm từng phụ tùng vào cơ sở dữ liệu
+        for part_data in data.parts:
+            part_lot_data = {
+                "part_id": part_data.part_id,
+                "quantity": part_data.quantity,
+                "price": part_data.price,
+                "location": part_data.location,
+                "note": data.note
+            }
+            
+            new_part_lot, _ = await create_part_lot(db, part_lot_data)
+            created_lots.append(new_part_lot.part_lot_id)
+        
+        # Commit sau khi tất cả các thay đổi đã được thực hiện
+        await db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Đã nhập kho thành công {len(created_lots)} loại phụ tùng",
+            "created_lots": created_lots
+        }
+    except IntegrityError as e:
+        await db.rollback()
+        log.error(f"Lỗi toàn vẹn dữ liệu khi nhập kho hàng loạt: {e}")
+        return {
+            "success": False,
+            "message": f"Lỗi toàn vẹn dữ liệu: {str(e)}",
+            "created_lots": created_lots
+        }
+    except Exception as e:
+        await db.rollback()
+        log.error(f"Lỗi khi nhập kho hàng loạt: {e}")
+        return {
+            "success": False,
+            "message": f"Lỗi: {str(e)}",
+            "created_lots": created_lots
+        }

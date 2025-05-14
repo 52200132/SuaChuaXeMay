@@ -8,7 +8,7 @@ from db.session import get_db
 from crud import part as crud
 from services import part_services
 from utils.logger import get_logger
-from schemas.part import PartCreate, PartUpdate, PartResponse
+from schemas.part import PartCreate, PartUpdate, PartResponse, BulkPartLotCreate, BulkPartLotResponse
 from schemas.views.part import PartView, PartWarehouseView, PartWarehouseView2
 
 log = get_logger(__name__)
@@ -191,5 +191,31 @@ async def update_part(part_id: int, part: PartUpdate, db: AsyncSession = Depends
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Lỗi khi cập nhật phụ tùng: {str(e)}"
+        )
+
+@router.post(URLS['PART']['BULK_RECEIVE_PARTS'], response_model=BulkPartLotResponse)
+async def bulk_receive_parts(data: BulkPartLotCreate, db: AsyncSession = Depends(get_db)):
+    """Nhập kho hàng loạt nhiều phụ tùng cùng lúc"""
+    try:
+        result = await crud.bulk_receive_parts(db, data)
+        if not result["success"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=result["message"]
+            )
+        return result
+    except IntegrityError as e:
+        log.error(f"Lỗi toàn vẹn dữ liệu khi nhập kho hàng loạt: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Lỗi toàn vẹn dữ liệu khi nhập kho hàng loạt: {str(e)}"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"Lỗi khi nhập kho hàng loạt: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi nhập kho hàng loạt: {str(e)}"
         )
 
