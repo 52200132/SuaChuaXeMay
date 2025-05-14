@@ -688,7 +688,12 @@ const TechnicianDashboard = () => {
                     status: 'repairing',
                     total_price: totalSelectedAmount
                 });
+                await resourceService.invoice.createInvoice({
+                    order_id: currentOrder.orderId,
+                    total_price: currentOrder.totalAmount
+                });
                 setData('orders', response.data, response.data.order_id);
+
             }
             
             alert('Cập nhật chi tiết đơn hàng thành công!');
@@ -740,10 +745,11 @@ const TechnicianDashboard = () => {
             // TODO: Gọi api cập nhật trạng thái và tạo hóa đơn
             console.log(currentOrder);
             const [_, __] = await Promise.all([
-                resourceService.invoice.createInvoice({
-                    order_id: currentOrder.orderId,
-                    total_price: currentOrder.totalAmount
-                }),
+                // resourceService.invoice.createInvoice({
+                //     order_id: currentOrder.orderId,
+                //     total_price: currentOrder.totalAmount
+                // }),
+                '',
                 repairService.order.updateOrderStatus(currentOrder.orderId, 'wait_delivery')
             ]);
             setData('orders', __.data, __.data.order_id);

@@ -74,9 +74,13 @@ URLS = {
     },
     'ORDER_V2':{
         'GET_ORDER_VIEWS_FOR_TABLE':'/order-views/table',
+        'GET_ORDER_DETAIL_BY_ID':'/order-detail/{order_id}',
     },
     'WAREHOUSE':{
         'EXPORT_PART_LOTS':'/warehouse/export-part-lots',
         'GET_WAREHOUSE_INFO':'/warehouse/info',
     },
+    'INVOICE_V2':{
+        'GET_INVOICE_VIEWS':'/invoice-views',
+    }
 }

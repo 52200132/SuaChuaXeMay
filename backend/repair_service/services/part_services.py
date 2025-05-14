@@ -232,7 +232,7 @@ async def get_part_order_detail_views_by_order_id(db: AsyncSession, order_id: in
 
             part_order_detail_view = PartOrderDetailView(
                 part_id=part.part_id,
-                part_order_detail_id=part_order_detail.part_order_detail_id,
+                part_order_detail_id=part_order_detail.part_detail_ID,
                 name=part.name,
                 unit=part.unit,
                 price=part.price,

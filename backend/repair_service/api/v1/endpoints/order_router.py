@@ -7,8 +7,10 @@ from datetime import datetime, timedelta
 from utils.logger import get_logger
 from db.session import get_db
 from schemas.order import OrderCreate, OrderUpdate, OrderResponse
+from schemas.views.order import OrderDetailView
 from crud import order as order_crud
 from .url import URLS
+from services import order_services
 
 router = APIRouter()
 
@@ -113,4 +115,47 @@ async def get_order_views_for_table(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Lỗi toàn vẹn")
     except Exception as e:
         logger.error(f"Lỗi khi lấy danh sách đơn hàng: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router_v2.get(URLS['ORDER_V2']['GET_ORDER_DETAIL_BY_ID'], response_model=OrderDetailView)
+async def get_order_details_by_id(
+    order_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lấy thông tin chi tiết của một đơn hàng theo ID.
+    """
+    try:
+        db_order = await order_services.get_order_details_by_id(db, order_id=order_id)
+        if not db_order:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy đơn hàng")
+        return db_order
+    except IntegrityError as e:
+        logger.error(f"Lỗi toàn vẹn: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Lỗi toàn vẹn")
+    except Exception as e:
+        logger.error(f"Lỗi khi lấy thông tin chi tiết đơn hàng: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+# invoice
+from schemas.views.invoice import InvoiceView
+from services import invoice_services
+@router_v2.get(URLS['INVOICE_V2']['GET_INVOICE_VIEWS'], response_model=List[InvoiceView])
+async def get_invoice_views(
+    skip: int = 0,
+    limit: int = 1000,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lấy danh sách hóa đơn để hiển thị trên bảng
+    """
+    try:
+        db_invoices = await invoice_services.get_invoice_views(db, skip=skip, limit=limit)
+        return db_invoices
+    except IntegrityError as e:
+        logger.error(f"Lỗi toàn vẹn: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Lỗi toàn vẹn")
+    except Exception as e:
+        logger.error(f"Lỗi khi lấy danh sách hóa đơn: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

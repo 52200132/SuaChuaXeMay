@@ -98,6 +98,9 @@ const URLS = {
         'GET_INVOICE_BY_ORDER_ID': '/invoice/order/{invoice_id}',
         // 'DELETE_INVOICE': '/invoice/{invoice_id}',
     },
+    'INVOICE_V2': {
+        'GET_INVOICE_VIEWS': '/invoice-views',
+    },
 
     // customer service
     'CUSTOMER': {
@@ -153,6 +156,7 @@ const URLS = {
     },
     'ORDER_V2':{
         'GET_ORDER_VIEWS_FOR_TABLE':'/order-views/table',
+        'GET_ORDER_DETAIL_BY_ID':'/order-detail/{order_id}',
     },
     'WAREHOUSE':{
         'EXPORT_PART_LOTS':'/warehouse/export-part-lots',

@@ -90,7 +90,7 @@ async def get_service_order_detail_views_by_service_order_id(db: AsyncSession, o
             total_amount_for_service += service_price if service_order_detail.is_selected else 0
 
             service_view = ServiceOrderDetailView(
-                service_detail_id=service_order_detail.service_order_detail_id,
+                service_detail_id=service_order_detail.service_detail_ID,
                 service_id=service.service_id,
                 name=service.name,
                 price=service_price,

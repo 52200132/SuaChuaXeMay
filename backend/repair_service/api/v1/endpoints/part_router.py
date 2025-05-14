@@ -238,3 +238,20 @@ async def bulk_receive_parts(data: BulkPartLotCreate, db: AsyncSession = Depends
             detail=f"Lỗi khi nhập kho hàng loạt: {str(e)}"
         )
 
+@router.get('/testsss/order/{order_id}')
+async def test_get_parts_by_order_id(order_id: int, db: AsyncSession = Depends(get_db)):
+    """Lấy danh sách phụ tùng theo ID đơn hàng"""
+    try:
+        return await part_services.get_part_order_detail_views_by_order_id(db, order_id)
+    except IntegrityError as e:
+        log.error(f"Lỗi toàn vẹn dữ liệu khi lấy danh sách phụ tùng theo đơn hàng: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Lỗi toàn vẹn dữ liệu khi lấy danh sách phụ tùng theo đơn hàng: {str(e)}"
+        )
+    except Exception as e:
+        log.error(f"Lỗi khi lấy danh sách phụ tùng theo đơn hàng: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy danh sách phụ tùng theo đơn hàng: {str(e)}"
+        )

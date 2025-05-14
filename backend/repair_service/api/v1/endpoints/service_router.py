@@ -124,3 +124,21 @@ async def delete_service(service_id: int, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         logger.error(f"Lỗi khi xóa dịch vụ ID {service_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Không thể xóa dịch vụ: {str(e)}")
+
+@router.get('/tessss/{order_id}')
+async def get_service_order_detail_views_by_service_order_id(
+    order_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lấy danh sách dịch vụ theo ID đơn hàng.
+    """
+    try:
+        services = await service_servies.get_service_order_detail_views_by_service_order_id(db, order_id)
+        return services
+    except IntegrityError as e:
+        logger.error(f"Lỗi toàn vẹn dữ liệu khi lấy dịch vụ theo ID đơn hàng {order_id}: {e}")
+        raise HTTPException(status_code=400, detail=f"Lỗi toàn vẹn dữ liệu khi truy vấn dịch vụ theo ID đơn hàng")
+    except Exception as e:
+        logger.error(f"Lỗi khi lấy dịch vụ theo ID đơn hàng {order_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Không thể lấy dịch vụ theo ID đơn hàng: {str(e)}")

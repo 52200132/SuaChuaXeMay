@@ -2,7 +2,6 @@ import { createContext, useState, useContext, useCallback, useMemo, useEffect, u
 import { useStaffAuth } from './StaffAuthContext';
 import { customerService, repairService, repairService2, resourceService } from '../../services/api';
 import pusher, { subscribeToChannel, unsubscribeFromChannel } from '../../services/pusher';
-import { data } from 'react-router-dom';
 // Create context
 const AppDataContext = createContext();
 
@@ -62,6 +61,9 @@ export const AppDataProvider = ({ children }) => {
 
         suppliers: {},
         suppliersIds: new Set(),
+
+        invoiceViews: {},
+        invoiceViewsIds: new Set(),
     });
 
     // State to track loading status for different categories
@@ -79,6 +81,7 @@ export const AppDataProvider = ({ children }) => {
         services: false,
         servicesParentMotoType: false,
         suppliers: false,
+        invoiceViews: false,
     });
 
     // State to track errors
@@ -317,6 +320,18 @@ export const AppDataProvider = ({ children }) => {
         }
     }
 
+    const fetchInvoiceViews = async () => {
+        setLoadingState('invoiceViews', true);
+        try {
+            const response = await repairService2.invoice.getInvoiceViews();
+            const data = response?.data;
+            setMultipleData('invoiceViews', data, 'invoice_id'); // Lưu tất cả invoice vào dataStore
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách invoice:', error);
+        }
+        setLoadingState('invoiceViews', false);
+    }
+
     useEffect(() => {        
         if (!currentStaff || hasDataLoaded.current) return;
         hasDataLoaded.current = true; // Set the flag to true after loading data
@@ -489,6 +504,12 @@ export const AppDataProvider = ({ children }) => {
                 fetchPartsView(allPartIds);
             })();
             fetchSuppliers();
+        } else if (currentStaff.role === 'cashier') {
+            console.log('Đang là nhân viên thu ngân');
+            fetchInvoiceViews();
+            // fetchOrders();
+            // fetchDiagnosis();
+            // fetchStaffs();
         }
     }, [currentStaff]);
 

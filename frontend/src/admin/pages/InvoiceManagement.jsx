@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Table, Button, Modal, Row, Col, Form, InputGroup, Spinner, Badge } from 'react-bootstrap';
 
 import { useStaffAuth } from '../contexts/StaffAuthContext';
 import { useAppData } from '../contexts/AppDataContext';
-import { resourceService, repairService, customerService } from '../../services/api';
+import { resourceService, repairService2, customerService } from '../../services/api';
 import './InvoiceManagement.css';
 
 const InvoiceManagement = () => {
-    const { getData, setData, fetchAndStoreData } = useAppData();
+    const { getData, setData, getIds, loading, setLoadingState } = useAppData();
     const { currentStaff } = useStaffAuth();
 
-    const [invoices, setInvoices] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const invoiceViews = getData('invoiceViews');
+    const invoiceIds = getIds('invoiceViews');
+
     const [modalLoading, setModalLoading] = useState(false);
     const [filters, setFilters] = useState({
         search: '',
@@ -21,16 +22,8 @@ const InvoiceManagement = () => {
     });
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [currentInvoice, setCurrentInvoice] = useState(null);
-    const [currentOrder, setCurrentOrder] = useState(null);
-    const [customer, setCustomer] = useState(null);
-    const [motorcycle, setMotorcycle] = useState(null);
-    const [staff, setStaff] = useState(null);
-    const [diagnosis, setDiagnosis] = useState(null);
-
-    // State để lưu chi tiết phụ tùng và dịch vụ
-    const [partOrderDetails, setPartOrderDetails] = useState([]);
-    const [serviceOrderDetails, setServiceOrderDetails] = useState([]);
-
+    const [currentOrderDetail, setCurrentOrderDetail] = useState(null);
+    
     // State để xử lý in hóa đơn
     const [isPrinting, setIsPrinting] = useState(false);
     
@@ -39,23 +32,7 @@ const InvoiceManagement = () => {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cash');
     const [invoiceToPayment, setInvoiceToPayment] = useState(null);
 
-    // Lấy danh sách hóa đơn khi load trang
-    useEffect(() => {
-        fetchInvoices();
-    }, []);
-
-    const fetchInvoices = async () => {
-        setLoading(true);
-        try {
-            const res = await resourceService.invoice.getAllInvoices();
-            setInvoices(res.data || []);
-        } catch (err) {
-            console.error("Lỗi khi tải danh sách hóa đơn:", err);
-            setInvoices([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+    useEffect(() => {console.log('Dữ liệu hóa đơn', invoiceViews)}, [invoiceViews]);
 
     // Hàm format tiền
     const formatCurrency = (amount) => {
@@ -64,6 +41,7 @@ const InvoiceManagement = () => {
 
     // Hàm format ngày giờ
     const formatDateTime = (dateTimeStr) => {
+        console.log('dateTimeStr', dateTimeStr);
         if (!dateTimeStr) return '';
 
         const date = new Date(dateTimeStr);
@@ -101,113 +79,26 @@ const InvoiceManagement = () => {
     // Xem chi tiết hóa đơn
     const handleShowDetail = async (invoice) => {
         setCurrentInvoice(invoice);
+        console.log("Current invoice:", invoice);
         setModalLoading(true);
         setShowDetailModal(true);
 
         try {
-            // Reset state
-            setCurrentOrder(null);
-            setCustomer(null);
-            setMotorcycle(null);
-            setStaff(null);
-            setDiagnosis(null);
-            setPartOrderDetails([]);
-            setServiceOrderDetails([]);
+            // Reset current order detail
+            setCurrentOrderDetail(null);
 
-            // Lấy thông tin đơn hàng liên quan
-            const orderRes = await repairService.order.getAllOrders();
-            console.log("Order response:", orderRes);
-
-            // Kiểm tra cấu trúc response và lấy mảng đơn hàng
-            const orders = Array.isArray(orderRes.data) ? orderRes.data : (orderRes.data?.data || []);
-
-            // Tìm đơn hàng phù hợp
-            const order = orders.find(o => o.order_id === invoice.order_id) || null;
-
-            if (!order) {
-                throw new Error("Không tìm thấy thông tin đơn hàng");
+            if (!invoice.order_id) {
+                throw new Error("Hóa đơn không có thông tin đơn hàng");
             }
 
-            setCurrentOrder(order);
-
-            // Tải song song các dữ liệu liên quan
-            const [motorcycleRes, diagnosisRes, partDetailsRes, serviceDetailsRes] = await Promise.all([
-                customerService.motorcycle.getMotorcycleById(order.motocycle_id),
-                repairService.diagnosis.getDiagnosisByOrderId(order.order_id),
-                repairService.partOrderDetail.getAllPartOrderDetailsByOrderId(order.order_id),
-                repairService.serviceOrderDetail.getAllServiceOrderDetailsByOrderId(order.order_id)
-            ]);
-
-            console.log("Part details response:", partDetailsRes);
-            console.log("Service details response:", serviceDetailsRes);
-
-            setMotorcycle(motorcycleRes.data);
-            setDiagnosis(diagnosisRes.data);
-
-            // Lọc các mục đã được chọn
-            const selectedParts = (partDetailsRes.data || []).filter(part => part.is_selected);
-            const selectedServices = (serviceDetailsRes.data || []).filter(service => service.is_selected);
-
-            // Tải thông tin chi tiết của tất cả phụ tùng và dịch vụ
-            const [allPartsRes, allServicesRes] = await Promise.all([
-                resourceService.part.getAllParts(),
-                resourceService.service.getAllServices()
-            ]);
-
-            console.log("All parts response:", allPartsRes);
-            console.log("All services response:", allServicesRes);
-
-            // Tạo map để lưu trữ thông tin phụ tùng và dịch vụ theo ID
-            const partsMap = {};
-            const servicesMap = {};
-
-            // Tạo bản đồ phụ tùng theo ID
-            (allPartsRes.data || []).forEach(part => {
-                partsMap[part.part_id] = part;
-            });
-
-            // Tạo bản đồ dịch vụ theo ID
-            (allServicesRes.data || []).forEach(service => {
-                servicesMap[service.service_id] = service;
-            });
-
-            // Gắn thông tin tên và mã cho từng phụ tùng trong đơn hàng
-            const enrichedParts = selectedParts.map(part => {
-                const partDetail = partsMap[part.part_id];
-                return {
-                    ...part,
-                    partDetail,
-                    part_name: partDetail?.name || part.part_name || "Phụ tùng không xác định",
-                    part_code: partDetail?.code || part.part_code || "Không có mã"
-                };
-            });
-
-            // Gắn thông tin tên và mã cho từng dịch vụ trong đơn hàng
-            const enrichedServices = selectedServices.map(service => {
-                const serviceDetail = servicesMap[service.service_id];
-                return {
-                    ...service,
-                    serviceDetail,
-                    service_name: serviceDetail?.name || service.service_name || "Dịch vụ không xác định",
-                    service_code: serviceDetail?.code || service.service_code || "Không có mã"
-                };
-            });
-
-            console.log("Enriched parts:", enrichedParts);
-            console.log("Enriched services:", enrichedServices);
-
-            setPartOrderDetails(enrichedParts);
-            setServiceOrderDetails(enrichedServices);
-
-            // Tải thông tin khách hàng và nhân viên
-            if (motorcycleRes.data?.customer_id && order.staff_id) {
-                const [customerRes, staffRes] = await Promise.all([
-                    customerService.customer.getCustomerById(motorcycleRes.data.customer_id),
-                    resourceService.staff.getStaffById(order.staff_id)
-                ]);
-
-                setCustomer(customerRes.data);
-                setStaff(staffRes.data);
+            // Fetch order details directly with the new response structure
+            const response = await repairService2.order.getOrderDetailById(invoice.order_id);
+            
+            if (response.data) {
+                setCurrentOrderDetail(response.data);
+                console.log("Order detail:", response.data);
+            } else {
+                throw new Error("Không lấy được thông tin chi tiết đơn hàng");
             }
         } catch (err) {
             console.error("Lỗi khi tải chi tiết hóa đơn:", err);
@@ -221,15 +112,6 @@ const InvoiceManagement = () => {
         setIsPrinting(true);
         
         try {
-            // Lấy nội dung cần in
-            const printContent = document.getElementById('invoice-print-content');
-            
-            if (!printContent) {
-                console.error('Không tìm thấy nội dung để in');
-                setIsPrinting(false);
-                return;
-            }
-            
             // Tạo một iframe ẩn
             const printFrame = document.createElement('iframe');
             printFrame.style.position = 'absolute';
@@ -242,6 +124,10 @@ const InvoiceManagement = () => {
             const frameDocument = printFrame.contentWindow.document;
             frameDocument.open();
             
+            // Filter selected parts and services
+            const selectedParts = currentOrderDetail?.part_order_detail?.part_order_details.filter(part => part.is_selected) || [];
+            const selectedServices = currentOrderDetail?.service_order_detail?.service_order_details.filter(service => service.is_selected) || [];
+            
             // Thêm CSS in ấn và nội dung
             frameDocument.write(`
                 <!DOCTYPE html>
@@ -251,7 +137,7 @@ const InvoiceManagement = () => {
                     <style>
                         @page {
                             size: A4;
-                            margin: 10mm 10mm 10mm 10mm; /* Giảm lề trang */
+                            margin: 10mm 10mm 10mm 10mm;
                         }
                         body {
                             font-family: Arial, sans-serif;
@@ -338,7 +224,7 @@ const InvoiceManagement = () => {
                             <div class="row">
                                 <div class="col">
                                     <p><strong>Mã hóa đơn:</strong> ${currentInvoice?.invoice_id}</p>
-                                    <p><strong>Ngày tạo:</strong> ${formatDateTime(currentInvoice?.create_at)}</p>
+                                    <p><strong>Ngày tạo:</strong> ${formatDateTime(currentOrderDetail?.created_at)}</p>
                                     <p><strong>Mã đơn hàng:</strong> ${currentInvoice?.order_id}</p>
                                     <p><strong>Trạng thái:</strong> ${currentInvoice?.is_paid ? 'Đã thanh toán' : 'Chờ thanh toán'}</p>
                                     <p><strong>Phương thức:</strong> ${
@@ -348,21 +234,14 @@ const InvoiceManagement = () => {
                                     }</p>
                                 </div>
                                 <div class="col">
-                                    <p><strong>Khách hàng:</strong> ${customer?.fullname || 'N/A'}</p>
-                                    <p><strong>SĐT:</strong> ${customer?.phone_num || 'N/A'}</p>
-                                    <p><strong>Biển số xe:</strong> ${motorcycle?.license_plate || 'N/A'}</p>
-                                    <p><strong>Loại xe:</strong> ${motorcycle?.brand || ''} ${motorcycle?.model || ''}</p>
-                                    <p><strong>Nhân viên phụ trách:</strong> ${staff?.fullname || 'N/A'}</p>
+                                    <p><strong>Khách hàng:</strong> ${currentOrderDetail?.customer?.fullname || 'N/A'}</p>
+                                    <p><strong>SĐT:</strong> ${currentOrderDetail?.customer?.phone_num || 'N/A'}</p>
+                                    <p><strong>Biển số xe:</strong> ${currentOrderDetail?.motocycle?.license_plate || 'N/A'}</p>
+                                    <p><strong>Loại xe:</strong> ${currentOrderDetail?.motocycle?.brand || ''} ${currentOrderDetail?.motocycle?.model || ''}</p>
+                                    <p><strong>Nhân viên phụ trách:</strong> ${currentOrderDetail?.staff?.fullname || 'N/A'}</p>
                                 </div>
                             </div>
                         </div>
-
-                        ${diagnosis?.problem ? `
-                            <div class="info-section">
-                                <h5>Chuẩn đoán</h5>
-                                <p><strong>Vấn đề:</strong> ${diagnosis.problem}</p>
-                            </div>
-                        ` : ''}
 
                         <h5>Phụ tùng và vật tư</h5>
                         <table>
@@ -376,25 +255,25 @@ const InvoiceManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${partOrderDetails.length > 0 ? 
-                                    partOrderDetails.map((item, index) => `
+                                ${selectedParts.length > 0 ? 
+                                    selectedParts.map((part, index) => `
                                         <tr>
                                             <td class="text-center">${index + 1}</td>
-                                            <td>${item.part_name || (item.partDetail && item.partDetail.name) || "Phụ tùng không xác định"}</td>
-                                            <td class="text-center">${formatCurrency(item.price)}</td>
-                                            <td class="text-center">${item.quantity}</td>
-                                            <td class="text-end">${formatCurrency(item.price * item.quantity)}</td>
+                                            <td>${part.name || "Phụ tùng không xác định"}</td>
+                                            <td class="text-center">${formatCurrency(part.price)}</td>
+                                            <td class="text-center">${part.quantity}</td>
+                                            <td class="text-end">${formatCurrency(part.total_price)}</td>
                                         </tr>
                                     `).join('') : 
                                     `<tr><td colspan="5" class="text-center">Không có phụ tùng nào được sử dụng</td></tr>`
                                 }
                             </tbody>
-                            ${partOrderDetails.length > 0 ? `
+                            ${selectedParts.length > 0 ? `
                                 <tfoot>
                                     <tr>
                                         <td colspan="4" class="text-end"><strong>Tổng chi phí phụ tùng:</strong></td>
                                         <td class="text-end"><strong>${formatCurrency(
-                                            partOrderDetails.reduce((sum, part) => sum + (part.price * part.quantity), 0)
+                                            currentOrderDetail?.part_order_detail?.total_amount_for_part || 0
                                         )}</strong></td>
                                     </tr>
                                 </tfoot>
@@ -412,24 +291,24 @@ const InvoiceManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${serviceOrderDetails.length > 0 ? 
-                                    serviceOrderDetails.map((item, index) => `
+                                ${selectedServices.length > 0 ? 
+                                    selectedServices.map((service, index) => `
                                         <tr>
                                             <td class="text-center">${index + 1}</td>
-                                            <td>${item.service_name || (item.serviceDetail && item.serviceDetail.name) || "Dịch vụ không xác định"}</td>
-                                            <td class="text-center">${formatCurrency(item.price)}</td>
-                                            <td class="text-end">${formatCurrency(item.price)}</td>
+                                            <td>${service.name || "Dịch vụ không xác định"}</td>
+                                            <td class="text-center">${formatCurrency(service.price)}</td>
+                                            <td class="text-end">${formatCurrency(service.price)}</td>
                                         </tr>
                                     `).join('') : 
                                     `<tr><td colspan="4" class="text-center">Không có dịch vụ nào được sử dụng</td></tr>`
                                 }
                             </tbody>
-                            ${serviceOrderDetails.length > 0 ? `
+                            ${selectedServices.length > 0 ? `
                                 <tfoot>
                                     <tr>
                                         <td colspan="3" class="text-end"><strong>Tổng chi phí dịch vụ:</strong></td>
                                         <td class="text-end"><strong>${formatCurrency(
-                                            serviceOrderDetails.reduce((sum, service) => sum + service.price, 0)
+                                            currentOrderDetail?.service_order_detail?.total_amount_for_service || 0
                                         )}</strong></td>
                                     </tr>
                                 </tfoot>
@@ -437,24 +316,17 @@ const InvoiceManagement = () => {
                         </table>
 
                         <div class="footer">
-                            ${currentOrder?.note ? `
-                                <div style="margin-bottom: 15px;">
-                                    <p style="margin-bottom: 5px;"><strong>Ghi chú:</strong></p>
-                                    <p style="margin: 0;">${currentOrder.note}</p>
-                                </div>
-                            ` : ''}
-                            
                             <div class="totals">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                     <span>Tổng chi phí phụ tùng:</span>
                                     <span>${formatCurrency(
-                                        partOrderDetails.reduce((sum, part) => sum + (part.price * part.quantity), 0)
+                                        currentOrderDetail?.part_order_detail?.total_amount_for_part || 0
                                     )}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                     <span>Tổng chi phí dịch vụ:</span>
                                     <span>${formatCurrency(
-                                        serviceOrderDetails.reduce((sum, service) => sum + service.price, 0)
+                                        currentOrderDetail?.service_order_detail?.total_amount_for_service || 0
                                     )}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid #ddd; font-weight: bold;">
@@ -501,20 +373,18 @@ const InvoiceManagement = () => {
         try {
             // Gọi API cập nhật trạng thái thanh toán và phương thức thanh toán
             await resourceService.invoice.updateInvoice(invoiceToPayment.invoice_id, {
-                // ...invoiceToPayment,
                 is_paid: true,
                 payment_method: selectedPaymentMethod,
                 staff_id: currentStaff.staff_id,
             });
             
-            // Cập nhật danh sách hóa đơn
-            setInvoices(prev => 
-                prev.map(inv => 
-                    inv.invoice_id === invoiceToPayment.invoice_id 
-                        ? {...inv, is_paid: true, payment_method: selectedPaymentMethod} 
-                        : inv
-                )
-            );
+            // Cập nhật trong context
+            setData('invoiceViews', {
+                ...invoiceToPayment,
+                is_paid: true, 
+                payment_method: selectedPaymentMethod,
+                staff_id: currentStaff.staff_id
+            }, invoiceToPayment.invoice_id);
             
             setShowPaymentModal(false);
             alert('Thanh toán hóa đơn thành công!');
@@ -524,41 +394,49 @@ const InvoiceManagement = () => {
         }
     };
 
-    // Danh sách hóa đơn đã lọc
-    const filteredInvoices = invoices.filter(inv => {
-        let passFilter = true;
+    // Convert invoiceViews object to array and filter
+    const getFilteredInvoices = () => {
+        if (!invoiceViews) return [];
+        
+        const invoicesArray = Object.values(invoiceViews);
+        
+        return invoicesArray.filter(inv => {
+            let passFilter = true;
 
-        if (filters.search) {
-            const searchTerm = filters.search.toLowerCase();
-            passFilter = passFilter && (
-                String(inv.invoice_id).toLowerCase().includes(searchTerm) ||
-                String(inv.order_id).toLowerCase().includes(searchTerm)
-            );
-        }
+            if (filters.search) {
+                const searchTerm = filters.search.toLowerCase();
+                passFilter = passFilter && (
+                    String(inv.invoice_id).toLowerCase().includes(searchTerm) ||
+                    String(inv.order_id).toLowerCase().includes(searchTerm)
+                );
+            }
 
-        if (filters.isPaid !== '') {
-            const isPaid = filters.isPaid === 'paid';
-            passFilter = passFilter && (inv.is_paid === isPaid);
-        }
+            if (filters.isPaid !== '') {
+                const isPaid = filters.isPaid === 'paid';
+                passFilter = passFilter && (inv.is_paid === isPaid);
+            }
 
-        if (filters.startDate) {
-            const invDate = new Date(inv.create_at).setHours(0, 0, 0, 0);
-            const startDate = new Date(filters.startDate).setHours(0, 0, 0, 0);
-            passFilter = passFilter && (invDate >= startDate);
-        }
+            if (filters.startDate) {
+                const invDate = new Date(inv.create_at).setHours(0, 0, 0, 0);
+                const startDate = new Date(filters.startDate).setHours(0, 0, 0, 0);
+                passFilter = passFilter && (invDate >= startDate);
+            }
 
-        if (filters.endDate) {
-            const invDate = new Date(inv.create_at).setHours(0, 0, 0, 0);
-            const endDate = new Date(filters.endDate).setHours(0, 0, 0, 0);
-            passFilter = passFilter && (invDate <= endDate);
-        }
+            if (filters.endDate) {
+                const invDate = new Date(inv.create_at).setHours(0, 0, 0, 0);
+                const endDate = new Date(filters.endDate).setHours(0, 0, 0, 0);
+                passFilter = passFilter && (invDate <= endDate);
+            }
 
-        return passFilter;
-    });
+            return passFilter;
+        });
+    };
+
+    const filteredInvoices = getFilteredInvoices();
 
     return (
         <>
-            <div className="d-flex justify-content-between align-items-center mb-4">
+            {/* <div className="d-flex justify-content-between align-items-center mb-4">
                 <h5 className="mb-0">Quản lý hóa đơn</h5>
                 <div>
                     <Button
@@ -569,9 +447,11 @@ const InvoiceManagement = () => {
                         <i className="bi bi-arrow-clockwise me-1"></i> Làm mới
                     </Button>
                 </div>
-            </div>
+            </div> */}
 
+            {/* Filter card */}
             <Card className="mb-4 shadow-sm">
+                {/* ...existing code... */}
                 <Card.Body>
                     <Row className="g-3">
                         <Col md={3}>
@@ -649,6 +529,7 @@ const InvoiceManagement = () => {
                 </Card.Body>
             </Card>
 
+            {/* Invoices table */}
             <Card className="shadow-sm">
                 <Card.Body className="p-0">
                     <div className="table-responsive">
@@ -665,7 +546,7 @@ const InvoiceManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {loading ? (
+                                {loading['invoiceViews'] ? (
                                     <tr>
                                         <td colSpan={7} className="text-center py-4">
                                             <Spinner animation="border" variant="primary" />
@@ -678,7 +559,7 @@ const InvoiceManagement = () => {
                                             <td>
                                                 <span className="fw-medium">{inv.invoice_id}</span>
                                             </td>
-                                            <td>{formatDateTime(inv.create_at)}</td>
+                                            <td>{formatDateTime(inv.pay_at)}</td>
                                             <td>{inv.order_id}</td>
                                             <td className="fw-medium text-primary">
                                                 {formatCurrency(inv.total_price)}
@@ -687,7 +568,7 @@ const InvoiceManagement = () => {
                                                 {inv.payment_method === 'cash' ? 'Tiền mặt' :
                                                     inv.payment_method === 'card' ? 'Thẻ' :
                                                         inv.payment_method === 'transfer' ? 'Chuyển khoản' :
-                                                            inv.payment_method}
+                                                            inv.payment_method || 'Chưa xác định'}
                                             </td>
                                             <td>
                                                 {inv.is_paid ? (
@@ -768,7 +649,7 @@ const InvoiceManagement = () => {
                                 <Row>
                                     <Col md={6}>
                                         <p className="mb-1"><strong>Mã hóa đơn:</strong> {currentInvoice?.invoice_id}</p>
-                                        <p className="mb-1"><strong>Ngày tạo:</strong> {formatDateTime(currentInvoice?.create_at)}</p>
+                                        <p className="mb-1"><strong>Ngày tạo:</strong> {formatDateTime(currentOrderDetail?.created_at)}</p>
                                         <p className="mb-1"><strong>Mã đơn hàng:</strong> {currentInvoice?.order_id}</p>
                                     </Col>
                                     <Col md={6}>
@@ -782,202 +663,169 @@ const InvoiceManagement = () => {
                                         </p>
                                         <p className="mb-1"><strong>Phương thức:</strong> {
                                             currentInvoice?.payment_method === 'cash' ? 'Tiền mặt' :
-                                                currentInvoice?.payment_method === 'card' ? 'Thẻ' :
-                                                    currentInvoice?.payment_method === 'transfer' ? 'Chuyển khoản' :
-                                                        currentInvoice?.payment_method
+                                                currentInvoice?.payment_method === 'transfer' ? 'Chuyển khoản' :
+                                                    currentInvoice?.payment_method || 'Chưa xác định'
                                         }</p>
-                                        <p className="mb-1"><strong>Tổng tiền:</strong> <span className="text-primary fw-bold">{formatCurrency(currentInvoice?.total_price)}</span></p>
+                                        <p className="mb-1"><strong>Tổng tiền:</strong> <span className="text-primary fw-bold">
+                                            {formatCurrency(currentInvoice?.total_price)}
+                                        </span></p>
                                     </Col>
                                 </Row>
                             </div>
 
-                            <div className="mb-4">
-                                <h5 className="border-bottom pb-2 mb-3 d-print-none">Thông tin khách hàng và xe</h5>
-                                <Row>
-                                    <Col md={6}>
-                                        <h6 className="text-muted mb-2 d-print-none">Khách hàng</h6>
-                                        <p className="mb-1"><strong>Họ tên:</strong> {customer?.fullname || 'N/A'}</p>
-                                        <p className="mb-1"><strong>SĐT:</strong> {customer?.phone_num || 'N/A'}</p>
-                                        {/* <p className="mb-0"><strong>Email:</strong> {customer?.email || 'N/A'}</p> */}
-                                    </Col>
-                                    <Col md={6}>
-                                        <h6 className="text-muted mb-2 d-print-none">Thông tin xe</h6>
-                                        <p className="mb-1"><strong>Biển số:</strong> {motorcycle?.license_plate || 'N/A'}</p>
-                                        <p className="mb-1"><strong>Loại xe:</strong> {motorcycle?.brand} {motorcycle?.model}</p>
-                                        <p className="mb-0"><strong>Nhân viên phụ trách:</strong> {staff?.fullname || 'N/A'}</p>
-                                    </Col>
-                                </Row>
-                            </div>
+                            {currentOrderDetail && (
+                                <>
+                                    <div className="mb-4">
+                                        <h5 className="border-bottom pb-2 mb-3 d-print-none">Thông tin khách hàng và xe</h5>
+                                        <Row>
+                                            <Col md={6}>
+                                                <h6 className="text-muted mb-2 d-print-none">Khách hàng</h6>
+                                                <p className="mb-1"><strong>Họ tên:</strong> {currentOrderDetail.customer?.fullname || 'N/A'}</p>
+                                                <p className="mb-1"><strong>SĐT:</strong> {currentOrderDetail.customer?.phone_num || 'N/A'}</p>
+                                            </Col>
+                                            <Col md={6}>
+                                                <h6 className="text-muted mb-2 d-print-none">Thông tin xe</h6>
+                                                <p className="mb-1"><strong>Biển số:</strong> {currentOrderDetail.motocycle?.license_plate || 'N/A'}</p>
+                                                <p className="mb-1"><strong>Loại xe:</strong> {currentOrderDetail.motocycle?.brand || ''} {currentOrderDetail.motocycle?.model || ''}</p>
+                                                <p className="mb-0"><strong>Nhân viên phụ trách:</strong> {currentOrderDetail.staff?.fullname || 'N/A'}</p>
+                                            </Col>
+                                        </Row>
+                                    </div>
 
-                            <div className="mb-4 diagnosis-section">
-                                <h5 className="border-bottom pb-2 mb-3 d-print-none">Chuẩn đoán & chi tiết sửa chữa</h5>
-                                <div className="p-3 bg-light rounded mb-3">
-                                    <p className="mb-1"><strong>Vấn đề:</strong> {diagnosis?.problem || 'Không có thông tin'}</p>
-                                </div>
-                            </div>
-
-                            {/* Hiển thị chi tiết phụ tùng */}
-                            <div className="mb-4">
-                                <h5 className="border-bottom pb-2 mb-3 d-print-none">Phụ tùng và vật tư</h5>
-                                <div className="table-responsive">
-                                    <Table bordered hover className="mb-0">
-                                        <thead className="table-light">
-                                            <tr>
-                                                <th width="5%">#</th>
-                                                <th width="30%">Tên phụ tùng</th>
-                                                <th width="15%" className="text-center">Đơn giá</th>
-                                                <th width="10%" className="text-center">Số lượng</th>
-                                                <th width="15%" className="text-center">Thành tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {partOrderDetails.length > 0 ? (
-                                                partOrderDetails.map((item, index) => (
-                                                    <tr key={item.part_order_detail_id || index}>
-                                                        <td className="text-center">{index + 1}</td>
-                                                        <td>
-                                                            <span className="fw-medium">
-                                                                {item.part_name ||
-                                                                    (item.partDetail && item.partDetail.name) ||
-                                                                    (item.part && item.part.name) ||
-                                                                    "Phụ tùng không xác định"}
-                                                            </span>
-                                                            {/* <div className="small text-muted">
-                                                                {item.part_code ||
-                                                                    (item.partDetail && item.partDetail.code) ||
-                                                                    (item.part && item.part.code) ||
-                                                                    'Không có mã'}
-                                                            </div> */}
-                                                        </td>
-                                                        <td className="text-center">{formatCurrency(item.price)}</td>
-                                                        <td className="text-center">{item.quantity}</td>
-                                                        <td className="text-end">{formatCurrency(item.price * item.quantity)}</td>
+                                    {/* Hiển thị chi tiết phụ tùng */}
+                                    <div className="mb-4">
+                                        <h5 className="border-bottom pb-2 mb-3 d-print-none">Phụ tùng và vật tư</h5>
+                                        <div className="table-responsive">
+                                            <Table bordered hover className="mb-0">
+                                                <thead className="table-light">
+                                                    <tr>
+                                                        <th width="5%">#</th>
+                                                        <th width="30%">Tên phụ tùng</th>
+                                                        <th width="15%" className="text-center">Đơn giá</th>
+                                                        <th width="10%" className="text-center">Số lượng</th>
+                                                        <th width="15%" className="text-center">Thành tiền</th>
                                                     </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan={5} className="text-center py-3 text-muted">
-                                                        Không có phụ tùng nào được sử dụng
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                        {partOrderDetails.length > 0 && (
-                                            <tfoot className="table-light">
-                                                <tr>
-                                                    <td colSpan={4} className="text-end fw-bold">Tổng chi phí phụ tùng:</td>
-                                                    <td className="text-end fw-bold">
-                                                        {formatCurrency(
-                                                            partOrderDetails.reduce((sum, part) => sum + (part.price * part.quantity), 0)
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            </tfoot>
-                                        )}
-                                    </Table>
-                                </div>
-                            </div>
+                                                </thead>
+                                                <tbody>
+                                                    {currentOrderDetail.part_order_detail?.part_order_details
+                                                        .filter(part => part.is_selected)
+                                                        .map((part, index) => (
+                                                            <tr key={part.part_order_detail_id || index}>
+                                                                <td className="text-center">{index + 1}</td>
+                                                                <td>
+                                                                    <span className="fw-medium">{part.name || "Phụ tùng không xác định"}</span>
+                                                                </td>
+                                                                <td className="text-center">{formatCurrency(part.price)}</td>
+                                                                <td className="text-center">{part.quantity}</td>
+                                                                <td className="text-end">{formatCurrency(part.total_price)}</td>
+                                                            </tr>
+                                                        ))
+                                                    }
+                                                    
+                                                    {!currentOrderDetail.part_order_detail?.part_order_details?.some(part => part.is_selected) && (
+                                                        <tr>
+                                                            <td colSpan={5} className="text-center py-3 text-muted">
+                                                                Không có phụ tùng nào được sử dụng
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                                {currentOrderDetail.part_order_detail?.part_order_details?.some(part => part.is_selected) && (
+                                                    <tfoot className="table-light">
+                                                        <tr>
+                                                            <td colSpan={4} className="text-end fw-bold">Tổng chi phí phụ tùng:</td>
+                                                            <td className="text-end fw-bold">
+                                                                {formatCurrency(currentOrderDetail.part_order_detail?.total_amount_for_part || 0)}
+                                                            </td>
+                                                        </tr>
+                                                    </tfoot>
+                                                )}
+                                            </Table>
+                                        </div>
+                                    </div>
 
-                            {/* Hiển thị chi tiết dịch vụ */}
-                            <div className="mb-4">
-                                <h5 className="border-bottom pb-2 mb-3 d-print-none">Dịch vụ</h5>
-                                <div className="table-responsive">
-                                    <Table bordered hover className="mb-0">
-                                        <thead className="table-light">
-                                            <tr>
-                                                <th width="5%">#</th>
-                                                <th width="50%">Tên dịch vụ</th>
-                                                <th width="15%" className="text-center">Đơn giá</th>
-                                                <th width="15%" className="text-center">Thành tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {serviceOrderDetails.length > 0 ? (
-                                                serviceOrderDetails.map((item, index) => (
-                                                    <tr key={item.service_order_detail_id || index}>
-                                                        <td className="text-center">{index + 1}</td>
-                                                        <td>
-                                                            <span className="fw-medium">
-                                                                {item.service_name ||
-                                                                    (item.serviceDetail && item.serviceDetail.name) ||
-                                                                    (item.service && item.service.name) ||
-                                                                    "Dịch vụ không xác định"}
-                                                            </span>
-                                                            {/* <div className="small text-muted">
-                                                                {item.service_code ||
-                                                                    (item.serviceDetail && item.serviceDetail.code) ||
-                                                                    (item.service && item.service.code) ||
-                                                                    'Không có mã'}
-                                                            </div> */}
-                                                        </td>
-                                                        <td className="text-center">{formatCurrency(item.price)}</td>
-                                                        <td className="text-end">{formatCurrency(item.price)}</td>
+                                    {/* Hiển thị chi tiết dịch vụ */}
+                                    <div className="mb-4">
+                                        <h5 className="border-bottom pb-2 mb-3 d-print-none">Dịch vụ</h5>
+                                        <div className="table-responsive">
+                                            <Table bordered hover className="mb-0">
+                                                <thead className="table-light">
+                                                    <tr>
+                                                        <th width="5%">#</th>
+                                                        <th width="50%">Tên dịch vụ</th>
+                                                        <th width="15%" className="text-center">Đơn giá</th>
+                                                        <th width="15%" className="text-center">Thành tiền</th>
                                                     </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan={4} className="text-center py-3 text-muted">
-                                                        Không có dịch vụ nào được sử dụng
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                        {serviceOrderDetails.length > 0 && (
-                                            <tfoot className="table-light">
-                                                <tr>
-                                                    <td colSpan={3} className="text-end fw-bold">Tổng chi phí dịch vụ:</td>
-                                                    <td className="text-end fw-bold">
-                                                        {formatCurrency(
-                                                            serviceOrderDetails.reduce((sum, service) => sum + service.price, 0)
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            </tfoot>
-                                        )}
-                                    </Table>
-                                </div>
-                            </div>
-
-                            {/* Hiển thị tổng chi phí */}
-                            <div className="mt-4 border-top pt-3">
-                                <Row>
-                                    <Col md={7}>
-                                        <div className="d-print-none">
-                                            <p className="mb-1 text-muted">Ghi chú:</p>
-                                            <p className="small text-muted mb-0">
-                                                {currentOrder?.note || 'Không có ghi chú'}
-                                            </p>
-                                        </div>
-                                    </Col>
-                                    <Col md={5}>
-                                        <div className="bg-light p-3 rounded">
-                                            <div className="d-flex justify-content-between mb-2">
-                                                <span>Tổng chi phí phụ tùng:</span>
-                                                <span>
-                                                    {formatCurrency(
-                                                        partOrderDetails.reduce((sum, part) => sum + (part.price * part.quantity), 0)
+                                                </thead>
+                                                <tbody>
+                                                    {currentOrderDetail.service_order_detail?.service_order_details
+                                                        .filter(service => service.is_selected)
+                                                        .map((service, index) => (
+                                                            <tr key={service.service_detail_id || index}>
+                                                                <td className="text-center">{index + 1}</td>
+                                                                <td>
+                                                                    <span className="fw-medium">{service.name || "Dịch vụ không xác định"}</span>
+                                                                </td>
+                                                                <td className="text-center">{formatCurrency(service.price)}</td>
+                                                                <td className="text-end">{formatCurrency(service.price)}</td>
+                                                            </tr>
+                                                        ))
+                                                    }
+                                                    
+                                                    {!currentOrderDetail.service_order_detail?.service_order_details?.some(service => service.is_selected) && (
+                                                        <tr>
+                                                            <td colSpan={4} className="text-center py-3 text-muted">
+                                                                Không có dịch vụ nào được sử dụng
+                                                            </td>
+                                                        </tr>
                                                     )}
-                                                </span>
-                                            </div>
-                                            <div className="d-flex justify-content-between mb-2">
-                                                <span>Tổng chi phí dịch vụ:</span>
-                                                <span>
-                                                    {formatCurrency(
-                                                        serviceOrderDetails.reduce((sum, service) => sum + service.price, 0)
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <div className="d-flex justify-content-between pt-2 border-top mt-2">
-                                                <span className="fw-bold">Tổng cộng:</span>
-                                                <span className="fw-bold text-primary fs-5">
-                                                    {formatCurrency(currentInvoice?.total_price)}
-                                                </span>
-                                            </div>
+                                                </tbody>
+                                                {currentOrderDetail.service_order_detail?.service_order_details?.some(service => service.is_selected) && (
+                                                    <tfoot className="table-light">
+                                                        <tr>
+                                                            <td colSpan={3} className="text-end fw-bold">Tổng chi phí dịch vụ:</td>
+                                                            <td className="text-end fw-bold">
+                                                                {formatCurrency(currentOrderDetail.service_order_detail?.total_amount_for_service || 0)}
+                                                            </td>
+                                                        </tr>
+                                                    </tfoot>
+                                                )}
+                                            </Table>
                                         </div>
-                                    </Col>
-                                </Row>
-                            </div>
+                                    </div>
 
+                                    {/* Hiển thị tổng chi phí */}
+                                    <div className="mt-4 border-top pt-3">
+                                        <Row>
+                                            <Col md={7}>
+                                                {/* Empty column for spacing */}
+                                            </Col>
+                                            <Col md={5}>
+                                                <div className="bg-light p-3 rounded">
+                                                    <div className="d-flex justify-content-between mb-2">
+                                                        <span>Tổng chi phí phụ tùng:</span>
+                                                        <span>
+                                                            {formatCurrency(currentOrderDetail.part_order_detail?.total_amount_for_part || 0)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="d-flex justify-content-between mb-2">
+                                                        <span>Tổng chi phí dịch vụ:</span>
+                                                        <span>
+                                                            {formatCurrency(currentOrderDetail.service_order_detail?.total_amount_for_service || 0)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="d-flex justify-content-between pt-2 border-top mt-2">
+                                                        <span className="fw-bold">Tổng cộng:</span>
+                                                        <span className="fw-bold text-primary fs-5">
+                                                            {formatCurrency(currentInvoice?.total_price)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </Col>
+                                        </Row>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
                 </Modal.Body>
@@ -989,7 +837,7 @@ const InvoiceManagement = () => {
                     <Button
                         variant="primary"
                         onClick={handlePrintInvoice}
-                        disabled={isPrinting || modalLoading}
+                        disabled={isPrinting || modalLoading || !currentOrderDetail}
                     >
                         {isPrinting ? (
                             <>

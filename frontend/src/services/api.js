@@ -927,6 +927,15 @@ const repairService2 = {
                 console.error('api - Lỗi khi lấy danh sách đơn hàng:', error);
                 throw error;
             }
+        },
+        getOrderDetailById: async (orderId) => {
+            try {
+                const response = await apiRepairService2.get(URLS.ORDER_V2.GET_ORDER_DETAIL_BY_ID.replace('{order_id}', orderId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy thông tin đơn hàng ID=${orderId}:`, error);
+                throw error;
+            }
         }
     },
     'warehouse': {
@@ -1010,7 +1019,19 @@ const repairService2 = {
                 throw error;
             }
         }
-    }
+    },
+
+    invoice: {
+        getInvoiceViews: async () => {
+            try {
+                const response = await apiRepairService2.get(URLS.INVOICE_V2.GET_INVOICE_VIEWS);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách hóa đơn:', error);
+                throw error;
+            }
+        }
+    },
 };
 
 export { customerService, resourceService, repairService, repairService2 };
