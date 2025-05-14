@@ -354,3 +354,31 @@ async def bulk_receive_parts(db: AsyncSession, data: BulkPartLotCreate) -> Dict[
             "message": f"Lỗi: {str(e)}",
             "created_lots": created_lots
         }
+
+async def get_parts_by_supplier_id(db: AsyncSession, supplier_id: int) -> list[Part]:
+    """
+    Lấy danh sách phụ tùng từ một nhà cung cấp cụ thể.
+    
+    Args:
+        db: Session cơ sở dữ liệu
+        supplier_id: ID của nhà cung cấp
+    
+    Returns:
+        list[Part]: Danh sách phụ tùng từ nhà cung cấp
+    """
+    try:
+        result = await db.execute(
+            select(Part).where(
+                and_(
+                    Part.supplier_id == supplier_id,
+                    Part.is_deleted == False
+                )
+            )
+        )
+        return result.scalars().all()
+    except IntegrityError as e:
+        log.error(f"Lỗi toàn vẹn dữ liệu khi lấy phụ tùng theo nhà cung cấp: {e}")
+        raise e
+    except Exception as e:
+        log.error(f"Lỗi khi lấy phụ tùng theo nhà cung cấp: {e}")
+        raise e

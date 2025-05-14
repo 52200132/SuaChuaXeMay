@@ -898,13 +898,22 @@ const repairService = {
         },
         bulkReceive: async (data) => {
             try {
-                const response = await apiRepairService2.post('/api/v2/parts/bulk-receive', data);
+                const response = await apiRepairService2.post(URLS.PART.BULK_RECEIVE, data);
                 return response;
             } catch (error) {
                 console.error('Lỗi khi gọi API nhập kho hàng loạt:', error);
                 throw error;
             }
         },
+        getPartBySupplierId: async (supplierId) => {
+            try {
+                const response = await apiRepairService2.get(URLS.PART.GET_PARTS_BY_SUPPLIER_ID.replace('{supplier_id}', supplierId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy danh sách phụ tùng theo nhà cung cấp ID=${supplierId}:`, error);
+                throw error;
+            }
+        }
     },
 };
 
@@ -948,6 +957,27 @@ const repairService2 = {
                 return response;
             } catch (error) {
                 console.error('api - Lỗi khi lấy danh sách phụ tùng:', error);
+                throw error;
+            }
+        }
+    },
+
+    supplier: {
+        getAllSuppliers: async () => {
+            try {
+                const response = await apiRepairService2.get(URLS.SUPPLIER.GET_ALL_SUPPLIERS);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách nhà cung cấp:', error);
+                throw error;
+            }
+        },
+        getSupplierById: async (supplierId) => {
+            try {
+                const response = await apiRepairService2.get(URLS.SUPPLIER.GET_SUPPLIER_BY_ID.replace('{supplier_id}', supplierId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy thông tin nhà cung cấp ID=${supplierId}:`, error);
                 throw error;
             }
         }

@@ -52,6 +52,7 @@ URLS = {
         'GET_PARTS_VIEWS_BY_ORDER_ID':'/part-views/order/{order_id}',
         'GET_PARTS_VIEWS_BY_PART_ID_LIST':'/part-views/part-id-list',
         'GET_PARTS_VIEWS_BY_ORDER_ID_V2':'/part-views/order/{order_id}/v2',
+        'GET_PARTS_BY_SUPPLIER_ID':'/parts/supplier/{supplier_id}',  # Thêm URL mới
         'UPDATE_PART':'/part/update/{part_id}',
         'DELETE_PART':'/part/delete/{part_id}',
         'BULK_RECEIVE_PARTS': "/parts/bulk-receive"

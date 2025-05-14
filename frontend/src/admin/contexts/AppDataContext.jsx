@@ -59,6 +59,9 @@ export const AppDataProvider = ({ children }) => {
 
         servicesParentMotoType: {}, // { service_id: {} }
         servicesParentMotoTypeIds: new Set(), // { service_id: {} }
+
+        suppliers: {},
+        suppliersIds: new Set(),
     });
 
     // State to track loading status for different categories
@@ -75,6 +78,7 @@ export const AppDataProvider = ({ children }) => {
         partsMotoType: false, // { "moto_type_id": { part_id: {} } }
         services: false,
         servicesParentMotoType: false,
+        suppliers: false,
     });
 
     // State to track errors
@@ -432,6 +436,25 @@ export const AppDataProvider = ({ children }) => {
             }
             setLoadingState('staffs', false);
         }
+        
+        const fetchSuppliers = async () => {
+            setLoadingState('suppliers', true);
+            try {
+                await fetchAndStoreData(
+                    'suppliers',
+                    async () => {
+                        const response = await repairService2.supplier.getAllSuppliers();
+                        console.log('Suppliers API response:', response.data);
+                        // Đảm bảo trả về mảng
+                        return response?.data || [];
+                    },
+                    'supplier_id'
+                );
+            } catch (error) {
+                console.error('Error fetching suppliers:', error);
+            }
+            setLoadingState('suppliers', false);
+        };
 
         console.log('Đang là nhân viên', currentStaff.role);
 
@@ -465,6 +488,7 @@ export const AppDataProvider = ({ children }) => {
                 const allPartIds = await fetchParts();
                 fetchPartsView(allPartIds);
             })();
+            fetchSuppliers();
         }
     }, [currentStaff]);
 
