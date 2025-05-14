@@ -1,8 +1,7 @@
 from typing import List
-from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete
+from sqlalchemy import update, delete, and_
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound
 from sqlalchemy.orm import selectinload
 
@@ -18,6 +17,23 @@ async def create_part_order_details(db: AsyncSession, part_detail: List[PartOrde
         db_part_order_details = []
         for part in part_detail:
             # Tạo đối tượng PartOrderDetail từ từng phần tử trong danh sách
+            part_detail = await db.execute(
+                select(PartOrderDetail).where(
+                    and_(
+                        PartOrderDetail.part_id == part.part_id,
+                        PartOrderDetail.order_id == part.order_id,
+                    )
+                )
+            )
+            existing_part_order_detail = part_detail.scalars().one_or_none()
+            # Nếu đã tồn tại chi tiết đơn hàng phụ tùng với cùng mã phụ tùng và mã đơn hàng, cập nhật thông tin
+            if existing_part_order_detail:
+                await update_part_order_detail(
+                    db=db,
+                    part_detail_ID=existing_part_order_detail.part_detail_ID,
+                    part_detail=part
+                )
+                continue
             db_part_order_detail = PartOrderDetail(**part.dict())
             db.add(db_part_order_detail)
             db_part_order_details.append(db_part_order_detail)

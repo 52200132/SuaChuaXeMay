@@ -13,6 +13,8 @@ from api.v1.endpoints.service_order_detail_router import router as service_order
 from api.v1.endpoints.motocycle_type_router import router as motocycle_type_router
 from api.v1.endpoints.part_router import router as part_router
 from api.v1.endpoints.service_router import router as service_router
+from api.v1.endpoints.order_router import router_v2 as order_router_v2
+from api.v1.endpoints.warehouse_router import router as warehouse_router
 
 app = FastAPI(title="Repair Service API", version="1.0.0")
 
@@ -25,6 +27,8 @@ app.include_router(service_order_detail_router, prefix="/api/v1", tags=["service
 app.include_router(motocycle_type_router, prefix="/api/v1", tags=["motocycle-type"])
 app.include_router(part_router, prefix="/api/v2", tags=["part"])
 app.include_router(service_router, prefix="/api/v2", tags=["service"])
+app.include_router(order_router_v2, prefix="/api/v2", tags=["order-v2"])
+app.include_router(warehouse_router, prefix="/api/v2", tags=["warehouse"])
 
 
 # Cấu hình CORS cho phép truy cập từ các nguồn khác nhau

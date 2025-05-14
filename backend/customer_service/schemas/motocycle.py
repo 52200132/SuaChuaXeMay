@@ -80,7 +80,7 @@ class MotocycleResponse(BaseModel):
 class MotocycleResponse2(MotocycleResponse):
     brand: Optional[str] = None
     model: Optional[str] = None
-    moto_type: Optional[MotocycleTypeResponse] = None  # Thông tin loại xe máy
+    type: Optional[str] = None  # Thông tin loại xe máy
 
     class Config:
         from_attributes = True
@@ -92,9 +92,6 @@ class MotocycleResponse2(MotocycleResponse):
                 "license_plate": "59Y2-123.45",
                 "brand": "Honda",
                 "model": "SH",
-                "moto_type": {
-                    "moto_type_id": 1,
-                    "name": "Xe tay ga"
-                }
+                "type": "Xe tay ga"
             }
         }

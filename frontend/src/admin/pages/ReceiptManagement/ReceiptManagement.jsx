@@ -6,7 +6,7 @@ import StatusBadge from '../../components/StatusBadge';
 import { useAppData } from '../../contexts/AppDataContext';
 import { useStaffAuth } from '../../contexts/StaffAuthContext';
 import { customerService, repairService } from '../../../services/api';
-import CreateNewModal from '../ReceiptManagement/Modals/CreateNewModals'
+import CreateNewModal from './Modals/CreateNewModals';
 
 const ReceiptManagement = () => {
     // Context and data fetching

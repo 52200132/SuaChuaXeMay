@@ -7,7 +7,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import OrderManagement from './pages/OrderManagement';
-import TechnicianDashboard from './pages/TechnicianDashboard';
+import TechnicianDashboard from './pages/TechnicianDashboard/TechnicianDashboard';
 import InvoiceManagement from './pages/InvoiceManagement';
 import OrderAssignment from './pages/OrderAssignment';
 import WarehouseManagement from './pages/WarehouseManagement';

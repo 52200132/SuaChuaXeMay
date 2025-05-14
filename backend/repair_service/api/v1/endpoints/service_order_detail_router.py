@@ -37,12 +37,12 @@ async def create_service_order_details(service_detail: List[ServiceOrderDetailCr
         return [ServiceOrderDetailResponse.from_orm(service) for service in db_service_detail]
     except IntegrityError as e:
         await db.rollback()
-        logger.error(f"Lỗi toàn vẹn dữ liệu khi tạo chi tiết phụ tùng đơn hàng: {str(e)} | Dữ liệu: {service_detail.dict()}")
+        logger.error(f"Lỗi toàn vẹn dữ liệu khi tạo chi tiết phụ tùng đơn hàng: {str(e)}")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Lỗi toàn vẹn dữ liệu: {str(e)}")
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Lỗi không xác định khi tạo chi tiết phụ tùng đơn hàng: {str(e)} | Dữ liệu: {service_detail.dict()}")
+        logger.error(f"Lỗi không xác định khi tạo chi tiết phụ tùng đơn hàng: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Lỗi không xác định")
 
 

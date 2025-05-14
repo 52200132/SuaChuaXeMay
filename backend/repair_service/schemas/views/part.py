@@ -83,3 +83,54 @@ class PartOrderDetailView(BaseModel):
                 "is_selected": True,
             }
         }
+
+class WarehouseView(BaseModel):
+    part_lot_id: int # cái này cũng là part_lot_id (part_warehouse_id)
+    import_price: Optional[int] = None
+    import_date: Optional[datetime] = None
+    stock: Optional[int] = None
+    quantity: Optional[int] = None
+    supplier_name: Optional[str] = None
+    location: Optional[str] = None
+
+class PartWarehouseView2(BaseModel):
+    """Schema cho việc xem thông tin kho phụ tùng"""
+    part_id: int
+    name: str
+    unit: str
+    price: Optional[int] = None
+    need_quantity: Optional[int] = None
+    URL: Optional[str] = None
+    warehouses: list
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "part_id": 1,
+                "name": "Lọc gió Wave Alpha",
+                "unit": "cái",
+                "price": 65000,
+                "need_quantity": 100,
+                "warehouses": [
+                    {
+                        "part_lot_id": 1,
+                        "import_price": 65000,
+                        "import_date": "2023-10-01T12:00:00",
+                        "stock": 100,
+                        "quantity": 50,
+                        "supplier_name": "Nhà cung cấp A",
+                        "location": "Kho A",
+                    },
+                    {
+                        "part_lot_id": 2,
+                        "import_price": 70000,
+                        "import_date": "2023-10-02T12:00:00",
+                        "stock": 50,
+                        "quantity": 30,
+                        "supplier_name": "Nhà cung cấp B",
+                        "location": "Kho B",
+                    },
+                ],
+            }
+        }   

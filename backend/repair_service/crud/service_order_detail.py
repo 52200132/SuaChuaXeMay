@@ -17,6 +17,16 @@ async def create_service_order_detail(db: AsyncSession, service_detail: List[Ser
     try:
         db_service_order_details = []
         for service in service_detail:
+            service_order_detail = await db.execute(
+                select(ServiceOrderDetail).where(
+                    ServiceOrderDetail.service_id == service.service_id,
+                    ServiceOrderDetail.order_id == service.order_id,
+                )
+            )
+            existing_service_order_detail = service_order_detail.scalars().one_or_none()
+            # Nếu đã tồn tại chi tiết đơn hàng dịch vụ với cùng mã dịch vụ và mã đơn hàng, bỏ qua
+            if existing_service_order_detail:
+                continue
             # Tạo đối tượng PartOrderDetail từ từng phần tử trong danh sách
             db_service_order_detail = ServiceOrderDetail(**service.dict())
             db.add(db_service_order_detail)
@@ -35,7 +45,7 @@ async def create_service_order_detail(db: AsyncSession, service_detail: List[Ser
         await db.rollback()
         raise e
     except Exception as e:
-        logger.error(f"Lỗi không xác định khi tạo chi tiết phụ tùng đơn hàng: {str(e)} | Dữ liệu: {[service.dict() for service in service_detail]}")
+        logger.error(f"Lỗi không xác định khi tạo chi tiết phụ tùng đơn hàng: {str(e)}")
         await db.rollback()
         raise e
 

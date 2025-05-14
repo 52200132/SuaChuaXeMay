@@ -9,6 +9,8 @@ class StaffRoleEnum(str, PyEnum):
     TECHNICIAN = "technician"
     CASHIER = "cashier"
     MANAGER = "manager"
+    HEAD_TECHNICIAN = "head technician"
+    WAREHOUSE_WORKER = "warehouse worker"
 
 
 class StaffStatusEnum(str, PyEnum):

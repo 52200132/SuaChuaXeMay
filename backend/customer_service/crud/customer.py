@@ -55,7 +55,8 @@ async def get_customer_with_motorcycle_by_phone(db: AsyncSession, phone_num: str
             Motocycle.license_plate,
             MotocycleType.brand,
             MotocycleType.model,
-            MotocycleType.moto_type_id
+            MotocycleType.moto_type_id,
+            MotocycleType.type
         )
         .join(MotocycleType, Motocycle.moto_type_id == MotocycleType.moto_type_id)
         .where(Motocycle.customer_id == customer.customer_id)

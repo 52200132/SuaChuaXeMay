@@ -36,7 +36,7 @@ import StaffLogin from './admin/pages/Login';
 import ReceiptManagement from './admin/pages/ReceiptManagement/ReceiptManagement';
 import OrderManagement from './admin/pages/OrderManagement';
 import WarehouseManagement from './admin/pages/WarehouseManagement';
-import TechnicianDashboard from './admin/pages/TechnicianDashboard';
+import TechnicianDashboard from './admin/pages/TechnicianDashboard/TechnicianDashboard';
 // Thêm import cho trang hóa đơn
 import InvoiceManagement from './admin/pages/InvoiceManagement';
 

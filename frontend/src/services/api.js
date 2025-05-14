@@ -33,6 +33,15 @@ const apiRepairService = axios.create({
     timeout: 10000 // Timeout 10 giây
 });
 
+//
+const apiRepairService2 = axios.create({
+    baseURL: 'http://localhost:8002/api/v2',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    timeout: 10000 // Timeout 10 giây
+}); 
+
 // Object chứa các hàm gọi API
 const resourceService = {
     // Lấy tất cả các loại dịch vụ
@@ -818,7 +827,42 @@ const repairService = {
                 throw error;
             }
         },
+    },
+};
+
+const repairService2 = {
+    part: {
+        getPartViewsByMotoTypeId: async (motoTypeId) => {
+            try {
+                const response = await apiRepairService2.get(URLS.PART.GET_PARTS_VIEWS_BY_MOTO_TYPE_ID.replace('{moto_type_id}', motoTypeId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy danh sách phụ tùng theo loại xe ID=${motoTypeId}:`, error);
+                throw error;
+            }
+        },
+        getPartViews: async () => {
+            try {
+                const response = await apiRepairService2.get(URLS.PART_V2.GET_PART_VIEWS);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách phụ tùng:', error);
+                throw error;
+            }
+        }
+    },
+
+    service: {
+        getServiceViewsByParentMotoType: async (parentMotoType) => {
+            try {
+                const response = await apiRepairService2.get(URLS.SERVICE_V2.GET_SERVICE_VIEWS_BY_PARENT_MOTO_TYPE.replace('{parent_moto_type}', parentMotoType));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy danh sách dịch vụ theo loại xe ${parentMotoType}:`, error);
+                throw error;
+            }
+        }
     }
 };
 
-export { customerService, resourceService, repairService };
+export { customerService, resourceService, repairService, repairService2 };

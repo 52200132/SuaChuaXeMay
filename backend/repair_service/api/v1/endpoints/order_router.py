@@ -82,10 +82,35 @@ async def get_all_orders_by_staff_id_today(staff_id: int, db: AsyncSession = Dep
     """Lấy danh sách đơn hàng của nhân viên trong ngày"""
     try:
         date = datetime.now().date()
-        db_orders = await order_crud.get_orders_with_filters(db, staff_id=staff_id, date=date)
+        db_orders = await order_crud.get_orders_with_filters(db, staff_id=staff_id)
         return db_orders
     except IntegrityError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except Exception as e:
         logger.error(f"Lỗi khi lấy danh sách đơn hàng của nhân viên trong ngày: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+
+from schemas.views.order import OrderViewForTable
+from services import order_services
+
+router_v2 = APIRouter()
+@router_v2.get(URLS['ORDER_V2']['GET_ORDER_VIEWS_FOR_TABLE'], response_model=List[OrderViewForTable])
+async def get_order_views_for_table(
+    skip: int = 0,
+    limit: int = 1000,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lấy danh sách đơn hàng để hiển thị trên bảng
+    """
+    try:
+        db_orders = await order_services.get_order_views_for_table(db, skip=skip, limit=limit)
+        return db_orders
+    except IntegrityError as e:
+        logger.error(f"Lỗi toàn vẹn: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Lỗi toàn vẹn")
+    except Exception as e:
+        logger.error(f"Lỗi khi lấy danh sách đơn hàng: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

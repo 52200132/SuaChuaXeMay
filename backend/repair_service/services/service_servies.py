@@ -31,7 +31,7 @@ async def get_service_views_by_parent_moto_type(db: AsyncSession, parent_moto_ty
         )
 
         result = await db.execute(query)
-        services_data = result.all()
+        services_data = result.unique().all()
 
         result_list = []
         for service_info in services_data:

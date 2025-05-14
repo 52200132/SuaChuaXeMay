@@ -74,7 +74,7 @@ async def delete_order(db: AsyncSession, order_id: int) -> str:
 async def get_orders_with_filters(db: AsyncSession, staff_id: int = None, status: str = None, start_date: datetime = None, end_date: datetime = None, date: datetime.date = None, skip: int = 0, limit: int = 100) -> list[Order]:
     """Lấy danh sách đơn hàng với các bộ lọc"""
     try:
-        query = select(Order).order_by(Order.order_id.asc()).offset(skip).limit(limit)
+        query = select(Order).order_by(Order.order_id.desc()).offset(skip).limit(limit)
 
         if staff_id:
             query = query.where(Order.staff_id == staff_id)

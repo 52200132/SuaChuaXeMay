@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useCallback, useMemo, useEffect, useRef, use } from 'react';
 import { useStaffAuth } from './StaffAuthContext';
-import { customerService, repairService, resourceService } from '../../services/api';
+import { customerService, repairService, repairService2, resourceService } from '../../services/api';
 import pusher, { subscribeToChannel, unsubscribeFromChannel } from '../../services/pusher';
 // Create context
 const AppDataContext = createContext();
@@ -50,8 +50,12 @@ export const AppDataProvider = ({ children }) => {
         parts: {},
         partsIds: new Set(),
         partsMotoType: {},
+        parts : {},     // Part data by ID
+        // partsMotoType : {},     
+        services : {},     // Service data by ID
+        servicesParentMotoType : {},
+        servicesParentMotoTypeIds: new Set(),  // IDs of services
     });
-
 
     // State to track loading status for different categories
     const [loading, setLoading] = useState({
@@ -65,7 +69,7 @@ export const AppDataProvider = ({ children }) => {
         parts: false,
         partsMotoType: false, // { "moto_type_id": { part_id: {} } }
         services: false,
-        servicesMotoType: false,
+        servicesParentMotoType: false,
     });
 
     // State to track errors
@@ -129,69 +133,78 @@ export const AppDataProvider = ({ children }) => {
         setLoadingState('motorcycles', false);
     }
 
-    const fetchPartsMotoType = async () => {
-        setLoadingState('partsMotoType', true);
-        try {
-            const response = await resourceService.partMotoType.getAllPartMotoTypes({
-                skip: 0,
-                limit: 1000,
-            });
-            const data = response?.data;
-            const dataObject = Array.isArray(data) 
-                ? data.reduce((obj, item) => {
-                    const motoTypeId = item.moto_type_id.toString();
-                    const partId = item.part_id.toString();
-                    obj[motoTypeId] = obj[motoTypeId] || {}; // Tạo một object con nếu chưa có
-                    obj[motoTypeId][partId] = item; // Lưu item vào object với moto_type_id là key
-                    return obj;
-                }, {})
-                : data;
-            console.log('Dữ liệu partMotoType pass', dataObject);
-            setDataStore(prevStore => ({
-                ...prevStore,
-                partsMotoType: dataObject
-            }));
-        } catch (error) {
-            console.error('Lỗi khi lấy partMotoTypes:', error);
-        }
-        setLoadingState('partsMotoType', false);
-    }
+    // const fetchPartsMotoType = async () => {
+    //     setLoadingState('partsMotoType', true);
+    //     try {
+    //         const response = await resourceService.partMotoType.getAllPartMotoTypes({
+    //             skip: 0,
+    //             limit: 1000,
+    //         });
+    //         const data = response?.data;
+    //         const dataObject = Array.isArray(data) 
+    //             ? data.reduce((obj, item) => {
+    //                 const motoTypeId = item.moto_type_id.toString();
+    //                 const partId = item.part_id.toString();
+    //                 obj[motoTypeId] = obj[motoTypeId] || {}; // Tạo một object con nếu chưa có
+    //                 obj[motoTypeId][partId] = item; // Lưu item vào object với moto_type_id là key
+    //                 return obj;
+    //             }, {})
+    //             : data;
+    //         console.log('Dữ liệu partMotoType pass', dataObject);
+    //         setDataStore(prevStore => ({
+    //             ...prevStore,
+    //             partsMotoType: dataObject
+    //         }));
+    //     } catch (error) {
+    //         console.error('Lỗi khi lấy partMotoTypes:', error);
+    //     }
+    //     setLoadingState('partsMotoType', false);
+    // }
 
-    const fetchServicesMotoType = async () => {
-        setLoadingState('servicesMotoType', true);
+    const fetchServicesParentMotoType = async () => {
+        setLoadingState('servicesParentMotoType', true);
         try {
-            const response = await resourceService.serviceMotoType.getAllServiceMotoTypes({
-                skip: 0,
-                limit: 1000,
-            });
-            const data = response?.data;
-            const dataObject = Array.isArray(data) 
-                ? data.reduce((obj, item) => {
-                    const motoTypeId = item.moto_type_id.toString();
-                    const serviceId = item.service_id.toString();
-                    obj[motoTypeId] = obj[motoTypeId] || {}; // Tạo một object con nếu chưa có
-                    obj[motoTypeId][serviceId] = item; // Lưu item vào object với moto_type_id là key
+            const response1 = await repairService2.service.getServiceViewsByParentMotoType('Xe số');
+            const response2 = await repairService2.service.getServiceViewsByParentMotoType('Xe tay ga');
+            const data1 = response1?.data;
+            const data2 = response2?.data;
+            const dataObject1 = Array.isArray(data1) 
+                ? data1.reduce((obj, item) => {
+                    obj[item.service_id] = item; // Lưu item vào object với service_id là key
+                : data1;
+            const dataObject2 = Array.isArray(data2)
+                ? data2.reduce((obj, item) => {
+                    obj[item.service_id] = item; // Lưu item vào object với service_id là key
                     return obj;
                 }, {})
-                : data;
-            console.log('Dữ liệu serviceMotoType pass', dataObject);
-            setDataStore(prevStore => ({
-                ...prevStore,
-                servicesMotoType: dataObject
-            }));
+                : data1;
+            const dataObject2 = Array.isArray(data2)
+                ? data2.reduce((obj, item) => {
+                    obj[item.service_id] = item; // Lưu item vào object với service_id là key
+                    return obj;
+                }
+                , {})
+                : data2;
+            setData('servicesParentMotoType', dataObject1, 'Xe số');
+            setData('servicesParentMotoType', dataObject2, 'Xe tay ga');
+                }
+                , {})
+                : data2;
+            setData('servicesParentMotoType', dataObject1, 'Xe số');
+            setData('servicesParentMotoType', dataObject2, 'Xe tay ga');
         } catch (error) {
-            console.error('Lỗi khi lấy serviceMotoTypes:', error);
+            console.error('Lỗi khi lấy danh sách service:', error);
+            console.error('Lỗi khi lấy danh sách service:', error);
         }
-        setLoadingState('servicesMotoType', false);
+        setLoadingState('servicesParentMotoType', false);
+        setLoadingState('servicesParentMotoType', false);
     }
 
     const fetchParts = async () => {
         setLoadingState('parts', true);
         try {
-            const response = await resourceService.part.getAllParts({
-                skip: 0,
-                limit: 1000,
-            });
+            const response = await repairService2.part.getPartViews();
+            const response = await repairService2.part.getPartViews();
             const data = response?.data;
             const dataObject = Array.isArray(data) 
                 ? data.reduce((obj, item) => {
@@ -419,8 +432,8 @@ export const AppDataProvider = ({ children }) => {
             fetchStaffs();
         } else if (currentStaff.role === 'technician') {
             console.log('Đang là nhân viên kỹ thuật');
-            fetchPartsMotoType();
-            fetchServicesMotoType();
+            // fetchPartsMotoType();
+            fetchServicesParentMotoType();
             fetchParts();
             fetchServices();
             fetchOrderForTechnician();
@@ -428,18 +441,11 @@ export const AppDataProvider = ({ children }) => {
         else if (currentStaff.role === 'head technician') {
             console.log('Đang là trưởng kỹ thuật viên');
             // fetchPartsMotoType();
-            // fetchServicesMotoType();
-            // fetchParts();
-            // fetchServices();
-            // fetchOrderForTechnician();
-        }
-        else if (currentStaff.role === 'warehouse worker') {
-            console.log('Đang là nhân viên kho');
-            // fetchPartsMotoType();
-            // fetchServicesMotoType();
-            // fetchParts();
-            // fetchServices();
-            // fetchOrderForTechnician();
+            fetchServicesParentMotoType();
+            fetchParts();
+            fetchServices();
+            fetchOrderForTechnician();
+>>>>>>> Stashed changes
         }
     }, [currentStaff]);
 

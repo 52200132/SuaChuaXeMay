@@ -47,9 +47,13 @@ URLS = {
         'CREATE_PART':'/part/create',
         'GET_ALL_PARTS':'/parts',
         'GET_PART_BY_ID':'/part/{part_id}',
+        'GET_PART_VIEWS': '/part-views',
+        'GET_PART_VIEWS': '/part-views',
         'GET_PARTS_VIEWS_BY_MOTO_TYPE_ID':'/part-views/motocycle-type/{moto_type_id}',
         'GET_PARTS_VIEWS_BY_ORDER_ID':'/part-views/order/{order_id}',
         'GET_PARTS_VIEWS_BY_PART_ID_LIST':'/part-views/part-id-list',
+        'GET_PARTS_VIEWS_BY_ORDER_ID_V2':'/part-views/order/{order_id}/v2',
+        'GET_PARTS_VIEWS_BY_ORDER_ID_V2':'/part-views/order/{order_id}/v2',
         'UPDATE_PART':'/part/update/{part_id}',
         'DELETE_PART':'/part/delete/{part_id}',
     },
@@ -61,5 +65,11 @@ URLS = {
         ''
         'UPDATE_SERVICE':'/service/update/{service_id}',
         'DELETE_SERVICE':'/service/delete/{service_id}',
+    },
+    'ORDER_V2':{
+        'GET_ORDER_VIEWS_FOR_TABLE':'/order-views/table',
+    },
+    'WAREHOUSE':{
+        'EXPORT_PART_LOTS':'/warehouse/export-part-lots',
     },
 }

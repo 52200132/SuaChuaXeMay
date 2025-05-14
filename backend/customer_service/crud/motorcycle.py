@@ -24,7 +24,8 @@ async def get_all_motorcycles(db: AsyncSession) -> list[MotocycleResponse2]:
                     Motocycle.license_plate,
                     MotocycleType.brand,
                     MotocycleType.model,
-                    MotocycleType.moto_type_id
+                    MotocycleType.moto_type_id,
+                    MotocycleType.type
                 )
             )
             .join(MotocycleType, Motocycle.moto_type_id == MotocycleType.moto_type_id)
@@ -50,7 +51,8 @@ async def get_motorcycle_by_id(db: AsyncSession, motorcycle_id: int) -> Motocycl
                     Motocycle.license_plate,
                     MotocycleType.brand,
                     MotocycleType.model,
-                    MotocycleType.moto_type_id
+                    MotocycleType.moto_type_id,
+                    MotocycleType.type
                 )
             )
             .join(MotocycleType, Motocycle.moto_type_id == MotocycleType.moto_type_id)
