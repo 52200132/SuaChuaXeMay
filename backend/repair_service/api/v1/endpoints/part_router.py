@@ -193,6 +193,25 @@ async def update_part(part_id: int, part: PartUpdate, db: AsyncSession = Depends
             detail=f"Lỗi khi cập nhật phụ tùng: {str(e)}"
         )
 
+@router.get(URLS['PART']['GET_PARTS_BY_SUPPLIER_ID'], response_model=List[PartResponse])
+async def get_parts_by_supplier_id(supplier_id: int, db: AsyncSession = Depends(get_db)):
+    """Lấy danh sách phụ tùng theo ID nhà cung cấp"""
+    try:
+        parts = await crud.get_parts_by_supplier_id(db, supplier_id)
+        return parts
+    except IntegrityError as e:
+        log.error(f"Lỗi toàn vẹn dữ liệu khi lấy phụ tùng theo nhà cung cấp: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Lỗi toàn vẹn dữ liệu khi lấy phụ tùng theo nhà cung cấp: {str(e)}"
+        )
+    except Exception as e:
+        log.error(f"Lỗi khi lấy phụ tùng theo nhà cung cấp: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy phụ tùng theo nhà cung cấp: {str(e)}"
+        )
+
 @router.post(URLS['PART']['BULK_RECEIVE_PARTS'], response_model=BulkPartLotResponse)
 async def bulk_receive_parts(data: BulkPartLotCreate, db: AsyncSession = Depends(get_db)):
     """Nhập kho hàng loạt nhiều phụ tùng cùng lúc"""

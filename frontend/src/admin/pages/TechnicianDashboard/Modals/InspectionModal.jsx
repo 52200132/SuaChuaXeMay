@@ -255,8 +255,8 @@ const InspectionModal = ({
     // TODO: Render phần chọn phụ tùng và dịch vụ
     const renderPartsSelection = ({ partsViews = [], servicesViews = [] }) => {
         // Lọc phụ tùng theo từ khóa tìm kiếm
-        // console.log('Load danh sách phụ tùng', partsViews);
-        // console.log('Load danh sách dịch vụ', servicesViews);
+        console.log('Load danh sách phụ tùng', partsViews);
+        console.log('Load danh sách dịch vụ', servicesViews);
         
         const filteredParts = partSearchTerm 
             ? partsViews.filter(part => 

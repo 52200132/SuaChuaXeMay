@@ -15,6 +15,9 @@ const WarehouseManagement = () => {
     const partsviewById = getData('partsview') || {};
     const partsviewIds = getIds('partsview') || [];
 
+    const suppliersById = getData('suppliers') || {};
+    const suppliersIds = getIds('suppliers') || [];
+
     // State for parts inventory
     const [filteredPartsIds, setFilteredPartsIds] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
@@ -64,7 +67,8 @@ const WarehouseManagement = () => {
 
     // Locations and suppliers lists
     const locations = ['A1-01', 'A1-02', 'A2-01', 'B1-01', 'B2-01', 'C1-01'];
-    const suppliers = ['Nhà cung cấp A', 'Nhà cung cấp B', 'Nhà cung cấp C'];
+    // const suppliers = ['Nhà cung cấp A', 'Nhà cung cấp B', 'Nhà cung cấp C'];
+    const suppliers = suppliersIds.map(id => suppliersById[id]?.name).filter(Boolean);
     const destinations = ['Phục vụ sửa chữa', 'Chuyển kệ khác', 'Xuất bán lẻ'];
 
     // Initialize data
@@ -368,6 +372,59 @@ const WarehouseManagement = () => {
         }));
     };
     
+    // Hàm helper để làm mới dữ liệu phụ tùng và cập nhật state
+    const refreshPartData = () => {
+        // Lấy dữ liệu mới nhất từ context
+        const freshPartsviewById = getData('partsview') || {};
+        const partsViewArray = Object.keys(freshPartsviewById).map(id => freshPartsviewById[id]);
+        
+        // Nhóm phụ tùng theo part_id
+        const grouped = groupPartsByPartId(partsViewArray);
+        
+        // Cập nhật state grouped parts
+        setGroupedParts(grouped);
+        const newGroupedIds = Object.keys(grouped);
+        setGroupedPartsIds(newGroupedIds);
+        
+        // Áp dụng lại bộ lọc hiện tại
+        let filtered = [...newGroupedIds];
+        
+        if (filters.search) {
+            const searchTerm = filters.search.toLowerCase();
+            filtered = filtered.filter(id => {
+                const part = grouped[id];
+                return part.name.toLowerCase().includes(searchTerm) ||
+                       part.part_id.toString().includes(searchTerm);
+            });
+        }
+        
+        if (filters.location) {
+            filtered = filtered.filter(id => {
+                const part = grouped[id];
+                return part.batches.some(batch => batch.location === filters.location);
+            });
+        }
+        
+        if (filters.supplier) {
+            filtered = filtered.filter(id => {
+                const part = grouped[id];
+                return part.batches.some(batch => batch.supplier_name === filters.supplier);
+            });
+        }
+        
+        if (filters.minStock) {
+            filtered = filtered.filter(id => grouped[id].totalStock >= parseInt(filters.minStock));
+        }
+        
+        if (filters.maxStock) {
+            filtered = filtered.filter(id => grouped[id].totalStock <= parseInt(filters.maxStock));
+        }
+        
+        // Cập nhật state filtered và pagination
+        setFilteredPartsIds(filtered);
+        setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+    };
+
     // Handle receive submit
     const handleReceiveSubmit = async (e) => {
         e.preventDefault();
@@ -382,7 +439,7 @@ const WarehouseManagement = () => {
         try {
             setLocalLoading(true);
             
-            // If receiving for an existing batch
+            // Nếu nhận cho một lô đã tồn tại
             if (currentBatch) {
                 // Update batch in local store
                 const updatedBatch = {
@@ -417,10 +474,8 @@ const WarehouseManagement = () => {
                 setData('partsview', newBatch, newBatchId);
             }
             
-            // Update grouped parts
-            const updatedParts = Object.keys(partsviewById).map(id => partsviewById[id]);
-            const grouped = groupPartsByPartId(updatedParts);
-            setGroupedParts(grouped);
+            // Làm mới dữ liệu phụ tùng và cập nhật giao diện
+            refreshPartData();
 
             setShowReceiveModal(false);
             alert('Nhập kho thành công!');
@@ -455,10 +510,8 @@ const WarehouseManagement = () => {
             // Update in partsview instead of parts
             setData('partsview', updatedBatch, currentBatch.part_warehouse_id);
             
-            // Update grouped parts
-            const updatedParts = Object.keys(partsviewById).map(id => partsviewById[id]);
-            const grouped = groupPartsByPartId(updatedParts);
-            setGroupedParts(grouped);
+            // Làm mới dữ liệu phụ tùng và cập nhật giao diện
+            refreshPartData();
             
             setShowDistributeModal(false);
             alert('Xuất kho thành công!');
@@ -479,23 +532,25 @@ const WarehouseManagement = () => {
     });
     const [availableParts, setAvailableParts] = useState([]);
     const [selectedParts, setSelectedParts] = useState([]);
+    const [supplierFilteredParts, setSupplierFilteredParts] = useState([]); // State mới để lưu danh sách phụ tùng theo nhà cung cấp
+    const [partSearchTerm, setPartSearchTerm] = useState(''); // State để lưu từ khóa tìm kiếm phụ tùng
 
-    // Initialize available parts for bulk receiving
+    // Initialize available parts for bulk receiving (không thay đổi)
     useEffect(() => {
-    if (Object.keys(partsById).length > 0) {
-        const uniqueParts = Object.values(partsById).map(part => ({
-            part_id: part.part_id,
-            name: part.name,
-            unit: part.unit,
-            URL: part.URL,
-            selected: false,
-            quantity: 0,
-            import_price: 0,
-            location: ''
-        }));
-        setAvailableParts(uniqueParts);
-    }
-}, [partsById]);
+        if (Object.keys(partsById).length > 0) {
+            const uniqueParts = Object.values(partsById).map(part => ({
+                part_id: part.part_id,
+                name: part.name,
+                unit: part.unit,
+                URL: part.URL,
+                selected: false,
+                quantity: 0,
+                import_price: 0,
+                location: ''
+            }));
+            setAvailableParts(uniqueParts);
+        }
+    }, [partsById]);
     
     // Show bulk receive modal
     const handleShowBulkReceiveModal = () => {
@@ -505,20 +560,93 @@ const WarehouseManagement = () => {
             parts: []
         });
         setSelectedParts([]);
+        setSupplierFilteredParts([]); // Reset danh sách phụ tùng đã lọc theo nhà cung cấp
+        setPartSearchTerm(''); // Reset từ khóa tìm kiếm
         setValidated(false);
         setShowBulkReceiveModal(true);
     };
     
+    // Handle bulk supplier change
+    const handleBulkSupplierChange = async (supplierName) => {
+        setBulkReceiveForm(prev => ({
+            ...prev,
+            supplier_name: supplierName
+        }));
+        
+        // Reset selected parts khi thay đổi nhà cung cấp
+        setSelectedParts([]);
+        setPartSearchTerm('');
+        
+        // Nếu đã chọn nhà cung cấp, lọc phụ tùng theo supplier_id
+        if (supplierName) {
+            const supplierId = suppliersIds.find(
+                id => suppliersById[id]?.name === supplierName
+            );
+            
+            if (supplierId) {
+                try {
+                    setLocalLoading(true);
+                    // Gọi API để lấy phụ tùng theo nhà cung cấp
+                    const response = await repairService.part.getPartBySupplierId(supplierId);
+                    
+                    if (response && response.data) {
+                        // Cập nhật state với danh sách phụ tùng đã lọc
+                        const formattedParts = response.data.map(part => ({
+                            part_id: part.part_id,
+                            name: part.name,
+                            unit: part.unit,
+                            URL: part.URL,
+                            supplier_id: part.supplier_id,
+                            selected: false,
+                            quantity: 1,
+                            import_price: part.price || 0,
+                            location: ''
+                        }));
+                        setSupplierFilteredParts(formattedParts);
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi lấy phụ tùng theo nhà cung cấp:', error);
+                    setSupplierFilteredParts([]);
+                } finally {
+                    setLocalLoading(false);
+                }
+            } else {
+                setSupplierFilteredParts([]);
+            }
+        } else {
+            // Nếu không chọn nhà cung cấp, xóa danh sách phụ tùng đã lọc
+            setSupplierFilteredParts([]);
+        }
+    };
+    
+    // Handle part search
+    const handlePartSearch = (e) => {
+        setPartSearchTerm(e.target.value);
+    };
+    
+    // Filter parts by search term
+    const getFilteredPartsBySearch = () => {
+        if (!partSearchTerm.trim()) return supplierFilteredParts;
+        
+        const searchTerm = partSearchTerm.toLowerCase();
+        return supplierFilteredParts.filter(part => 
+            part.name.toLowerCase().includes(searchTerm) || 
+            part.part_id.toString().includes(searchTerm)
+        );
+    };
+    
     // Handle part selection in bulk form
     const handlePartSelection = (partIndex, checked) => {
-        const updatedParts = [...availableParts];
+        // Sử dụng danh sách đã lọc theo nhà cung cấp thay vì availableParts
+        const updatedParts = [...supplierFilteredParts];
         updatedParts[partIndex].selected = checked;
+        setSupplierFilteredParts(updatedParts);
         
         // If checked, add to selected parts with default values
         if (checked) {
             const part = updatedParts[partIndex];
             const existingPriceFromBatches = 
-                groupedParts[part.part_id]?.batches?.[0]?.import_price || 0;
+                groupedParts[part.part_id]?.batches?.[0]?.import_price || part.import_price || 0;
             
             setSelectedParts(prev => [
                 ...prev, 
@@ -535,8 +663,6 @@ const WarehouseManagement = () => {
                 prev.filter(p => p.part_id !== updatedParts[partIndex].part_id)
             );
         }
-        
-        setAvailableParts(updatedParts);
     };
     
     // Handle changing values for selected parts
@@ -551,14 +677,6 @@ const WarehouseManagement = () => {
         }
         
         setSelectedParts(updatedParts);
-    };
-    
-    // Handle bulk supplier change
-    const handleBulkSupplierChange = (supplierName) => {
-        setBulkReceiveForm(prev => ({
-            ...prev,
-            supplier_name: supplierName
-        }));
     };
     
     // Handle bulk notes change
@@ -588,23 +706,28 @@ const WarehouseManagement = () => {
             setLocalLoading(true);
             
             // Chuẩn bị dữ liệu để gửi lên server
+            const supplierId = suppliersIds.find(
+                id => suppliersById[id]?.name === bulkReceiveForm.supplier_name
+            );
+
             const bulkReceiveData = {
-            supplier_name: bulkReceiveForm.supplier_name,
-            notes: bulkReceiveForm.notes,
-            parts: selectedParts.map(part => ({
-                part_id: part.part_id,
-                quantity: part.quantity,
-                import_price: part.import_price,
-                location: part.location
-            }))
+                note: bulkReceiveForm.notes, // Đúng tên trường là "note"
+                supplier_id: supplierId,
+                parts: selectedParts.map(part => ({
+                    part_id: part.part_id,
+                    quantity: part.quantity,
+                    price: part.import_price, // Đúng tên trường là "price"
+                    location: part.location
+                }))
             };
             
             // Gọi API để lưu vào CSDL
+            console.log('bulkReceiveData:', bulkReceiveData);
             const result = await repairService.part.bulkReceive(bulkReceiveData);
             // bulkReceiveInventory(bulkReceiveData);
             
             if (result && result.success) {
-            // Nếu thành công, cập nhật dữ liệu local từ kết quả trả về
+                // Nếu thành công, cập nhật dữ liệu local từ kết quả trả về
                 if (result.data && Array.isArray(result.data)) {
                     result.data.forEach(batch => {
                         // Cập nhật vào context
@@ -613,10 +736,8 @@ const WarehouseManagement = () => {
                 }
             }
             
-            // Update grouped parts using the updated partsview data
-            const updatedPartsViews = Object.keys(partsviewById).map(id => partsviewById[id]);
-            const grouped = groupPartsByPartId(updatedPartsViews);
-            setGroupedParts(grouped);
+            // Làm mới dữ liệu phụ tùng và cập nhật giao diện
+            refreshPartData();
             
             setShowBulkReceiveModal(false);
             alert('Nhập kho hàng loạt thành công!');
@@ -627,6 +748,7 @@ const WarehouseManagement = () => {
                 selected: false
             }));
             setAvailableParts(resetAvailableParts);
+            setSelectedParts([]);
             
         } catch (error) {
             console.error('Lỗi khi nhập kho hàng loạt:', error);
@@ -641,8 +763,8 @@ const WarehouseManagement = () => {
         // Remove from selected parts
         setSelectedParts(prev => prev.filter(p => p.part_id !== partId));
         
-        // Update available parts selection status
-        setAvailableParts(prev => prev.map(p => 
+        // Update selection status in filtered parts
+        setSupplierFilteredParts(prev => prev.map(p => 
             p.part_id === partId ? { ...p, selected: false } : p
         ));
     };
@@ -1315,41 +1437,60 @@ const WarehouseManagement = () => {
                                                 type="text"
                                                 placeholder="Tìm kiếm phụ tùng..."
                                                 className="form-control-sm w-50"
+                                                value={partSearchTerm}
+                                                onChange={handlePartSearch}
+                                                disabled={!bulkReceiveForm.supplier_name}
                                             />
                                         </div>
                                     </Card.Header>
                                     <div className="parts-selection-container">
-                                        {availableParts.map((part, index) => (
-                                            <div 
-                                                key={part.part_id} 
-                                                className={`part-selection-item ${part.selected ? 'selected' : ''}`}
-                                            >
-                                                <Form.Check 
-                                                    type="checkbox"
-                                                    id={`part-${part.part_id}`}
-                                                    checked={part.selected}
-                                                    onChange={(e) => handlePartSelection(index, e.target.checked)}
-                                                    label={
-                                                        <div className="d-flex align-items-center">
-                                                            <Image 
-                                                                src={part.URL || "/images/parts/placeholder.jpg"}
-                                                                alt={part.name}
-                                                                width={30}
-                                                                height={30}
-                                                                className="me-2 part-thumbnail"
-                                                            />
-                                                            <div>
-                                                                <div className="fw-semibold">{part.name}</div>
-                                                                <small className="text-muted">Mã PT: {part.part_id}</small>
-                                                            </div>
-                                                        </div>
-                                                    }
-                                                />
+                                        {!bulkReceiveForm.supplier_name ? (
+                                            <div className="text-center p-4 text-muted">
+                                                <i className="bi bi-exclamation-circle fs-3 d-block mb-2"></i>
+                                                Vui lòng chọn nhà cung cấp trước để xem danh sách phụ tùng
                                             </div>
-                                        ))}
-                                        {availableParts.length === 0 && (
+                                        ) : localLoading ? (
+                                            <div className="text-center p-4">
+                                                <div className="spinner-border text-primary" role="status">
+                                                    <span className="visually-hidden">Đang tải...</span>
+                                                </div>
+                                                <p className="mt-2 text-muted">Đang tải danh sách phụ tùng...</p>
+                                            </div>
+                                        ) : getFilteredPartsBySearch().length > 0 ? (
+                                            getFilteredPartsBySearch().map((part, index) => (
+                                                <div 
+                                                    key={part.part_id} 
+                                                    className={`part-selection-item ${part.selected ? 'selected' : ''}`}
+                                                >
+                                                    <Form.Check 
+                                                        type="checkbox"
+                                                        id={`part-${part.part_id}`}
+                                                        checked={part.selected}
+                                                        onChange={(e) => handlePartSelection(index, e.target.checked)}
+                                                        label={
+                                                            <div className="d-flex align-items-center">
+                                                                <Image 
+                                                                    src={part.URL || "/images/parts/placeholder.jpg"}
+                                                                    alt={part.name}
+                                                                    width={30}
+                                                                    height={30}
+                                                                    className="me-2 part-thumbnail"
+                                                                />
+                                                                <div>
+                                                                    <div className="fw-semibold">{part.name}</div>
+                                                                    <small className="text-muted">Mã PT: {part.part_id}</small>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    />
+                                                </div>
+                                            ))
+                                        ) : (
                                             <div className="text-center p-3 text-muted">
-                                                Không có phụ tùng
+                                                {partSearchTerm ? 
+                                                    'Không tìm thấy phụ tùng phù hợp' : 
+                                                    'Không có phụ tùng của nhà cung cấp này'
+                                                }
                                             </div>
                                         )}
                                     </div>
