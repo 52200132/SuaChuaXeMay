@@ -45,6 +45,7 @@ export function StaffAuthProvider({ children }) {
                 role: userData.role,
                 access_token: userData.access_token,
                 token_type: userData.token_type,
+                originData: userData,
             };
             setCurrentStaff(staff);
             localStorage.setItem('staff', JSON.stringify(staff));

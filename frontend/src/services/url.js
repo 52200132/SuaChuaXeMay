@@ -148,6 +148,7 @@ const URLS = {
     },
     'WAREHOUSE':{
         'EXPORT_PART_LOTS':'/warehouse/export-part-lots',
+        'GET_WAREHOUSE_INFO':'/warehouse/info',
     },
 
     'DIAGNOSIS':{

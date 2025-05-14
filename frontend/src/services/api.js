@@ -921,7 +921,24 @@ const repairService2 = {
         }
     },
     'warehouse': {
-        
+        exportPartLots: async (data, orderId) => {
+            try {
+                const response = await apiRepairService2.post(`${URLS.WAREHOUSE.EXPORT_PART_LOTS}?order_id=${orderId}`, data);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi xuất kho phụ tùng:', error);
+                throw error;
+            }
+        },
+        getWarehouseInfo: async (listPartLotStr) => {
+            try {
+                const response = await apiRepairService2.get(`${URLS.WAREHOUSE.GET_WAREHOUSE_INFO}?part_lots_json=${listPartLotStr}`);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy thông tin kho hàng:', error);
+                throw error;
+            }
+        },
     },
     part: {
         getPartViewsByMotoTypeId: async (motoTypeId) => {

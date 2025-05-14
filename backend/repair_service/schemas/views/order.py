@@ -23,6 +23,7 @@ class OrderViewForTable(BaseModel):
     created_at: Optional[datetime] = None
     customer: CustomerView
     motocycle: MotocycleView
+    is_exported: Optional[bool] = False
     order_detail: Optional[OrderDetailView] = None
     
     class Config:

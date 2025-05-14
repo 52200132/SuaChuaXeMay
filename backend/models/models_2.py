@@ -151,7 +151,7 @@ class Staff(Base):
     
     staff_id = Column(Integer, primary_key=True, autoincrement=True)
     fullname = Column(Unicode(255), nullable=False)
-    role = Column(Enum('receptionist', 'technician', 'head technician', 'warehouse worker', 'cashier', 'manager', name='staff_role'), nullable=False)
+    role = Column(Enum('receptionist', 'technician', 'cashier', 'manager', name='staff_role'), nullable=False)
     status = Column(Enum('active', 'inactive', name='staff_status'), default='active')
     email = Column(String(50), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
@@ -229,6 +229,7 @@ class Order(Base):
     staff_id = Column(Integer, ForeignKey('staff.staff_id'))
     status = Column(Enum('received', 'checking', 'wait_confirm', 'cancelled', 'repairing', 'wait_delivery', 'delivered', name='order_status'), default='received')
     total_price = Column(Integer, default=0)
+    is_exported = Column(Boolean, default=False)
     
     # Relationships
     motocycle = relationship("Motocycle", back_populates="orders")

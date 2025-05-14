@@ -22,6 +22,7 @@ async def get_order_views_for_table(db: AsyncSession, skip: int = 0, limit: int 
                     Order.order_id,
                     Order.status,
                     Order.created_at,
+                    Order.is_exported,
                     Bundle(
                         "customer",
                         Customer.customer_id,

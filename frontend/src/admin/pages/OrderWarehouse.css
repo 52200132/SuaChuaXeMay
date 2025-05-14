@@ -54,6 +54,18 @@
     width: 300px;
 }
 
+/* Quantity input styling */
+.warehouse-list .form-control[type="number"] {
+    text-align: center;
+    padding: 0.25rem;
+}
+
+/* Status badges */
+.badge {
+    font-weight: normal;
+    padding: 0.35em 0.65em;
+}
+
 @media (max-width: 992px) {
     .search-box {
         width: 100%;
