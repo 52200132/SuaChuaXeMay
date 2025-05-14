@@ -11,6 +11,7 @@ import TechnicianDashboard from './pages/TechnicianDashboard/TechnicianDashboard
 import InvoiceManagement from './pages/InvoiceManagement';
 import OrderAssignment from './pages/OrderAssignment';
 import WarehouseManagement from './pages/WarehouseManagement';
+import OrderWarehouse from './pages/OrderWarehouse';
 
 // Routes cho vai trò receptionist (tiếp tân)
 export const receptionistRoutes = [
@@ -97,6 +98,13 @@ export const warehouse_workerRoutes = [
         component: WarehouseManagement,
         name: 'Quản lý kho',
         icon: 'bi bi-box',
+        exact: true,
+    },
+    {
+        path: '/admin/order-warehouse',
+        component: OrderWarehouse,
+        name: 'Xuất kho đơn hàng',
+        icon: 'bi bi-box-arrow-up',
         exact: true,
     },
     {

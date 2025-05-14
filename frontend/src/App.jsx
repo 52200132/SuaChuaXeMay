@@ -36,6 +36,7 @@ import StaffLogin from './admin/pages/Login';
 import ReceiptManagement from './admin/pages/ReceiptManagement/ReceiptManagement';
 import OrderManagement from './admin/pages/OrderManagement';
 import WarehouseManagement from './admin/pages/WarehouseManagement';
+import OrderWarehouse from './admin/pages/OrderWarehouse';
 import TechnicianDashboard from './admin/pages/TechnicianDashboard/TechnicianDashboard';
 // Thêm import cho trang hóa đơn
 import InvoiceManagement from './admin/pages/InvoiceManagement';
@@ -87,6 +88,7 @@ function App() {
                                         <Route path="bookings/create" element={<BookingManagement />} />
                                         <Route path="receipts" element={<ReceiptManagement />} />
                                         <Route path="warehouse" element={<WarehouseManagement />} />
+                                        <Route path="order-warehouse" element={<OrderWarehouse />} />
                                         <Route path="orders" element={<OrderManagement />} />
                                         <Route path="orders/:id/print" element={<OrderManagement />} />
                                         <Route path="orders/create" element={<OrderManagement />} />

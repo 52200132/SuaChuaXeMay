@@ -1,0 +1,62 @@
+/* Order Warehouse styles */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.table thead.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.table thead.sticky-top tr th {
+    background-color: #f8f9fa;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.part-item {
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.part-header {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.warehouse-list {
+    padding: 0.75rem;
+}
+
+/* Hover effect for order rows */
+.table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.table tbody tr.table-active {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* Card height and scrolling */
+.orders-list-container {
+    height: calc(100vh - 250px);
+    overflow-y: auto;
+}
+
+/* Custom spinner for loading state */
+.spinner-border {
+    border-width: 0.15em;
+    height: 2rem;
+    width: 2rem;
+}
+
+.search-box {
+    width: 300px;
+}
+
+@media (max-width: 992px) {
+    .search-box {
+        width: 100%;
+        margin-top: 1rem;
+    }
+}

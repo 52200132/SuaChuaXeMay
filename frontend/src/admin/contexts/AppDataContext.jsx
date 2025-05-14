@@ -2,6 +2,7 @@ import { createContext, useState, useContext, useCallback, useMemo, useEffect, u
 import { useStaffAuth } from './StaffAuthContext';
 import { customerService, repairService, repairService2, resourceService } from '../../services/api';
 import pusher, { subscribeToChannel, unsubscribeFromChannel } from '../../services/pusher';
+import { data } from 'react-router-dom';
 // Create context
 const AppDataContext = createContext();
 
@@ -171,10 +172,6 @@ export const AppDataProvider = ({ children }) => {
             const dataObject1 = Array.isArray(data1) 
                 ? data1.reduce((obj, item) => {
                     obj[item.service_id] = item; // Lưu item vào object với service_id là key
-                : data1;
-            const dataObject2 = Array.isArray(data2)
-                ? data2.reduce((obj, item) => {
-                    obj[item.service_id] = item; // Lưu item vào object với service_id là key
                     return obj;
                 }, {})
                 : data1;
@@ -187,23 +184,15 @@ export const AppDataProvider = ({ children }) => {
                 : data2;
             setData('servicesParentMotoType', dataObject1, 'Xe số');
             setData('servicesParentMotoType', dataObject2, 'Xe tay ga');
-                }
-                , {})
-                : data2;
-            setData('servicesParentMotoType', dataObject1, 'Xe số');
-            setData('servicesParentMotoType', dataObject2, 'Xe tay ga');
         } catch (error) {
             console.error('Lỗi khi lấy danh sách service:', error);
-            console.error('Lỗi khi lấy danh sách service:', error);
         }
-        setLoadingState('servicesParentMotoType', false);
         setLoadingState('servicesParentMotoType', false);
     }
 
     const fetchParts = async () => {
         setLoadingState('parts', true);
         try {
-            const response = await repairService2.part.getPartViews();
             const response = await repairService2.part.getPartViews();
             const data = response?.data;
             const dataObject = Array.isArray(data) 
@@ -445,7 +434,8 @@ export const AppDataProvider = ({ children }) => {
             fetchParts();
             fetchServices();
             fetchOrderForTechnician();
->>>>>>> Stashed changes
+        } else if (currentStaff.role === 'warehouse worker') {
+            console.log('Đang là nhân viên kho');
         }
     }, [currentStaff]);
 

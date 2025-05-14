@@ -51,6 +51,7 @@ const URLS = {
         'GET_PART_VIEWS':'/part-views',
         'GET_PARTS_VIEWS_BY_MOTO_TYPE_ID':'/part-views/motocycle-type/{moto_type_id}',
         'GET_PARTS_VIEWS_BY_ORDER_ID':'/part-views/order/{order_id}',
+        'GET_PARTS_VIEWS_BY_ORDER_ID_V2':'/part-views/order/{order_id}/v2',
         'GET_PARTS_VIEWS_BY_PART_ID_LIST':'/part-views/part-id-list',
         'UPDATE_PART':'/part/update/{part_id}',
         'DELETE_PART':'/part/delete/{part_id}',
@@ -142,6 +143,13 @@ const URLS = {
         'GET_CUSTOMER_ORDERS':'/orders/customer/{customer_id}',
         'GET_ALL_ORDERS_BY_MOTO_ID':'/orders/motorcycle/{motocycle_id}',
     },
+    'ORDER_V2':{
+        'GET_ORDER_VIEWS_FOR_TABLE':'/order-views/table',
+    },
+    'WAREHOUSE':{
+        'EXPORT_PART_LOTS':'/warehouse/export-part-lots',
+    },
+
     'DIAGNOSIS':{
         'CREATE_DIAGNOSIS':'/diagnosis/create',
         'GET_ALL_DIAGNOSIS':'/diagnosis',

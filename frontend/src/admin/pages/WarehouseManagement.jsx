@@ -62,24 +62,24 @@ const WarehouseManagement = () => {
     const destinations = ['Phục vụ sửa chữa', 'Chuyển kệ khác', 'Xuất bán lẻ'];
 
     // Initialize data
-    useEffect(() => {
-        setLocalLoading(true);
-        if (loading['parts'] === true) return;
+    // useEffect(() => {
+    //     setLocalLoading(true);
+    //     if (loading['parts'] === true) return;
         
-        // Mock data for development - would be replaced by actual API calls
-        if (Object.keys(partsById).length === 0) {
-            // Simulate fetching parts data
-            fetchParts();
-        } else {
-            // Group parts by part_id
-            const grouped = groupPartsByPartId(partsIds.map(id => partsById[id]));
-            setGroupedParts(grouped);
-            setGroupedPartsIds(Object.keys(grouped));
-            setFilteredPartsIds(Object.keys(grouped));
-            setTotalPages(Math.ceil(Object.keys(grouped).length / itemsPerPage));
-            setLocalLoading(false);
-        }
-    }, [loading, partsById, partsIds]);
+    //     // Mock data for development - would be replaced by actual API calls
+    //     if (Object.keys(partsById).length === 0) {
+    //         // Simulate fetching parts data
+    //         fetchParts();
+    //     } else {
+    //         // Group parts by part_id
+    //         const grouped = groupPartsByPartId(partsIds.map(id => partsById[id]));
+    //         setGroupedParts(grouped);
+    //         setGroupedPartsIds(Object.keys(grouped));
+    //         setFilteredPartsIds(Object.keys(grouped));
+    //         setTotalPages(Math.ceil(Object.keys(grouped).length / itemsPerPage));
+    //         setLocalLoading(false);
+    //     }
+    // }, [loading, partsById, partsIds]);
 
     // Group parts by part_id
     const groupPartsByPartId = (partsArray) => {
@@ -504,21 +504,21 @@ const WarehouseManagement = () => {
     const [selectedParts, setSelectedParts] = useState([]);
 
     // Initialize available parts for bulk receiving
-    useEffect(() => {
-        if (Object.keys(groupedParts).length > 0) {
-            const uniqueParts = Object.values(groupedParts).map(part => ({
-                part_id: part.part_id,
-                name: part.name,
-                unit: part.unit,
-                URL: part.URL,
-                selected: false,
-                quantity: 0,
-                import_price: 0,
-                location: ''
-            }));
-            setAvailableParts(uniqueParts);
-        }
-    }, [groupedParts]);
+    // useEffect(() => {
+    //     if (Object.keys(groupedParts).length > 0) {
+    //         const uniqueParts = Object.values(groupedParts).map(part => ({
+    //             part_id: part.part_id,
+    //             name: part.name,
+    //             unit: part.unit,
+    //             URL: part.URL,
+    //             selected: false,
+    //             quantity: 0,
+    //             import_price: 0,
+    //             location: ''
+    //         }));
+    //         setAvailableParts(uniqueParts);
+    //     }
+    // }, [groupedParts]);
     
     // Show bulk receive modal
     const handleShowBulkReceiveModal = () => {

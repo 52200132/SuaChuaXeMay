@@ -831,6 +831,20 @@ const repairService = {
 };
 
 const repairService2 = {
+    order: {
+        getOrderViewsForTable: async () => {
+            try {
+                const response = await apiRepairService2.get(URLS.ORDER_V2.GET_ORDER_VIEWS_FOR_TABLE);
+                return response;
+            } catch (error) {
+                console.error('api - Lỗi khi lấy danh sách đơn hàng:', error);
+                throw error;
+            }
+        }
+    },
+    'warehouse': {
+        
+    },
     part: {
         getPartViewsByMotoTypeId: async (motoTypeId) => {
             try {
@@ -838,6 +852,15 @@ const repairService2 = {
                 return response;
             } catch (error) {
                 console.error(`api - Lỗi khi lấy danh sách phụ tùng theo loại xe ID=${motoTypeId}:`, error);
+                throw error;
+            }
+        },
+        getPartViewsByOrderIdV2: async (orderId) => {
+            try {
+                const response = await apiRepairService2.get(URLS.PART_V2.GET_PARTS_VIEWS_BY_ORDER_ID_V2.replace('{order_id}', orderId));
+                return response;
+            } catch (error) {
+                console.error(`api - Lỗi khi lấy danh sách phụ tùng theo đơn hàng ID=${orderId}:`, error);
                 throw error;
             }
         },

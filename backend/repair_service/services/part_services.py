@@ -265,7 +265,8 @@ async def get_part_warehouse_views_by_order_id_v2(db: AsyncSession, order_id: in
             .join(Part, PartOrderDetail.part_id == Part.part_id)
             .where(
                 PartOrderDetail.order_id == order_id,
-                Part.is_deleted == False
+                Part.is_deleted == False,
+                PartOrderDetail.is_selected == True
             )
         )
         
