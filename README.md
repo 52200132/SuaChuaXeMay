@@ -18,13 +18,17 @@ Hệ thống được xây dựng theo kiến trúc microservices, bao gồm:
 - **Realtime Communication**: Pusher
 - **Containerization**: Docker (tùy chọn)
 
-## Hướng dẫn cài đặt
+## Hướng dẫn cài đặt trên Windows
 
 ### Yêu cầu hệ thống
 - Node.js 16.x trở lên
 - Python 3.9 trở lên
 - MySQL Server
 - Git
+
+### Tạo cơ sở dữ liệu có data
+- Tạo một cơ sở dữ liệu có tên giống với `DB_NAME` trong file `.env` bên dưới
+- Chạy `databasecuahangsuaxe.sql` để tạo bảng và dữ liệu
 
 ### Cài đặt Backend
 
@@ -37,7 +41,7 @@ Hệ thống được xây dựng theo kiến trúc microservices, bao gồm:
 2. Cài đặt môi trường ảo:
    ```bash
    python -m venv venv
-   source venv/bin/activate      # Trên Windows: venv\Scripts\activate
+   venv\\Scripts\\activate
    ```
 
 3. Cài đặt các dependency:
@@ -58,6 +62,9 @@ Hệ thống được xây dựng theo kiến trúc microservices, bao gồm:
    ```bash
    python main.py
    ```
+
+6. Mở một terminal để chạy thêm các dịch vụ
+- Phải đảm bảo bạn đã chạy 3 dịch vụ: `resource_service`, `customer_service`, `repair_service`
 
 Các service sẽ hoạt động trên các cổng sau:
 - Resource Service: http://localhost:8000
@@ -122,7 +129,6 @@ WebSocket server sẽ hoạt động tại http://localhost:4000
 
 ### Quản lý kho và phụ tùng
 - Quản lý tồn kho phụ tùng
-- Cảnh báo khi sắp hết hàng
 - Nhập và xuất phụ tùng
 
 ### Thanh toán và hóa đơn
@@ -135,6 +141,7 @@ WebSocket server sẽ hoạt động tại http://localhost:4000
 - Quản lý
 - Nhân viên tiếp nhận
 - Kỹ thuật viên
+- Kỹ thuật viên trưởng
 - Thu ngân
 - Nhân viên kho
 
@@ -147,18 +154,3 @@ WebSocket server sẽ hoạt động tại http://localhost:4000
 - Resource Service: http://localhost:8000/docs
 - Customer Service: http://localhost:8001/docs
 - Repair Service: http://localhost:8002/docs
-
-## 📝 Ghi chú phát triển
-- Cấu trúc dự án tuân theo nguyên tắc microservices
-- Mỗi microservice phụ trách một phần của hệ thống
-- Giao tiếp giữa các service thông qua API calls
-- Cập nhật realtime qua WebSocket/Pusher
-
-## 🧪 Testing
-Thực hiện chạy kiểm thử cho mỗi service:
-
-```bash
-pytest backend/resource_service/tests/
-pytest backend/customer_service/tests/
-pytest backend/repair_service/tests/
-```
