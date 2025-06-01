@@ -120,6 +120,132 @@ const UpdateDetailModal = ({
         }
     }, [show, partOrderDetailsData, serviceOrderDetailsData]);
 
+    // Function to handle temporary printing
+    const handlePrint = () => {
+        // Create a printable version of the content
+        const printContent = document.createElement('div');
+        printContent.innerHTML = `
+            <style>
+                body { font-family: Arial, sans-serif; }
+                .print-container { padding: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                table, th, td { border: 1px solid #ddd; }
+                th, td { padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+                .header { text-align: center; margin-bottom: 20px; }
+                .footer { margin-top: 30px; text-align: right; }
+                .print-only { display: block; }
+                @media print {
+                    button { display: none !important; }
+                }
+            </style>
+            <div class="print-container">
+                <div class="header">
+                    <h2>PHIẾU SỬA CHỮA TẠM</h2>
+                    <p>Ngày: ${new Date().toLocaleDateString('vi-VN')}</p>
+                </div>
+                <div>
+                    <p><strong>Mã đơn:</strong> ${currentOrder?.orderId}</p>
+                    <p><strong>Khách hàng:</strong> ${currentOrder?.customerName}</p>
+                    <p><strong>Số điện thoại:</strong> ${currentOrder?.customerPhone}</p>
+                    <p><strong>Xe:</strong> ${currentOrder?.motorcycleModel}</p>
+                    <p><strong>Biển số:</strong> ${currentOrder?.plateNumber}</p>
+                </div>
+                <h3>Phụ tùng đã sử dụng</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th>Tên phụ tùng</th>
+                            <th>Số lượng</th>
+                            <th>Đơn giá</th>
+                            <th>Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${partOrderDetailsData
+                            ?.filter(part => selectedItems.parts.has(part.part_detail_ID))
+                            .map(part => {
+                                const partInfo = getData('parts', part.part_id) || { name: `Phụ tùng #${part.part_id}` };
+                                const unitPrice = part.quantity > 0 ? part.price / part.quantity : 0;
+                                return `
+                                    <tr>
+                                        <td>${part.part_id}</td>
+                                        <td>${partInfo.name}</td>
+                                        <td>${part.quantity}</td>
+                                        <td>${formatCurrency(unitPrice)}</td>
+                                        <td>${formatCurrency(part.price)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" style="text-align: right;"><strong>Tổng tiền phụ tùng:</strong></td>
+                            <td><strong>${formatCurrency(
+                                partOrderDetailsData
+                                    ?.filter(part => selectedItems.parts.has(part.part_detail_ID))
+                                    .reduce((sum, part) => sum + (part.price), 0) || 0
+                            )}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <h3>Dịch vụ đã thực hiện</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th>Tên dịch vụ</th>
+                            <th>Giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${serviceOrderDetailsData
+                            ?.filter(service => selectedItems.services.has(service.service_detail_ID))
+                            .map(service => {
+                                const serviceInfo = getData('services', service.service_id) || { name: `Dịch vụ #${service.service_id}` };
+                                return `
+                                    <tr>
+                                        <td>${service.service_id}</td>
+                                        <td>${serviceInfo.name}</td>
+                                        <td>${formatCurrency(service.price)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" style="text-align: right;"><strong>Tổng tiền dịch vụ:</strong></td>
+                            <td><strong>${formatCurrency(
+                                serviceOrderDetailsData
+                                    ?.filter(service => selectedItems.services.has(service.service_detail_ID))
+                                    .reduce((sum, service) => sum + service.price, 0) || 0
+                            )}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <div class="footer">
+                    <h3>Tổng cộng: ${formatCurrency(calculateTotalSelectedAmount())}</h3>
+                </div>
+            </div>
+        `;
+
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent.innerHTML);
+        printWindow.document.close();
+        printWindow.focus();
+        
+        // Print after a short delay to ensure content is loaded
+        setTimeout(() => {
+            printWindow.print();
+            // Close window after print (optional)
+            // printWindow.close();
+        }, 500);
+    };
+
     return (
         <Modal
             show={show}
@@ -330,6 +456,14 @@ const UpdateDetailModal = ({
                 )}
             </Modal.Body>
             <Modal.Footer>
+                <Button 
+                    variant="info" 
+                    onClick={handlePrint}
+                    disabled={detailsLoading || (selectedItems.parts.size === 0 && selectedItems.services.size === 0)}
+                    className="me-auto"
+                >
+                    <i className="bi bi-printer me-1"></i> In tạm
+                </Button>
                 <Button variant="secondary" onClick={onHide}>
                     Hủy
                 </Button>

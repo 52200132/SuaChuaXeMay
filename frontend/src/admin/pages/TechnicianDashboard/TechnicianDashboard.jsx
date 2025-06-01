@@ -1074,8 +1074,7 @@ const TechnicianDashboard = () => {
                 </Modal.Footer>
             </Modal>
 
-            {/* Modal cập nhật kiểm tra xe (renamed from "Modal cập nhật đơn hàng") */}
-            // TODO: modal - cập nhật kiểm tra xe
+            {/* TODO: Modal cập nhật kiểm tra xe (renamed from "Modal cập nhật đơn hàng") */}
             <InspectionModal
                 show={showUpdateModal}
                 onHide={() => setShowUpdateModal(false)}
